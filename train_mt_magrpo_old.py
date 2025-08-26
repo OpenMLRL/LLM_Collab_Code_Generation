@@ -1,41 +1,26 @@
-"""
-Unified training script for MAGRPO that supports both single-turn and multi-turn training.
-The training mode is determined by the num_turns parameter in the config file.
-Supports multiple datasets and configurations via YAML files.
-"""
-
 import argparse
+import ast
 import os
 import re
 import sys
 
+import numpy as np
+import torch
+import wandb
+
 # Add project root to Python path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 from config import Config, add_config_args, parse_overrides
 from datasets import load_dataset
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
-# Import loggers for different datasets
-from loggers.arxiv_logger import (
-    aggregate_arxiv_metrics_for_logging,
-    arxiv_combined_reward_logger,
-)
-from loggers.code_logger import (
-    aggregate_code_metrics_for_logging,
-    code_reward_logger,
-)
-from loggers.tldr_logger import (
-    aggregate_tldr_metrics_for_logging,
-    tldr_combined_reward_logger,
-)
 from loggers.mt_code_logger import (
     aggregate_mt_humaneval_metrics_for_logging,
     mt_humaneval_logger,
 )
-
 from rewards.arxiv_rewards import arxiv_combined_reward
 from rewards.code_rewards import execution_reward_humaneval_aux
 from rewards.tldr_rewards import tldr_combined_reward
@@ -57,8 +42,8 @@ def aux_function_formatter(
     example: Dict[str, Any], expert_feedback: Optional[str] = None
 ) -> str:
     """
-    Formatter for the auxiliary function generator (Agent 1) for code tasks.
-    Optionally includes expert feedback for multi-turn training.
+    Formatter for the auxiliary function generator (Agent 1).
+    Optionally includes expert feedback.
     """
     prompt = example.get("prompt", "")
     entry_point = example.get("entry_point", "")
@@ -97,8 +82,8 @@ def main_function_formatter(
     example: Dict[str, Any], expert_feedback: Optional[str] = None
 ) -> str:
     """
-    Formatter for the main function generator (Agent 2) for code tasks.
-    Optionally includes expert feedback for multi-turn training.
+    Formatter for the main function generator (Agent 2).
+    Optionally includes expert feedback.
     """
     prompt = example.get("prompt", "")
     entry_point = example.get("entry_point", "")
@@ -136,7 +121,7 @@ def {entry_point}({params_str}):\n # your function code here\nreturn result\n"""
     return prompt_text
 
 
-def background_agent_formatter(
+def background_agent_formatter_mt(
     example: Dict[str, Any], expert_feedback: Optional[str] = None
 ) -> str:
     """Formatter for the background agent (Agent 1) for ArXiv dataset."""
@@ -162,7 +147,7 @@ IMPORTANT INSTRUCTIONS:
     return prompt_text
 
 
-def complementary_agent_formatter(
+def complementary_agent_formatter_mt(
     example: Dict[str, Any], expert_feedback: Optional[str] = None
 ) -> str:
     """Formatter for the complementary agent (Agent 2) for ArXiv dataset."""
@@ -188,7 +173,7 @@ IMPORTANT INSTRUCTIONS:
     return prompt_text
 
 
-def summary_agent_formatter(
+def summary_agent_formatter_mt(
     example: Dict[str, Any], expert_feedback: Optional[str] = None
 ) -> str:
     """Formatter for the summary agent (Agent 1) for TLDR dataset."""
@@ -213,7 +198,7 @@ IMPORTANT INSTRUCTIONS:
     return prompt_text
 
 
-def elaboration_agent_formatter(
+def elaboration_agent_formatter_mt(
     example: Dict[str, Any], expert_feedback: Optional[str] = None
 ) -> str:
     """Formatter for the elaboration agent (Agent 2) for TLDR dataset."""
@@ -248,38 +233,15 @@ def get_formatters(dataset_type: str):
     formatters_map = {
         "humaneval": [aux_function_formatter, main_function_formatter],
         "coophumaneval": [aux_function_formatter, main_function_formatter],
-        "arxiv": [background_agent_formatter, complementary_agent_formatter],
-        "tldr": [summary_agent_formatter, elaboration_agent_formatter],
+        "arxiv": [background_agent_formatter_mt, complementary_agent_formatter_mt],
+        "tldr": [summary_agent_formatter_mt, elaboration_agent_formatter_mt],
     }
     return formatters_map.get(
         dataset_type.lower(), [aux_function_formatter, main_function_formatter]
     )
 
 
-def get_logger_and_aggregator(dataset_type: str, is_multi_turn: bool = False):
-    """
-    Get the appropriate logger and aggregator functions based on dataset type.
-    For multi-turn training with code datasets, use the multi-turn logger.
-    """
-    if dataset_type is None:
-        return None, None
-
-    # For multi-turn training with code datasets, use multi-turn logger
-    if is_multi_turn and dataset_type.lower() in ["humaneval", "coophumaneval"]:
-        return mt_humaneval_logger, aggregate_mt_humaneval_metrics_for_logging
-
-    # Standard single-turn loggers
-    logger_map = {
-        "humaneval": (code_reward_logger, aggregate_code_metrics_for_logging),
-        "coophumaneval": (code_reward_logger, aggregate_code_metrics_for_logging),
-        "arxiv": (arxiv_combined_reward_logger, aggregate_arxiv_metrics_for_logging),
-        "tldr": (tldr_combined_reward_logger, aggregate_tldr_metrics_for_logging),
-    }
-
-    return logger_map.get(dataset_type.lower(), (None, None))
-
-
-def get_reward_function(dataset_type: str):
+def get_reward_function(dataset_type: str, train_dataset):
     """Get the appropriate reward function based on dataset type."""
     if dataset_type is None:
         raise ValueError(
@@ -317,10 +279,10 @@ def get_reward_function(dataset_type: str):
         raise ValueError(f"Unknown dataset type: {dataset_type}")
 
 
-def main():
-    """Main function to run the unified MAGRPO training."""
+def parse_args():
+    """Parse command line arguments."""
     parser = argparse.ArgumentParser(
-        description="Train MAGRPO with configurable dataset (single-turn or multi-turn)"
+        description="Train MT-MAGRPO model with customizable parameters"
     )
     add_config_args(parser)
 
@@ -330,54 +292,109 @@ def main():
         default=None,
         help="Model name to use (overrides config)",
     )
-    parser.add_argument(
-        "--output_base_dir",
-        type=str,
-        default=None,
-        help="Base output directory (overrides config)",
-    )
+
     parser.add_argument(
         "--num_epochs",
+        "--num_epoch",
         type=int,
         default=None,
         help="Number of training epochs (overrides config)",
     )
-    parser.add_argument(
-        "--num_turns",
-        type=int,
-        default=None,
-        help="Number of turns for multi-turn training (overrides config)",
-    )
+
     parser.add_argument(
         "--turn_gradient_weights",
         type=float,
         nargs="+",
         default=None,
-        help="Turn gradient weights for multi-turn training (overrides config)",
+        help="Turn gradient weights as a list of floats (overrides config)",
     )
 
-    args = parser.parse_args()
+    parser.add_argument(
+        "--learning_rate",
+        type=float,
+        default=None,
+        help="Learning rate (overrides config)",
+    )
+
+    parser.add_argument(
+        "--batch_size",
+        type=int,
+        default=None,
+        help="Training batch size per device (overrides config)",
+    )
+
+    parser.add_argument(
+        "--num_generations",
+        type=int,
+        default=None,
+        help="Number of generations for MAGRPO (overrides config)",
+    )
+
+    parser.add_argument(
+        "--temperature",
+        type=float,
+        default=None,
+        help="Temperature for generation (overrides config)",
+    )
+
+    parser.add_argument(
+        "--beta",
+        type=float,
+        default=None,
+        help="Beta parameter for MAGRPO (overrides config)",
+    )
+
+    return parser.parse_args()
+
+
+def main():
+    """Main function to run the multi-turn experiment with expert feedback."""
+    args = parse_args()
 
     if args.config:
         config = Config(args.config)
     else:
-        raise ValueError("Please provide a configuration file using --config")
+        default_config_path = (
+            Path(__file__).parent / "configs" / "mt_magrpo_he_config.yaml"
+        )
+        if default_config_path.exists():
+            config = ConfigLoader(str(default_config_path))
+        else:
+            from types import SimpleNamespace
+
+            config = SimpleNamespace()
+            config.get = lambda key, default=None: {
+                "model_name": "Qwen/Qwen2.5-Coder-3B",
+                "output.base_dir": "../../../projects/bepg/sliu30/output_mt",
+                "dataset.name": "openai/openai_humaneval",
+                "dataset.train_split": "test[:50]",
+                "dataset.eval_split": "test[50:66]",
+            }.get(key, default)
+            config.get_section = lambda section: {}
+            config.save = lambda path: None
 
     if args.override:
         overrides = parse_overrides(args.override)
         config.update(overrides)
 
-    # Apply command-line overrides
     if args.model_name:
         config.update({"model_name": args.model_name})
-    if args.output_base_dir:
-        config.update({"output": {"base_dir": args.output_base_dir}})
     if args.num_epochs is not None:
-        config.update({"magrpo": {"num_train_epochs": args.num_epochs}})
-    if args.num_turns is not None:
-        config.update({"magrpo": {"num_turns": args.num_turns}})
+        config.update({"mt_magrpo": {"num_train_epochs": args.num_epochs}})
+    if args.batch_size is not None:
+        config.update({"mt_magrpo": {"per_device_train_batch_size": args.batch_size}})
+    if args.learning_rate is not None:
+        config.update({"mt_magrpo": {"learning_rate": args.learning_rate}})
+    if args.beta is not None:
+        config.update({"mt_magrpo": {"beta": args.beta}})
+    if args.num_generations is not None:
+        config.update({"mt_magrpo": {"num_generations": args.num_generations}})
+    if args.temperature is not None:
+        config.update({"mt_magrpo": {"temperature": args.temperature}})
     if args.turn_gradient_weights is not None:
-        config.update({"magrpo": {"turn_gradient_weights": args.turn_gradient_weights}})
+        config.update(
+            {"mt_magrpo": {"turn_gradient_weights": args.turn_gradient_weights}}
+        )
 
     # Load model configuration
     model_config = config.get_model_config()
@@ -397,42 +414,29 @@ def main():
         elif "tldr" in dataset_name.lower():
             dataset_type = "tldr"
         else:
-            raise ValueError(
-                f"Could not infer dataset type from dataset name '{dataset_name}'. Please specify 'type' in dataset config."
-            )
-        print(f"Dataset type not specified, inferred as: {dataset_type}")
-    
+            # Default to humaneval for backward compatibility
+            dataset_type = "humaneval"
+            print(f"Dataset type not specified, defaulting to: {dataset_type}")
+        if dataset_type != "humaneval":
+            print(f"Dataset type not specified, inferred as: {dataset_type}")
     train_split = config.get("dataset.train_split")
     eval_split = config.get("dataset.eval_split")
 
-    # Get MAGRPO configuration (works for both single and multi-turn)
-    magrpo_config = (
-        config.get_section("magrpo") if hasattr(config, "get_section") else {}
+    mt_magrpo_config = (
+        config.get_section("mt_magrpo") if hasattr(config, "get_section") else {}
     )
-    
-    # Check if this is multi-turn training
-    num_turns = magrpo_config.get("num_turns", 1)
-    is_multi_turn = num_turns > 1
-    
-    # Validate turn gradient weights for multi-turn
-    if is_multi_turn:
-        turn_weights = magrpo_config.get("turn_gradient_weights", [1.0] * num_turns)
-        if len(turn_weights) != num_turns:
-            raise ValueError(
-                f"turn_gradient_weights must have {num_turns} values, got {len(turn_weights)}"
-            )
-        print(f"Multi-turn training enabled: num_turns={num_turns}, weights={turn_weights}")
-    else:
-        print(f"Single-turn training: num_turns={num_turns}")
+    turn_weights = mt_magrpo_config.get("turn_gradient_weights", [1.2, 0.8])
+    if len(turn_weights) != 2:
+        raise ValueError(
+            f"turn_gradient_weights must have exactly 2 values, got {len(turn_weights)}"
+        )
+
+    print(f"Running with num_epochs: {mt_magrpo_config.get('num_train_epochs', 7)}")
+    print(f"Running with turn_gradient_weights: {turn_weights}")
 
     slurm_job_id = os.environ.get("SLURM_JOB_ID", "no_job_id")
-    
-    # Use different output directory prefix for multi-turn
-    if is_multi_turn:
-        output_dir = os.path.join(output_base_dir, f"mt_job_{slurm_job_id}")
-    else:
-        output_dir = os.path.join(output_base_dir, f"job_{slurm_job_id}")
-    
+
+    output_dir = os.path.join(output_base_dir, f"mt_expert_job_{slurm_job_id}")
     os.makedirs(output_dir, exist_ok=True)
 
     if hasattr(config, "save"):
@@ -462,10 +466,6 @@ def main():
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
 
-    padding_side = config.get("tokenizer.padding_side")
-    if padding_side:
-        tokenizer.padding_side = padding_side
-
     # Add special tokens if needed (e.g., FIM tokens for StarCoder)
     if model_config.special_tokens:
         print("Adding special tokens...")
@@ -474,51 +474,46 @@ def main():
             f"Special tokens added: {model_config.special_tokens.get('additional_special_tokens', [])}"
         )
 
-    temperature = magrpo_config.get("temperature", model_config.temperature)
-    top_p = magrpo_config.get("top_p", model_config.top_p)
-    
-    # Use unified MAGRPOConfig which handles both single-turn and multi-turn
-    magrpo_args = MAGRPOConfig(
+    temperature = mt_magrpo_config.get("temperature", model_config.temperature)
+    top_p = mt_magrpo_config.get("top_p", model_config.top_p)
+
+    mt_config = MAGRPOConfig(
         output_dir=output_dir,
-        num_train_epochs=magrpo_config.get("num_train_epochs", 10 if not is_multi_turn else 7),
-        per_device_train_batch_size=magrpo_config.get("per_device_train_batch_size", 1),
-        learning_rate=magrpo_config.get("learning_rate", 1e-5),
-        logging_steps=magrpo_config.get("logging_steps", 50),
-        save_steps=magrpo_config.get("save_steps", 200),
-        num_generations=magrpo_config.get("num_generations", 4),
-        max_new_tokens=magrpo_config.get("max_new_tokens", 256),
+        num_train_epochs=mt_magrpo_config.get("num_train_epochs", 7),
+        per_device_train_batch_size=mt_magrpo_config.get(
+            "per_device_train_batch_size", 1
+        ),
+        learning_rate=mt_magrpo_config.get("learning_rate", 1e-5),
+        logging_steps=mt_magrpo_config.get("logging_steps", 50),
+        save_steps=mt_magrpo_config.get("save_steps", 200),
+        num_generations=mt_magrpo_config.get("num_generations", 4),
+        max_new_tokens=mt_magrpo_config.get("max_new_tokens", 256),
         temperature=temperature,
         top_p=top_p,
-        beta=magrpo_config.get("beta", 0.02),
-        # Multi-turn parameters (automatically handled based on num_turns)
-        num_turns=num_turns,
-        turn_gradient_weights=magrpo_config.get("turn_gradient_weights", [1.0] * num_turns),
-        early_termination_weight=magrpo_config.get("early_termination_weight", 2.0),
-        expert_model=magrpo_config.get("expert_model", "claude-3-5-sonnet-20241022"),
+        beta=mt_magrpo_config.get("beta", 0.02),
+        num_turns=mt_magrpo_config.get("num_turns", 2),
+        turn_gradient_weights=turn_weights,
+        early_termination_weight=mt_magrpo_config.get("early_termination_weight", 2.0),
+        expert_model=mt_magrpo_config.get("expert_model", "claude-3-5-sonnet-20241022"),
     )
 
-    # Get appropriate formatters and functions based on dataset type and training mode
     formatters = get_formatters(dataset_type)
-    reward_func = get_reward_function(dataset_type)
-    eval_logger, eval_aggregator = get_logger_and_aggregator(dataset_type, is_multi_turn)
+    reward_func = get_reward_function(dataset_type, train_dataset)
 
     wandb_section = (
         config.get_section("wandb") if hasattr(config, "get_section") else {}
     )
     model_short_name = model_name.split("/")[-1].lower()
-    
-    # Use different wandb name for multi-turn
-    if is_multi_turn:
-        wandb_name = wandb_section.get("name", f"mt_magrpo_{dataset_type}")
-    else:
-        wandb_name = wandb_section.get("name", f"magrpo_{dataset_type}")
+    wandb_name = wandb_section.get("name", f"mt_magrpo_{dataset_type}")
 
     wandb_config = {
         "project": wandb_section.get("project", "mlrl"),
         "entity": wandb_section.get("entity", "nu-llpr"),
         "name": f"{wandb_name}_{model_short_name}",
         "dir": wandb_section.get("dir", "../../../projects/bepg/sliu30"),
-        "tags": wandb_section.get("tags", ["magrpo", dataset_type, f"turns_{num_turns}"]),
+        "tags": wandb_section.get(
+            "tags", ["mt_magrpo", dataset_type, "multi-agent", "multi-turn"]
+        ),
     }
 
     agents_config = (
@@ -527,6 +522,7 @@ def main():
     num_agents = agents_config.get("num_agents", 2)
 
     print(f"\nCreating {num_agents} agents with {model_name}...")
+
     agents = [
         AutoModelForCausalLM.from_pretrained(
             model_name,
@@ -546,28 +542,25 @@ def main():
         "num_agents": num_agents,
         "reward_funcs": reward_func,
         "formatters": formatters,
-        "args": magrpo_args,
+        "args": mt_config,
         "train_dataset": train_dataset,
         "eval_dataset": eval_dataset,
         "tokenizer": tokenizer,
         "wandb_config": wandb_config,
-        "eval_logger": eval_logger,
-        "eval_aggregator": eval_aggregator,
+        "eval_logger": mt_humaneval_logger,
+        "eval_aggregator": aggregate_mt_humaneval_metrics_for_logging,
     }
 
     if reward_processor is not None:
         trainer_kwargs["reward_processors"] = reward_processor
 
-    # Use the unified MAGRPOTrainer which automatically handles single/multi-turn based on config
     trainer = MAGRPOTrainer(**trainer_kwargs)
 
     trainer.train()
 
     save_final = config.get("output.save_final_model", True)
     if save_final:
-        save_path = config.get(
-            "output.save_path", os.path.join(output_dir, "final_model")
-        )
+        save_path = os.path.join(output_dir, "final_model")
         trainer.save_model(save_path)
         print(f"Model saved to: {save_path}")
 
