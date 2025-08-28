@@ -41,6 +41,7 @@ from rewards.code_rewards import execution_reward_humaneval_aux
 from rewards.tldr_rewards import tldr_combined_reward
 from comlrl.utils.reward_processor import RewardProcessors
 from comlrl.trainers.magrpo import MAGRPOConfig, MAGRPOTrainer
+from external import get_expert_feedback
 
 
 def extract_function_params_from_prompt(prompt_text):
@@ -557,6 +558,25 @@ def main():
 
     if reward_processor is not None:
         trainer_kwargs["reward_processors"] = reward_processor
+    
+    # Add external_transition for code tasks if multi-turn is enabled
+    dataset_type = config.get("dataset.type")
+    if config.get("training.num_turns", 1) > 1 and dataset_type and dataset_type.lower() in ["humaneval", "coophumaneval"]:
+        # Create a wrapper that provides test and expert_model from batch_item and config
+        expert_model = config.get("training.expert_model", "claude-3-5-sonnet-20241022")
+        
+        def external_transition_wrapper(prompt, best_reward, aux_completion, main_completion, batch_item):
+            """Wrapper that adds test and expert_model from batch_item and config."""
+            return get_expert_feedback(
+                prompt=prompt,
+                test=batch_item.get("test", ""),
+                best_reward=best_reward,
+                aux_completion=aux_completion,
+                main_completion=main_completion,
+                expert_model=expert_model,
+            )
+        
+        trainer_kwargs["external_transition"] = external_transition_wrapper
 
     # Use the unified MAGRPOTrainer which automatically handles single/multi-turn based on config
     trainer = MAGRPOTrainer(**trainer_kwargs)

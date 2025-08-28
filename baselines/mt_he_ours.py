@@ -25,151 +25,10 @@ from loggers.mt_code_logger import (
     mt_humaneval_logger,
 )
 
-
-def extract_last_json_from_response(response_text: str) -> Dict[str, str]:
-    """Extract the last valid JSON from Claude's response."""
-    # Try to find JSON block with more flexible pattern
-    # Look for content between curly braces that contains "aux" and "main"
-    json_pattern = (
-        r'\{[^{}]*"aux"[^{}]*"main"[^{}]*\}|\{[^{}]*"main"[^{}]*"aux"[^{}]*\}'
-    )
-
-    matches = re.findall(json_pattern, response_text, re.DOTALL | re.MULTILINE)
-
-    for match in reversed(matches):
-        try:
-            # Clean up the match - remove any trailing commas before }
-            cleaned_match = re.sub(r",\s*}", "}", match)
-            parsed = json.loads(cleaned_match)
-            if "aux" in parsed and "main" in parsed:
-                return parsed
-        except json.JSONDecodeError:
-            continue
-
-    # If no JSON found, try to extract code blocks directly
-    # Look for aux function
-    aux_pattern = r"def aux\([^)]*\):[^}]+(?:return[^}]+)?"
-    aux_match = re.search(aux_pattern, response_text, re.DOTALL)
-
-    # Look for main function (could be any entry point name)
-    main_pattern = r"def (?!aux)\w+\([^)]*\):[^}]+(?:return[^}]+)?"
-    main_match = re.search(main_pattern, response_text, re.DOTALL)
-
-    if aux_match and main_match:
-        return {"aux": aux_match.group(0).strip(), "main": main_match.group(0).strip()}
-
-    raise ValueError("No valid JSON with 'aux' and 'main' fields found in response")
-
-
-def get_expert_feedback(
-    prompt: str,
-    test: str,
-    combined_code: str,
-    best_reward: float,
-    aux_completion: str,
-    main_completion: str,
-    entry_point: str,
-    expert_model: str = "claude-3-5-sonnet-20241022",
-    max_retries: int = 3,
-) -> Tuple[str, str]:
-    """Get feedback from Claude Sonnet expert model."""
-
-    expert_prompt = f"""You are an advisor helping two agents (an auxiliary agent and a main agent) solve the following problem: {prompt} There are some unit tests: {test} The auxiliary agent provides a helper function (aux), while the main agent defines the task-specific logic.
-The current combined solution achieved a reward of {best_reward:.4f} / 4.0.
-Your task is to review the provided code and return fixed codes. Specifically: 1. If you identify a missing element, such as an undefined aux or missing entry point (main function), you just rewrite one for it. 2. If both not missing, point out and make changes to any critical syntax or logic errors that would prevent the code from passing the given unit tests.
-Important instructions: 1. You should focus only on clear errors on the given unit tests. 2. Be conservative and lenient: ignore issues like redundancy, inefficiency, lack of edge case handling, or type annotations unless they cause failure in the given unit tests. 3. If either function independently completes the task correctly, you don't need to specify this error for this function. 4. Return "Perfect! No changes needed!" if logics are sound.
-IMPORTANT: Your response MUST contain the JSON format specified below. Always include both 'aux' and 'main' fields in the JSON, even if no changes are needed.
-Show your feedback for the following code: {combined_code}
-Respond in the following JSON format: {{"aux": "def aux(...): ...", "main": "def {entry_point}(...): ..."}}"""
-
-    for attempt in range(max_retries):
-        try:
-            if "claude" in expert_model.lower():
-                # Claude API
-                client = Anthropic()
-                response = client.messages.create(
-                    model=expert_model,
-                    max_tokens=2048,
-                    messages=[{"role": "user", "content": expert_prompt}],
-                )
-                response_text = response.content[0].text
-
-            elif "deepseek" in expert_model.lower():
-                # DeepSeek API
-                client = OpenAI(
-                    api_key=os.getenv("DEEPSEEK_API_KEY"),
-                    base_url="https://api.deepseek.com",
-                )
-                deepseek_model = (
-                    "deepseek-coder"
-                    if expert_model == "deepseek-coder"
-                    else expert_model
-                )
-                response = client.chat.completions.create(
-                    model=deepseek_model,
-                    messages=[{"role": "user", "content": expert_prompt}],
-                    max_tokens=2048,
-                    temperature=0.3,
-                )
-                response_text = response.choices[0].message.content
-
-            elif "qwen3-coder" in expert_model.lower():
-                client = OpenAI(
-                    api_key=os.getenv("DASHSCOPE_API_KEY"),
-                    base_url="https://dashscope-intl.aliyuncs.com/compatible-mode/v1",
-                )
-                qwen_model = (
-                    "qwen3-coder" if expert_model == "qwen3-coder" else expert_model
-                )
-                response = client.chat.completions.create(
-                    model=qwen_model,
-                    messages=[{"role": "user", "content": expert_prompt}],
-                    max_tokens=2048,
-                    temperature=0.3,
-                )
-                response_text = response.choices[0].message.content
-
-            else:
-                raise ValueError(f"Unsupported expert model: {expert_model}")
-
-            # Try to extract feedback
-            try:
-                feedback_json = extract_last_json_from_response(response_text)
-                aux_feedback = feedback_json.get("aux", aux_completion)
-                main_feedback = feedback_json.get("main", main_completion)
-            except ValueError as e:
-                # If JSON extraction fails, print the response for debugging
-                print(
-                    f"\nJSON extraction failed. Full response:\n{response_text[:500]}..."
-                )
-
-                # Try to extract functions directly from the response
-                # Look for def aux
-                aux_pattern = r"(def aux\([^)]*\):.*?)(?=def\s+\w+|$)"
-                aux_match = re.search(aux_pattern, response_text, re.DOTALL)
-
-                # Look for the main function
-                main_pattern = rf"(def {entry_point}\([^)]*\):.*?)(?=def\s+\w+|$)"
-                main_match = re.search(main_pattern, response_text, re.DOTALL)
-
-                if aux_match and main_match:
-                    aux_feedback = aux_match.group(1).strip()
-                    main_feedback = main_match.group(1).strip()
-                else:
-                    # If we still can't extract, use originals
-                    print(
-                        f"Could not extract functions from response. Using originals."
-                    )
-                    aux_feedback = aux_completion
-                    main_feedback = main_completion
-
-            return aux_feedback, main_feedback
-
-        except Exception as e:
-            print(f"Expert feedback attempt {attempt + 1} failed: {str(e)}")
-            if attempt == max_retries - 1:
-                print("Max retries reached. Using original completions.")
-                return aux_completion, main_completion
+# Import external module for expert feedback
+import sys
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from external import get_expert_feedback
 
 
 class TwoTurnHumanEvalEvaluator:
@@ -558,17 +417,12 @@ def {entry_point}({params_str}):
                         main_output_tokens2 = 0
                     else:
                         # Get expert feedback based on Turn 1 code
-                        imports = ""
-                        combined_code = f"{aux_response}\n\n{main_response}"
-
                         aux_expert_feedback, main_expert_feedback = get_expert_feedback(
                             prompt=prompt,
                             test=test_code,
-                            combined_code=combined_code,
                             best_reward=2.0,  # Default middle value since we don't evaluate yet
                             aux_completion=aux_response,
                             main_completion=main_response,
-                            entry_point=entry_point,
                             expert_model=self.expert_model_name,
                         )
 
