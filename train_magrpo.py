@@ -560,10 +560,9 @@ def main():
         trainer_kwargs["reward_processors"] = reward_processor
     
     # Add external_transition for code tasks if multi-turn is enabled
-    dataset_type = config.get("dataset.type")
-    if config.get("training.num_turns", 1) > 1 and dataset_type and dataset_type.lower() in ["humaneval", "coophumaneval"]:
+    if is_multi_turn and dataset_type and dataset_type.lower() in ["humaneval", "coophumaneval"]:
         # Create a wrapper that provides test and expert_model from batch_item and config
-        expert_model = config.get("training.expert_model", "claude-3-5-sonnet-20241022")
+        expert_model = magrpo_config.get("expert_model", "claude-3-5-sonnet-20241022")
         
         def external_transition_wrapper(prompt, best_reward, aux_completion, main_completion, batch_item):
             """Wrapper that adds test and expert_model from batch_item and config."""
