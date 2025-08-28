@@ -19,26 +19,16 @@ from datasets import load_dataset
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
 # Import loggers for different datasets
-from loggers.arxiv_logger import (
-    aggregate_arxiv_metrics_for_logging,
-    arxiv_combined_reward_logger,
-)
 from loggers.code_logger import (
     aggregate_code_metrics_for_logging,
     code_reward_logger,
-)
-from loggers.tldr_logger import (
-    aggregate_tldr_metrics_for_logging,
-    tldr_combined_reward_logger,
 )
 from loggers.mt_code_logger import (
     aggregate_mt_humaneval_metrics_for_logging,
     mt_humaneval_logger,
 )
 
-from rewards.arxiv_rewards import arxiv_combined_reward
 from rewards.code_rewards import execution_reward_humaneval_aux
-from rewards.tldr_rewards import tldr_combined_reward
 from comlrl.utils.reward_processor import RewardProcessors
 from comlrl.trainers.magrpo import MAGRPOConfig, MAGRPOTrainer
 from external import get_expert_feedback
@@ -137,120 +127,18 @@ def {entry_point}({params_str}):\n # your function code here\nreturn result\n"""
     return prompt_text
 
 
-def background_agent_formatter(
-    example: Dict[str, Any], expert_feedback: Optional[str] = None
-) -> str:
-    """Formatter for the background agent (Agent 1) for ArXiv dataset."""
-    abstract = example.get("abstract_text", "")
-
-    if not abstract:
-        return "Error: No abstract provided."
-
-    prompt_text = f"""Based on the following scientific abstract, expand content for an introduction section.
-
-Abstract:
-{abstract}
-
-IMPORTANT INSTRUCTIONS:
-- There is another agent that will provide methodology and implications
-- You just need to focus on background and motivation
-- Avoid repeating methodology and implications content
-"""
-
-    if expert_feedback is not None:
-        prompt_text += f"\n\nHere is the feedback from an expert:\n{expert_feedback}"
-
-    return prompt_text
-
-
-def complementary_agent_formatter(
-    example: Dict[str, Any], expert_feedback: Optional[str] = None
-) -> str:
-    """Formatter for the complementary agent (Agent 2) for ArXiv dataset."""
-    abstract = example.get("abstract_text", "")
-
-    if not abstract:
-        return "Error: No abstract provided."
-
-    prompt_text = f"""Based on the following scientific abstract, expand content for an introduction section.
-
-Abstract:
-{abstract}
-
-IMPORTANT INSTRUCTIONS:
-- There is another agent that will provide the background and motivation
-- You just need to focus on methodology and implications
-- Avoid repeating background and motivation content
-"""
-
-    if expert_feedback is not None:
-        prompt_text += f"\n\nHere is the feedback from an expert:\n{expert_feedback}"
-
-    return prompt_text
-
-
-def summary_agent_formatter(
-    example: Dict[str, Any], expert_feedback: Optional[str] = None
-) -> str:
-    """Formatter for the summary agent (Agent 1) for TLDR dataset."""
-    prompt = example.get("prompt", "")
-
-    if not prompt:
-        return "Error: No prompt provided."
-
-    prompt_text = f"""Create a concise summary response to this post.
-
-Query:
-{prompt}
-
-IMPORTANT INSTRUCTIONS:
-- Provide a brief, focused summary in one sentence or a few sentences
-- Be factual and informative
-"""
-
-    if expert_feedback is not None:
-        prompt_text += f"\n\nHere is the feedback from an expert:\n{expert_feedback}"
-
-    return prompt_text
-
-
-def elaboration_agent_formatter(
-    example: Dict[str, Any], expert_feedback: Optional[str] = None
-) -> str:
-    """Formatter for the elaboration agent (Agent 2) for TLDR dataset."""
-    prompt = example.get("prompt", "")
-
-    if not prompt:
-        return "Error: No prompt provided."
-
-    prompt_text = f"""Create a detailed summary response to this post.
-
-Original Query:
-{prompt}
-
-IMPORTANT INSTRUCTIONS:
-- Use more unique words
-- Use some transition words to improve flow
-"""
-
-    if expert_feedback is not None:
-        prompt_text += f"\n\nHere is the feedback from an expert:\n{expert_feedback}"
-
-    return prompt_text
 
 
 def get_formatters(dataset_type: str):
     """Get the appropriate formatters based on dataset type."""
     if dataset_type is None:
         raise ValueError(
-            "dataset.type not specified in config. Please add 'type: humaneval/coophumaneval/arxiv/tldr' to the dataset section."
+            "dataset.type not specified in config. Please add 'type: humaneval/coophumaneval' to the dataset section."
         )
 
     formatters_map = {
         "humaneval": [aux_function_formatter, main_function_formatter],
         "coophumaneval": [aux_function_formatter, main_function_formatter],
-        "arxiv": [background_agent_formatter, complementary_agent_formatter],
-        "tldr": [summary_agent_formatter, elaboration_agent_formatter],
     }
     return formatters_map.get(
         dataset_type.lower(), [aux_function_formatter, main_function_formatter]
@@ -273,8 +161,6 @@ def get_logger_and_aggregator(dataset_type: str, is_multi_turn: bool = False):
     logger_map = {
         "humaneval": (code_reward_logger, aggregate_code_metrics_for_logging),
         "coophumaneval": (code_reward_logger, aggregate_code_metrics_for_logging),
-        "arxiv": (arxiv_combined_reward_logger, aggregate_arxiv_metrics_for_logging),
-        "tldr": (tldr_combined_reward_logger, aggregate_tldr_metrics_for_logging),
     }
 
     return logger_map.get(dataset_type.lower(), (None, None))
@@ -284,7 +170,7 @@ def get_reward_function(dataset_type: str):
     """Get the appropriate reward function based on dataset type."""
     if dataset_type is None:
         raise ValueError(
-            "dataset.type not specified in config. Please add 'type: humaneval/coophumaneval/arxiv/tldr' to the dataset section."
+            "dataset.type not specified in config. Please add 'type: humaneval/coophumaneval' to the dataset section."
         )
 
     if dataset_type.lower() in ["humaneval", "coophumaneval"]:
@@ -310,10 +196,6 @@ def get_reward_function(dataset_type: str):
             )
 
         return reward_wrapper
-    elif dataset_type.lower() == "arxiv":
-        return arxiv_combined_reward
-    elif dataset_type.lower() == "tldr":
-        return tldr_combined_reward
     else:
         raise ValueError(f"Unknown dataset type: {dataset_type}")
 
@@ -393,10 +275,6 @@ def main():
             dataset_type = "humaneval"
         elif "coophumaneval" in dataset_name.lower() or "coop" in dataset_name.lower():
             dataset_type = "coophumaneval"
-        elif "arxiv" in dataset_name.lower():
-            dataset_type = "arxiv"
-        elif "tldr" in dataset_name.lower():
-            dataset_type = "tldr"
         else:
             raise ValueError(
                 f"Could not infer dataset type from dataset name '{dataset_name}'. Please specify 'type' in dataset config."
@@ -519,7 +397,7 @@ def main():
         "entity": wandb_section.get("entity", "nu-llpr"),
         "name": f"{wandb_name}_{model_short_name}",
         "dir": wandb_section.get("dir", "../../../projects/bepg/sliu30"),
-        "tags": wandb_section.get("tags", ["magrpo", dataset_type, f"turns_{num_turns}"]),
+        "tags": wandb_section.get("tags", ["magrpo", dataset_type or "code", f"turns_{num_turns}"]),
     }
 
     agents_config = (

@@ -20,9 +20,7 @@ from config import Config, add_config_args, parse_overrides
 from datasets import load_dataset
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
-from rewards.arxiv_rewards import arxiv_combined_reward
 from rewards.code_rewards import execution_reward_humaneval_aux
-from rewards.tldr_rewards import tldr_combined_reward
 from comlrl.rewards.processor import RewardProcessors
 
 # [dist]
@@ -81,62 +79,6 @@ def {entry_point}({params_str}):\n    # your function code here\n    return resu
     return prompt_text
 
 
-def arxiv_single_formatter(example: Dict[str, Any]) -> str:
-    """
-    Formatter for single agent ArXiv abstract expansion.
-    """
-    abstract = example.get("abstract_text", "")
-
-    if not abstract:
-        return "Error: No abstract provided."
-
-    prompt_text = f"""Please provide an expanded introduction of this abstract text in exactly two paragraphs with SAME LENGTH.
-
-{abstract}
-
-Instructions:
-- First paragraph: Provide the background and motivation for this research, include as many categories of transition words as possible to improve flow.
-- Second paragraph: Provide the framework, method, contribution, and the implications of this research, using same number of vocabulary words as the first paragraph, include as many categories of transition words as possible to improve flow, maintaining a consistent style
-
-IMPORTANT: Separate the two paragraphs with exactly this delimiter: [PARAGRAPH_SPLIT]
-
-FORMAT:
-Paragraph 1: ...
-[PARAGRAPH_SPLIT]
-Paragraph 2: ...
-"""
-
-    return prompt_text
-
-
-def tldr_single_formatter(example: Dict[str, Any]) -> str:
-    """
-    Formatter for single agent TLDR summarization.
-    """
-    prompt = example.get("prompt", "")
-
-    if not prompt:
-        return "Error: No prompt provided."
-
-    prompt_text = f"""Please provide a summary of this Reddit post in exactly two paragraphs:
-
-{prompt}
-
-Instructions:
-- First paragraph: Provide a concise summary of the main points
-- Second paragraph: Expand on the summary with more details, using more unique vocabulary words, include as many categories of transition words as possible to improve flow, and make it 2-3 times longer than the first paragraph in terms of character count, while maintaining a consistent style
-
-IMPORTANT REQUIREMENTS - FOLLOW EXACTLY:
-- No paragraph should be less than 10 tokens or more than 200 tokens
-- Use EXACTLY this delimiter between paragraphs: [PARAGRAPH_SPLIT]
-
-FORMAT:
-Paragraph 1: ...
-[PARAGRAPH_SPLIT]
-Paragraph 2: ...
-"""
-
-    return prompt_text
 
 
 def execution_reward_single_agent(completions, batch_items=None):
@@ -242,14 +184,12 @@ def get_formatter(dataset_type: str):
     """Get the appropriate formatter based on dataset type."""
     if dataset_type is None:
         raise ValueError(
-            "dataset.type not specified in config. Please add 'type: humaneval/coophumaneval/arxiv/tldr' to the dataset section."
+            "dataset.type not specified in config. Please add 'type: humaneval/coophumaneval' to the dataset section."
         )
 
     formatters_map = {
         "humaneval": complete_function_formatter,
         "coophumaneval": complete_function_formatter,
-        "arxiv": arxiv_single_formatter,
-        "tldr": tldr_single_formatter,
     }
     return formatters_map.get(dataset_type.lower(), complete_function_formatter)
 
@@ -258,15 +198,11 @@ def get_reward_function(dataset_type: str):
     """Get the appropriate reward function based on dataset type."""
     if dataset_type is None:
         raise ValueError(
-            "dataset.type not specified in config. Please add 'type: humaneval/coophumaneval/arxiv/tldr' to the dataset section."
+            "dataset.type not specified in config. Please add 'type: humaneval/coophumaneval' to the dataset section."
         )
 
     if dataset_type.lower() in ["humaneval", "coophumaneval"]:
         return execution_reward_single_agent
-    elif dataset_type.lower() == "arxiv":
-        return create_execution_reward_function(arxiv_combined_reward)
-    elif dataset_type.lower() == "tldr":
-        return create_execution_reward_function(tldr_combined_reward)
     else:
         raise ValueError(f"Unknown dataset type: {dataset_type}")
 
@@ -322,10 +258,6 @@ def main():
             dataset_type = "humaneval"
         elif "coophumaneval" in dataset_name.lower() or "coop" in dataset_name.lower():
             dataset_type = "coophumaneval"
-        elif "arxiv" in dataset_name.lower():
-            dataset_type = "arxiv"
-        elif "tldr" in dataset_name.lower():
-            dataset_type = "tldr"
         else:
             raise ValueError(
                 f"Could not infer dataset type from dataset name '{dataset_name}'. Please specify 'type' in dataset config."
