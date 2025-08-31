@@ -381,7 +381,6 @@ def main():
         max_new_tokens=magrpo_config.get("max_new_tokens", 256),
         temperature=temperature,
         top_p=top_p,
-        beta=magrpo_config.get("beta", 0.02),
         # Multi-turn parameters (automatically handled based on num_turns)
         num_turns=num_turns,
         turn_gradient_weights=magrpo_config.get(
