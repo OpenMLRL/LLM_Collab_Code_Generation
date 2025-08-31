@@ -35,7 +35,6 @@ magrpo:
   save_steps: 200
   num_generations: 4
   max_new_tokens: 256
-  beta: 0.02
   num_agents: 2
   expert_model: "deepseek-coder"  # Expert model for feedback (optional for single-turn)
   # Temperature and top_p will be set based on model_config if not specified

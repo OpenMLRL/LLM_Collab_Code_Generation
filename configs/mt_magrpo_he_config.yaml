@@ -36,7 +36,6 @@ magrpo:
   save_steps: 200
   num_generations: 4
   max_new_tokens: 256
-  beta: 0.02
   num_agents: 2
   # Multi-turn specific parameters
   turn_gradient_weights: [1.2, 0.8]  # Weights for different turns

@@ -38,7 +38,6 @@ magrpo:
   max_new_tokens: 256
   temperature: 0.8
   top_p: 0.95
-  beta: 0.02
   num_agents: 2
   # Multi-turn specific parameters
   turn_gradient_weights: [1.2, 0.8]  # Weights for different turns
