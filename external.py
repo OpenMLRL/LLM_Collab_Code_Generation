@@ -146,9 +146,7 @@ Respond in the following JSON format: {{ "aux": {{aux_func only here}}, "main": 
 
 def get_external_transition(
     prompt: str,
-    best_reward: float,
     agent_completions: Union[List[str], Tuple[str, str]],
-    batch_item: Optional[Dict] = None,
     num_agents: int = 2,
     **kwargs,
 ) -> Union[List[str], Tuple[str, str]]:
@@ -158,7 +156,6 @@ def get_external_transition(
 
     Args:
         prompt: The problem statement
-        best_reward: The best reward from the previous turn
         agent_completions: List of completions from all agents (or tuple for 2 agents)
         batch_item: Full batch item with additional data (e.g., test cases)
         num_agents: Number of agents
@@ -167,9 +164,6 @@ def get_external_transition(
     Returns:
         List of external prompts for each agent (or tuple for backward compatibility)
     """
-    # Extract test from batch_item if available
-    test = batch_item.get("test", "") if batch_item else ""
-
     # Currently only 2-agent case is implemented
     if num_agents != 2:
         raise ValueError(
@@ -179,8 +173,6 @@ def get_external_transition(
     # Convert list to tuple if needed for cleaner handling
     if isinstance(agent_completions, list) and len(agent_completions) == 2:
         aux_completion, main_completion = agent_completions[0], agent_completions[1]
-    elif isinstance(agent_completions, tuple) and len(agent_completions) == 2:
-        aux_completion, main_completion = agent_completions
     else:
         raise ValueError(
             f"Expected 2 agent completions but got {len(agent_completions)}"
@@ -190,8 +182,6 @@ def get_external_transition(
     expert_model = kwargs.get("expert_model", "claude-3-5-sonnet-20241022")
     aux_feedback, main_feedback = get_expert_feedback(
         prompt=prompt,
-        test=test,
-        best_reward=best_reward,
         aux_completion=aux_completion,
         main_completion=main_completion,
         expert_model=expert_model,
