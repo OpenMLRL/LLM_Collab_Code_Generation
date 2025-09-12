@@ -33,8 +33,6 @@ def extract_last_json_from_response(response_text: str) -> Dict[str, str]:
 
 def get_expert_feedback(
     prompt: str,
-    test: str,
-    best_reward: float,
     aux_completion: str,
     main_completion: str,
     expert_model: str = "claude-3-5-sonnet-20241022",
@@ -45,8 +43,6 @@ def get_expert_feedback(
 
     Args:
         prompt: The problem statement
-        test: The unit tests
-        best_reward: The best reward from the previous turn
         aux_completion: The auxiliary agent's completion
         main_completion: The main agent's completion
         expert_model: The Claude model to use for feedback
@@ -130,8 +126,6 @@ Respond in the following JSON format: {{ "aux": {{aux_func only here}}, "main": 
             # Print both full response and extracted functions for visibility
             print("\n" + "=" * 60)
             print("EXPERT FEEDBACK")
-            print("=" * 60)
-            print(f"Best reward from previous turn: {best_reward:.4f}")
             print("\n--- FULL EXPERT RESPONSE ---")
             print(response_text)
             print("\n--- EXTRACTED EXPERT FEEDBACK ---")
@@ -155,7 +149,6 @@ def get_external_transition(
     best_reward: float,
     agent_completions: Union[List[str], Tuple[str, str]],
     batch_item: Optional[Dict] = None,
-    turn_idx: int = 0,
     num_agents: int = 2,
     **kwargs,
 ) -> Union[List[str], Tuple[str, str]]:
@@ -168,7 +161,6 @@ def get_external_transition(
         best_reward: The best reward from the previous turn
         agent_completions: List of completions from all agents (or tuple for 2 agents)
         batch_item: Full batch item with additional data (e.g., test cases)
-        turn_idx: Current turn index
         num_agents: Number of agents
         **kwargs: Additional arguments for future extensibility (e.g., expert_model)
 
