@@ -31,7 +31,7 @@ from loggers.mt_code_logger import (
 from rewards.code_rewards import execution_reward_humaneval_aux
 from comlrl.utils.reward_processor import RewardProcessors
 from comlrl.trainers.magrpo import MAGRPOConfig, MAGRPOTrainer
-from external import get_expert_feedback, get_external_transition
+from external import get_external_transition
 
 
 def extract_function_params_from_prompt(prompt_text):
@@ -47,15 +47,11 @@ def extract_function_params_from_prompt(prompt_text):
 def aux_function_formatter(
     example: Dict[str, Any],
     external_prompts: Optional[str] = None,
-    expert_feedback: Optional[str] = None,
 ) -> str:
     """
     Formatter for the auxiliary function generator (Agent 1) for code tasks.
-    Optionally includes external prompts (or expert feedback) for multi-turn training.
+    Optionally includes external prompts for multi-turn training.
     """
-    # Support both parameter names for backward compatibility
-    if external_prompts is None and expert_feedback is not None:
-        external_prompts = expert_feedback
     prompt = example.get("prompt", "")
     entry_point = example.get("entry_point", "")
 
@@ -63,8 +59,6 @@ def aux_function_formatter(
 
     if not params or not entry_point:
         return "Error: Could not extract function information from prompt."
-
-    params_str = ", ".join(params)
 
     prompt_text = f"""Create a helper function for this coding problem.
 
@@ -92,15 +86,11 @@ def aux(...):\n # your function code here\nreturn result\n"""
 def main_function_formatter(
     example: Dict[str, Any],
     external_prompts: Optional[str] = None,
-    expert_feedback: Optional[str] = None,
 ) -> str:
     """
     Formatter for the main function generator (Agent 2) for code tasks.
-    Optionally includes external prompts (or expert feedback) for multi-turn training.
+    Optionally includes external prompts for multi-turn training.
     """
-    # Support both parameter names for backward compatibility
-    if external_prompts is None and expert_feedback is not None:
-        external_prompts = expert_feedback
     prompt = example.get("prompt", "")
     entry_point = example.get("entry_point", "")
 
@@ -142,25 +132,10 @@ def get_formatters(dataset_type: str, num_agents: int):
 
     For code tasks, use aux formatters for all agents except the last, which uses main.
     """
-    if dataset_type is None:
-        raise ValueError(
-            "dataset.type not specified in config. Please add 'type: humaneval/coophumaneval' to the dataset section."
-        )
+    if dataset_type.lower() in ["humaneval", "coophumaneval"] and num_agents == 2:
+        return [aux_function_formatter, main_function_formatter]
 
-    if num_agents is None or num_agents < 1:
-        raise ValueError("num_agents must be >= 1")
-
-    if dataset_type.lower() in ["humaneval", "coophumaneval"]:
-        if num_agents == 1:
-            # Fallback: single agent uses main function formatter
-            return [main_function_formatter]
-        # For N agents: first N-1 are aux, last is main
-        return [aux_function_formatter] * (num_agents - 1) + [main_function_formatter]
-
-    # Default: treat as code tasks
-    if num_agents == 1:
-        return [main_function_formatter]
-    return [aux_function_formatter] * (num_agents - 1) + [main_function_formatter]
+    raise NotImplementedError("Other number of agents have not been implemented yet")
 
 
 def get_logger_and_aggregator(dataset_type: str, is_multi_turn: bool = False):
