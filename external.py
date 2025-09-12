@@ -179,13 +179,11 @@ def get_external_transition(
         )
 
     # Use the existing get_expert_feedback function for 2 agents
-    expert_model = kwargs.get("expert_model", "claude-3-5-sonnet-20241022")
+    expert_model = kwargs.get("expert_model", "DeepSeek-coder")
     aux_feedback, main_feedback = get_expert_feedback(
         prompt=prompt,
         aux_completion=aux_completion,
         main_completion=main_completion,
         expert_model=expert_model,
     )
-
-    # Return as tuple
     return (aux_feedback, main_feedback)
