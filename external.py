@@ -56,7 +56,7 @@ def get_expert_feedback(
     imports = extract_imports_from_prompt(prompt)
     combined_code = concatenate_functions(aux_completion, main_completion, imports)
 
-    expert_prompt = f"""You are an advisor helping two agents (an auxiliary agent and a main agent) solve the following problem: {prompt} The auxiliary agent provides a helper function (aux), while the main agent defines the task-specific logic.
+    expert_prompt = f"""You are an expert helping two agents (an auxiliary agent and a main agent) solve the following problem: {prompt} The auxiliary agent provides a helper function (aux), while the main agent defines the task-specific logic.
 Your task is to review the provided code and return fixed codes. Specifically: 1. If you identify a missing element, such as an undefined aux or missing entry point (main function), you just rewrite one for it. 2. If both not missing, point out and make changes to any critical syntax or logic errors that would prevent the code from passing the given unit tests.
 Important instructions: 1. You should focus only on clear errors on the given unit tests. 2. Be conservative and lenient: ignore issues like redundancy, inefficiency, lack of edge case handling, or type annotations unless they cause failure in the given unit tests. 3. If either function independently completes the task correctly, you don't need to specify this error for this function. 4. Return "Perfect! No changes needed!" if logics are sound.
 IMPORTANT: Your response MUST contain the JSON format specified below. Always include both 'aux' and 'main' fields in the JSON, even if no changes are needed.
