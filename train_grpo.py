@@ -17,7 +17,7 @@ from config import Config, add_config_args, parse_overrides
 from datasets import load_dataset
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
-from rewards.code_rewards import execution_reward_humaneval_aux
+from rewards.code_rewards import execution_reward_aux
 from comlrl.utils.reward_processor import RewardProcessors
 from comlrl.trainers.magrpo import MAGRPOConfig, MAGRPOTrainer
 
@@ -70,7 +70,7 @@ def {entry_point}({params_str}):\n    # your function code here\n    return resu
 def execution_reward_single_agent(completions, batch_items=None):
     """
     Compute execution-based rewards for single agent completions.
-    Adapts to use execution_reward_humaneval_aux by treating single agent
+    Adapts to use execution_reward_aux by treating single agent
     completion as the main function with no aux function.
     """
     # Adapt single-agent completions to multi-agent reward function format
@@ -95,7 +95,7 @@ def execution_reward_single_agent(completions, batch_items=None):
             entry_points.append("")
             prompts.append("")
 
-    raw_rewards = execution_reward_humaneval_aux(
+    raw_rewards = execution_reward_aux(
         completion1_list, completion2_list, test_cases, entry_points, prompts
     )
     return raw_rewards

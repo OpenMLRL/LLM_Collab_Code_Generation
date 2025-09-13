@@ -9,7 +9,6 @@ import os
 import re
 import sys
 
-# Add project root to Python path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from pathlib import Path
 from typing import Any, Dict, Optional
@@ -18,7 +17,6 @@ from config import Config, add_config_args, parse_overrides
 from datasets import load_dataset
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
-# Import loggers for different datasets
 from loggers.code_logger import (
     aggregate_code_metrics_for_logging,
     code_reward_logger,
@@ -28,7 +26,7 @@ from loggers.mt_code_logger import (
     mt_humaneval_logger,
 )
 
-from rewards.code_rewards import execution_reward_humaneval_aux
+from rewards.code_rewards import execution_reward_aux
 from comlrl.utils.reward_processor import RewardProcessors
 from comlrl.trainers.magrpo import MAGRPOConfig, MAGRPOTrainer
 from external import get_external_transition
@@ -44,14 +42,8 @@ def extract_function_params_from_prompt(prompt_text):
     return []
 
 
-def aux_function_formatter(
-    example: Dict[str, Any],
-    external_prompts: Optional[str] = None,
-) -> str:
-    """
-    Formatter for the auxiliary function generator (Agent 1) for code tasks.
-    Optionally includes external prompts for multi-turn training.
-    """
+def aux_function_formatter(example: Dict[str, Any]) -> str:
+    """Formatter for the auxiliary function generator (Agent 1) for code tasks."""
     prompt = example.get("prompt", "")
     entry_point = example.get("entry_point", "")
 
@@ -77,20 +69,11 @@ Your output should follow this format:
 
 def aux(...):\n # your function code here\nreturn result\n"""
 
-    if external_prompts is not None:
-        prompt_text += f"\n\nHere is the feedback from an expert:\n{external_prompts}"
-
     return prompt_text
 
 
-def main_function_formatter(
-    example: Dict[str, Any],
-    external_prompts: Optional[str] = None,
-) -> str:
-    """
-    Formatter for the main function generator (Agent 2) for code tasks.
-    Optionally includes external prompts for multi-turn training.
-    """
+def main_function_formatter(example: Dict[str, Any]) -> str:
+    """Formatter for the main function generator (Agent 2) for code tasks."""
     prompt = example.get("prompt", "")
     entry_point = example.get("entry_point", "")
 
@@ -120,9 +103,6 @@ IMPORTANT INSTRUCTIONS:
 Your output should follow this format:
 
 def {entry_point}({params_str}):\n # your function code here\nreturn result\n"""
-
-    if external_prompts is not None:
-        prompt_text += f"\n\nHere is the feedback from an expert:\n{external_prompts}"
 
     return prompt_text
 
@@ -197,7 +177,7 @@ def get_reward_function(dataset_type: str, num_agents: int):
             else:
                 raise ValueError("batch_items must be provided for reward calculation")
 
-            return execution_reward_humaneval_aux(
+            return execution_reward_aux(
                 completion1, completion2, test_cases, entry_points, original_prompts
             )
 
@@ -448,14 +428,14 @@ def main():
         and dataset_type.lower() in ["humaneval", "coophumaneval"]
     ):
         expert_model = magrpo_config.get("expert_model", "deepseek-coder")
-        def external_transition_wrapper(
-            prompt, agent_completions, num_agents
-        ):
+        def external_transition_wrapper(prompt, agent_completions, num_agents):
+            # Returns full next-turn prompts per agent (strings)
             return get_external_transition(
                 prompt=prompt,
                 agent_completions=agent_completions,
                 num_agents=num_agents,
                 expert_model=expert_model,
+                mode="expert_edits",
             )
 
         trainer_kwargs["external_transition"] = external_transition_wrapper

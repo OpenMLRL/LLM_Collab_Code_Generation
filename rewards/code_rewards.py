@@ -18,7 +18,7 @@ from rewards.code_utils import (
 )
 
 
-def execution_reward_humaneval_aux(
+def execution_reward_aux(
     completion1: List[str],
     completion2: List[str],
     test_cases: List[str],
@@ -26,7 +26,7 @@ def execution_reward_humaneval_aux(
     prompts: List[str] = None,  # Add prompts parameter
 ) -> List[float]:
     """
-    Reward function for HumanEval aux + main function collaboration:
+    Reward function for aux + main function collaboration on code tasks:
 
     LEVEL 1:
     - +0.4 reward if aux function is properly defined with return statement in completion1
