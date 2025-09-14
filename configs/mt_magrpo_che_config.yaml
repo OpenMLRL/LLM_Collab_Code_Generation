@@ -41,8 +41,9 @@ magrpo:
   num_agents: 2
   # Multi-turn specific parameters
   turn_gradient_weights: [1.2, 0.8]  # Weights for different turns
-  expert_model: "deepseek-coder"  # Expert model for feedback
   early_termination_weight: 2.0
+  external_mode: "expert_edits"    # Options: expert_edits (default), level_passed, level_feedback
+  expert_model: "deepseek-coder"   # Used by expert_edits mode only
 
 # Wandb configuration
 wandb:

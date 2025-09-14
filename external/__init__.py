@@ -1,7 +1,38 @@
-from typing import List, Tuple, Union
+from typing import Any, Callable, Dict, List, Tuple, Union, Optional
 
 # Mode implementations live alongside this file
 from . import expert_edits
+from . import level_feedback
+from . import level_passed
+from . import passed
+
+# -----------------------------
+# Context resolver API
+# -----------------------------
+_context_resolver: Optional[Callable[[str], Optional[Dict[str, Any]]]] = None
+_expert_edits_preview_printed: bool = False
+
+
+def set_context_resolver(fn: Callable[[str], Optional[Dict[str, Any]]]):
+    """Register a resolver that maps prompt -> context dict.
+
+    Expected dict keys:
+      - entry_point: str
+      - tests_eval: str
+      - tests_sandbox: Optional[str]
+    """
+    global _context_resolver
+    _context_resolver = fn
+
+
+def get_context(prompt: str) -> Optional[Dict[str, Any]]:
+    """Resolve context for a given prompt using the registered resolver."""
+    if _context_resolver is None:
+        return None
+    try:
+        return _context_resolver(prompt)
+    except Exception:
+        return None
 
 
 def get_external_transition(
@@ -51,12 +82,66 @@ def get_external_transition(
         )
 
         # Format the follow-up prompts for each agent using this mode's formatter
+        ctx = get_context(prompt) or {}
+        entry_point = ctx.get("entry_point", "")
         aux_prompt, main_prompt = expert_edits.format_followup_prompts(
             original_prompt=original_prompt,
             aux_edits=aux_edits,
             main_edits=main_edits,
+            entry_point=entry_point,
         )
+
+        # One-time preview for visual confirmation
+        global _expert_edits_preview_printed
+        if not _expert_edits_preview_printed:
+            def _preview(label: str, text: str, n: int = 400) -> str:
+                t = text.replace("\n", " ")
+                return f"{label}: " + (t[:n] + ("..." if len(t) > n else ""))
+
+            print("\n=== EXTERNAL MODE PREVIEW: expert_edits ===")
+            print(_preview("AUX PROMPT", aux_prompt))
+            print(_preview("MAIN PROMPT", main_prompt))
+            print("=== END PREVIEW ===\n")
+            _expert_edits_preview_printed = True
         return (aux_prompt, main_prompt)
 
-    raise ValueError(f"Unsupported external transition mode: {mode}")
+    if mode in ("level_feedback", "feedback"):
+        aux_comp, main_comp = agent_completions[0], agent_completions[1]
+        ctx = get_context(prompt) or {}
+        entry_point = ctx.get("entry_point", "")
+        test_code = ctx.get("tests_sandbox") or ctx.get("tests_eval", "")
+        return level_feedback.format_followup_prompts(
+            original_prompt=prompt,
+            aux_completion=aux_comp,
+            main_completion=main_comp,
+            test_code=test_code,
+            entry_point=entry_point,
+        )
 
+    if mode in ("level_passed", "signals"):
+        aux_comp, main_comp = agent_completions[0], agent_completions[1]
+        ctx = get_context(prompt) or {}
+        entry_point = ctx.get("entry_point", "")
+        test_code = ctx.get("tests_sandbox") or ctx.get("tests_eval", "")
+        return level_passed.format_followup_prompts(
+            original_prompt=prompt,
+            aux_completion=aux_comp,
+            main_completion=main_comp,
+            test_code=test_code,
+            entry_point=entry_point,
+        )
+
+    if mode in ("passed",):
+        aux_comp, main_comp = agent_completions[0], agent_completions[1]
+        ctx = get_context(prompt) or {}
+        entry_point = ctx.get("entry_point", "")
+        test_code = ctx.get("tests_sandbox") or ctx.get("tests_eval", "")
+        return passed.format_followup_prompts(
+            original_prompt=prompt,
+            aux_completion=aux_comp,
+            main_completion=main_comp,
+            test_code=test_code,
+            entry_point=entry_point,
+        )
+
+    raise ValueError(f"Unsupported external transition mode: {mode}")

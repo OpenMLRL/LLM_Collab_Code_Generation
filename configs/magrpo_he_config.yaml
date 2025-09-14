@@ -36,10 +36,6 @@ magrpo:
   num_generations: 4
   max_new_tokens: 256
   num_agents: 2
-  expert_model: "deepseek-coder"  # Expert model for feedback (optional for single-turn)
-  # Temperature and top_p will be set based on model_config if not specified
-  # temperature: 0.8  # Optional override
-  # top_p: 0.95      # Optional override
 
 # Wandb configuration
 wandb:

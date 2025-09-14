@@ -29,6 +29,7 @@ from loggers.mt_code_logger import (
 from rewards.code_rewards import execution_reward_aux
 from comlrl.utils.reward_processor import RewardProcessors
 from comlrl.trainers.magrpo import MAGRPOConfig, MAGRPOTrainer
+import external as external_ctx
 from external import get_external_transition
 
 
@@ -339,6 +340,89 @@ def main():
     temperature = magrpo_config.get("temperature", model_config.temperature)
     top_p = magrpo_config.get("top_p", model_config.top_p)
 
+    # Register external context resolver using dataset items
+    def _normalize_prompt(p: str) -> str:
+        return " ".join((p or "").split()).strip()
+
+    context_map = {}
+
+    # Optionally restrict sandbox tests to the first N eval asserts
+    # Set magrpo.sandbox_slice to an integer N (>0) to keep only the first N asserts
+    sandbox_slice = magrpo_config.get("sandbox_slice", None)
+    try:
+        sandbox_slice = int(sandbox_slice) if sandbox_slice is not None else None
+    except (TypeError, ValueError):
+        sandbox_slice = None
+
+    import re
+
+    def _make_sliced_assert_tests(test_code: str, n: int) -> str:
+        if not isinstance(test_code, str) or not test_code.strip():
+            return test_code
+
+        # n > 0: keep first n asserts; n < 0: keep last |n| asserts; n == 0: keep all
+        if n is None or n == 0:
+            return test_code
+
+        lines = test_code.splitlines()
+        # Collect import preamble before check definition
+        preamble = []
+        check_idx = None
+        for idx, line in enumerate(lines):
+            if re.match(r"\s*def\s+check\s*\(candidate\)\s*:\s*", line):
+                check_idx = idx
+                break
+            preamble.append(line)
+
+        # Find assert statements containing 'candidate'
+        asserts = []
+        search_start = check_idx + 1 if check_idx is not None else 0
+        for line in lines[search_start:]:
+            s = line.strip()
+            if s.startswith("assert") and "candidate" in s:
+                asserts.append(s)
+
+        if not asserts:
+            return test_code  # fallback when no asserts found
+
+        preamble_text = "\n".join(preamble).strip()
+        new_parts = []
+        if preamble_text:
+            new_parts.append(preamble_text)
+        new_parts.append("def check(candidate):")
+        selected = asserts[:n] if n > 0 else asserts[n:]
+        for a in selected:
+            new_parts.append(f"    {a}")
+        return "\n".join(new_parts) + "\n"
+    def _register_split(ds):
+        try:
+            for item in ds:
+                key = _normalize_prompt(item.get("prompt", ""))
+                if key and key not in context_map:
+                    tests_eval = item.get("test", "")
+                    tests_sandbox = (
+                        _make_sliced_assert_tests(tests_eval, sandbox_slice)
+                        if sandbox_slice is not None and sandbox_slice != 0
+                        else tests_eval
+                    )
+                    context_map[key] = {
+                        "entry_point": item.get("entry_point", ""),
+                        "tests_eval": tests_eval,
+                        "tests_sandbox": tests_sandbox,
+                    }
+        except Exception:
+            pass
+
+    if 'train_dataset' in locals() and train_dataset is not None:
+        _register_split(train_dataset)
+    if 'eval_dataset' in locals() and eval_dataset is not None:
+        _register_split(eval_dataset)
+
+    def _resolver(prompt: str):
+        return context_map.get(_normalize_prompt(prompt))
+
+    external_ctx.set_context_resolver(_resolver)
+
     # Use unified MAGRPOConfig which handles both single-turn and multi-turn
     magrpo_args = MAGRPOConfig(
         output_dir=output_dir,
@@ -380,14 +464,22 @@ def main():
     else:
         wandb_name = wandb_section.get("name", f"magrpo_{dataset_type}")
 
+    # Compute tags and add self-evolved when using analysis-based external modes
+    external_mode = magrpo_config.get("external_mode", "expert_edits")
+    default_tags = ["magrpo", dataset_type or "code", f"turns_{num_turns}"]
+    tags_from_cfg = wandb_section.get("tags", default_tags)
+    # Ensure list
+    tags = list(tags_from_cfg) if isinstance(tags_from_cfg, list) else default_tags
+    if external_mode in ["level_passed", "level_feedback", "passed"]:
+        if "self-evolved" not in tags:
+            tags.append("self-evolved")
+
     wandb_config = {
         "project": wandb_section.get("project", "mlrl"),
         "entity": wandb_section.get("entity", "nu-llpr"),
         "name": f"{wandb_name}_{model_short_name}",
         "dir": wandb_section.get("dir", "../../../projects/bepg/sliu30"),
-        "tags": wandb_section.get(
-            "tags", ["magrpo", dataset_type or "code", f"turns_{num_turns}"]
-        ),
+        "tags": tags,
     }
 
     # Get num_agents from magrpo config (where it belongs for MAGRPO training)
@@ -428,14 +520,16 @@ def main():
         and dataset_type.lower() in ["humaneval", "coophumaneval"]
     ):
         expert_model = magrpo_config.get("expert_model", "deepseek-coder")
-        def external_transition_wrapper(prompt, agent_completions, num_agents):
+        # external_mode already loaded above
+
+        def external_transition_wrapper(prompt, agent_completions, num_agents, **et_kwargs):
             # Returns full next-turn prompts per agent (strings)
             return get_external_transition(
                 prompt=prompt,
                 agent_completions=agent_completions,
                 num_agents=num_agents,
                 expert_model=expert_model,
-                mode="expert_edits",
+                mode=external_mode,
             )
 
         trainer_kwargs["external_transition"] = external_transition_wrapper

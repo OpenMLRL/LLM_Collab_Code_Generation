@@ -1,7 +1,7 @@
 import json
 import os
 import re
-from typing import Tuple
+from typing import List, Tuple
 
 from anthropic import Anthropic
 from openai import OpenAI
@@ -120,24 +120,83 @@ Here is the current combined code to consider:
     return prompt, "", ""
 
 
+def _extract_function_params_from_prompt(prompt_text: str) -> List[str]:
+    import re
+
+    match = re.search(r"def\s+\w+\s*\(([^)]+)\)", prompt_text)
+    if match:
+        params_str = match.group(1)
+        params = [p.strip() for p in params_str.split(",") if p.strip()]
+        return params
+    return []
+
+
 def format_followup_prompts(
     original_prompt: str,
     aux_edits: str,
     main_edits: str,
+    entry_point: str = "",
 ) -> Tuple[str, str]:
     """
-    Mode-specific formatter for next-turn prompts.
+    Mode-specific formatter for next-turn prompts under expert_edits.
 
-    Current behavior (mirrors the existing setup):
-    - If edits are provided, append a brief note with the edits to the original prompt.
-    - Otherwise, return the original prompt unchanged.
+    To preserve original behavior, we generate full prompts equivalent to the
+    first-turn formatters (aux/main) and append expert feedback at the end.
+    If entry_point cannot be resolved, fall back to appending to original.
     """
-    def _append_edits(base: str, edits: str) -> str:
-        return (
-            f"{base}\n\nHere is the feedback from an expert:\n{edits}" if edits.strip() else base
+
+    params = _extract_function_params_from_prompt(original_prompt)
+    params_str = ", ".join(params) if params else "..."
+
+    # Aux formatter text
+    aux_fmt = (
+        "Create a helper function for this coding problem.\n\n"
+        f"Problem:\n{original_prompt}\n\n"
+        "IMPORTANT INSTRUCTIONS:\n"
+        "- Output ONLY the function code, no explanations or examples\n"
+        "- Do NOT include markdown code blocks (```python)\n"
+        "- Do NOT include any text before or after the function\n"
+        "- Do NOT include test cases or example usage\n"
+        "- Create a helper function named 'aux' that can assist the main function\n"
+        "- The function should return useful data for solving the problem\n\n"
+        "Your output should follow this format:\n\n"
+        "def aux(...):\n # your function code here\nreturn result\n"
+    )
+
+    # Main formatter text
+    main_fmt = (
+        "Solve this coding problem by implementing the required function.\n\n"
+        f"Problem:\n{original_prompt}\n\n"
+        "You have access to a helper function: aux(...)\n\n"
+        "IMPORTANT INSTRUCTIONS:\n"
+        "- Output ONLY the function code, no explanations or examples\n"
+        "- Do NOT include markdown code blocks (```python)  \n"
+        "- Do NOT include any text before or after the function\n"
+        "- Do NOT include test cases or example usage\n"
+        "- Do NOT redefine the aux() function\n"
+        + (
+            f"- Implement ONLY the '{entry_point}' function as specified\n"
+            if entry_point
+            else "- Implement ONLY the required function as specified\n"
         )
+        "- You can call aux() to assign value to a variable within your function if helpful\n\n"
+        "Your output should follow this format:\n\n"
+        + (
+            f"def {entry_point}({params_str}):\n # your function code here\nreturn result\n"
+            if entry_point
+            else "def <entry_point>(...):\n # your function code here\nreturn result\n"
+        )
+    )
 
-    aux_prompt = _append_edits(original_prompt, aux_edits)
-    main_prompt = _append_edits(original_prompt, main_edits)
+    def _append_edits(base: str, edits: str) -> str:
+        return base + (f"\n\nHere is the feedback from an expert:\n{edits}" if edits.strip() else "")
+
+    # If we don't have entry_point, fall back to just appending
+    if not entry_point:
+        aux_prompt = _append_edits(original_prompt, aux_edits)
+        main_prompt = _append_edits(original_prompt, main_edits)
+        return aux_prompt, main_prompt
+
+    aux_prompt = _append_edits(aux_fmt, aux_edits)
+    main_prompt = _append_edits(main_fmt, main_edits)
     return aux_prompt, main_prompt
-

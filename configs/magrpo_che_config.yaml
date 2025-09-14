@@ -38,7 +38,6 @@ magrpo:
   temperature: 0.8
   top_p: 0.95
   num_agents: 2
-  expert_model: "deepseek-coder"  # Expert model for feedback (optional for single-turn)
 
 # Wandb configuration
 wandb:
