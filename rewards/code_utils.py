@@ -620,7 +620,11 @@ class AuxUsageAnalyzer(ast.NodeVisitor):
         reassignments = []
         usages = []
 
-        tree = ast.parse(self.code)
+        try:
+            tree = ast.parse(self.code)
+        except SyntaxError:
+            # If code cannot be parsed, we cannot analyze reassignments safely
+            return None
         for node in ast.walk(tree):
             if (
                 isinstance(node, ast.Assign)
