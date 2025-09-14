@@ -224,10 +224,8 @@ def format_followup_prompts(
         if not report["aux_called"]:
             main_lines.append("- Aux usage: main does NOT call aux")
         elif report["aux_called_but_not_used"]:
-            reasons = ", ".join(
-                f"line {pc.get('line')}: {pc.get('reason')}"
-                for pc in report["aux_problematic_calls"][:2]
-            )
+            # aux_problematic_calls is a list of formatted strings like 'Line N: reason'
+            reasons = ", ".join(report["aux_problematic_calls"][:2])
             main_lines.append(f"- Aux usage: called but misused ({reasons})")
         else:
             main_lines.append("- Aux usage: main calls aux and uses its result")
