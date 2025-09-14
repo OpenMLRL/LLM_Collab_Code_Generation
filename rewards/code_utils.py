@@ -490,7 +490,12 @@ def check_aux_call_without_usage(main_code, aux_function_name="aux"):
     if not main_code or aux_function_name not in main_code:
         return False, []
 
-    tree = ast.parse(main_code)
+    # AST parse may fail on incomplete or special-token-laden generations
+    try:
+        tree = ast.parse(main_code)
+    except SyntaxError:
+        return False, []
+
     analyzer = AuxUsageAnalyzer(aux_function_name, main_code)
     analyzer.visit(tree)
     problematic_calls = analyzer.get_problematic_calls()
