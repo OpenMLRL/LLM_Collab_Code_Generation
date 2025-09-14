@@ -1,4 +1,5 @@
 from typing import Any, Callable, Dict, List, Tuple, Union, Optional
+import random
 
 # Mode implementations live alongside this file
 from . import expert_edits
@@ -74,9 +75,27 @@ def get_external_transition(
     # Pull common flags controlling prompt composition
     original_prompt_flag = kwargs.get("original_prompt", False)
     previous_response_flag = kwargs.get("previous_response", True)
+    handoff_strategy = (kwargs.get("handoff_strategy") or "best").lower()
+
+    # Optional pool of candidate completions from the previous turn (per agent)
+    # Expected shape: (List[str] for aux, List[str] for main)
+    candidate_pool = kwargs.get("agent_candidate_completions")
+
+    def select_handoff(prev_best_aux: str, prev_best_main: str) -> Tuple[str, str]:
+        if handoff_strategy != "random" or not candidate_pool:
+            return prev_best_aux, prev_best_main
+        try:
+            aux_pool, main_pool = candidate_pool
+            chosen_aux = random.choice(aux_pool) if aux_pool else prev_best_aux
+            chosen_main = random.choice(main_pool) if main_pool else prev_best_main
+            return chosen_aux, chosen_main
+        except Exception:
+            # Fallback safely to best if pool malformed
+            return prev_best_aux, prev_best_main
 
     if mode == "expert_edits":
-        aux_comp, main_comp = agent_completions[0], agent_completions[1]
+        aux_best, main_best = agent_completions[0], agent_completions[1]
+        aux_comp, main_comp = select_handoff(aux_best, main_best)
         original_prompt, aux_edits, main_edits = expert_edits.add_expert_edits(
             prompt=prompt,
             aux_completion=aux_comp,
@@ -110,7 +129,8 @@ def get_external_transition(
         return (aux_prompt, main_prompt)
 
     if mode == "level_feedback":
-        aux_comp, main_comp = agent_completions[0], agent_completions[1]
+        aux_best, main_best = agent_completions[0], agent_completions[1]
+        aux_comp, main_comp = select_handoff(aux_best, main_best)
         ctx = get_context(prompt) or {}
         entry_point = ctx.get("entry_point", "")
         test_code = ctx.get("tests_sandbox") or ctx.get("tests_eval", "")
@@ -133,7 +153,8 @@ def get_external_transition(
         return (aux_prompt, main_prompt)
 
     if mode == "level_passed":
-        aux_comp, main_comp = agent_completions[0], agent_completions[1]
+        aux_best, main_best = agent_completions[0], agent_completions[1]
+        aux_comp, main_comp = select_handoff(aux_best, main_best)
         ctx = get_context(prompt) or {}
         entry_point = ctx.get("entry_point", "")
         test_code = ctx.get("tests_sandbox") or ctx.get("tests_eval", "")
@@ -156,7 +177,8 @@ def get_external_transition(
         return (aux_prompt, main_prompt)
 
     if mode == "passed":
-        aux_comp, main_comp = agent_completions[0], agent_completions[1]
+        aux_best, main_best = agent_completions[0], agent_completions[1]
+        aux_comp, main_comp = select_handoff(aux_best, main_best)
         ctx = get_context(prompt) or {}
         entry_point = ctx.get("entry_point", "")
         test_code = ctx.get("tests_sandbox") or ctx.get("tests_eval", "")
@@ -179,7 +201,8 @@ def get_external_transition(
         return (aux_prompt, main_prompt)
 
     if mode == "plain":
-        aux_comp, main_comp = agent_completions[0], agent_completions[1]
+        aux_best, main_best = agent_completions[0], agent_completions[1]
+        aux_comp, main_comp = select_handoff(aux_best, main_best)
         ctx = get_context(prompt) or {}
         entry_point = ctx.get("entry_point", "")
         test_code = ctx.get("tests_sandbox") or ctx.get("tests_eval", "")

@@ -74,7 +74,7 @@ python LLM_Collaboration_with_MARL/train_magrpo.py \
 
 ### 2+Turn Prompt Composition
 
-To save memory usage, 2+ turn prompts include the previous response without the original first‑turn problem prompt by default. You can add the original prompt to match the concept of observation-action history in MARL.
+To save memory usage, 2+ turn prompts **include the previous response without the original first‑turn problem prompt by default**. You can add the original prompt to match the concept of observation-action history in MARL.
 
 ```bash
 python LLM_Collaboration_with_MARL/train_magrpo.py \
@@ -86,7 +86,7 @@ python LLM_Collaboration_with_MARL/train_magrpo.py \
 
 Multi-turn training supports external transition modes for 2nd+ turns, set via `magrpo.external_mode`:
 
-- `expert_edits` (default): Uses an expert LLM to suggest edits.
+- `expert_edits` **(default)**: Uses an expert LLM to suggest edits.
   - Requires `magrpo.expert_model` in config (e.g., `deepseek-coder`, Claude, etc.).
   - Requires corrsponding API keys in env vars.
 - `level_passed`: Binary passed signals (impl found, syntax, tests summary, aux usage). 
@@ -103,10 +103,8 @@ python LLM_Collaboration_with_MARL/train_magrpo.py \
 
 ### Sandbox Tests
 
-The external modes obtain `entry_point` and tests via an internal resolver registered by the training script. By default, the sandbox tests are the same as the dataset’s eval tests.
+The external modes obtain `entry_point` and tests via an internal resolver registered by the training script. **By default, the sandbox tests are the same as the dataset’s eval tests.**
 Note: `magrpo.sandbox_slice` only affects analysis-based modes (`level_feedback`, `level_passed`, `passed`), and it has no effect on `expert_edits`.
-
-
 
 ```bash
 # Add a magrpo.sandbox_slice to override
@@ -114,3 +112,15 @@ python LLM_Collaboration_with_MARL/train_magrpo.py \
   --config LLM_Collaboration_with_MARL/configs/mt_magrpo_che_config.yaml \
   --override magrpo.external_mode='level_feedback' magrpo.sandbox_slice=-2
 ```
+
+### Handoff Strategy
+
+In MAGRPO, since agents generate a few responses per turn, we need to hand off one for efficiency, else the number of generations per turn will increase exponentially. External handoff controls which previous response is used as context for the later turns. **By default, the "best" completion per agent from the prior turn is used.** Random handoff requires the training loop to supply a candidate pool of previous-turn completions per agent to the external transition. If only a single completion per agent is available, random falls back to the best completion.
+
+
+```bash
+python LLM_Collaboration_with_MARL/train_magrpo.py \
+  --config LLM_Collaboration_with_MARL/configs/mt_magrpo_he_config.yaml \
+  --override magrpo.external_mode='plain' magrpo.external_handoff='random'
+```
+
