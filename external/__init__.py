@@ -10,10 +10,6 @@ from . import passed
 # Context resolver API
 # -----------------------------
 _context_resolver: Optional[Callable[[str], Optional[Dict[str, Any]]]] = None
-_expert_edits_preview_printed: bool = False
-_level_feedback_preview_printed: bool = False
-_level_passed_preview_printed: bool = False
-_passed_preview_printed: bool = False
 
 
 def set_context_resolver(fn: Callable[[str], Optional[Dict[str, Any]]]):
@@ -94,9 +90,8 @@ def get_external_transition(
             entry_point=entry_point,
         )
 
-        # One-time preview for visual confirmation (print full prompts)
-        global _expert_edits_preview_printed
-        if not _expert_edits_preview_printed:
+        # Print preview only when explicitly requested via preview=True
+        if kwargs.get("preview", False):
             print("\n" + "=" * 60)
             print("EXTERNAL MODE PREVIEW: expert_edits")
             print("-" * 60)
@@ -104,7 +99,6 @@ def get_external_transition(
             print("-" * 60)
             print("MAIN PROMPT:\n" + main_prompt)
             print("=" * 60 + "\n")
-            _expert_edits_preview_printed = True
         return (aux_prompt, main_prompt)
 
     if mode in ("level_feedback", "feedback"):
@@ -119,9 +113,7 @@ def get_external_transition(
             test_code=test_code,
             entry_point=entry_point,
         )
-        # One-time preview for visual confirmation (print full prompts)
-        global _level_feedback_preview_printed
-        if not _level_feedback_preview_printed:
+        if kwargs.get("preview", False):
             print("\n" + "=" * 60)
             print("EXTERNAL MODE PREVIEW: level_feedback")
             print("-" * 60)
@@ -129,7 +121,6 @@ def get_external_transition(
             print("-" * 60)
             print("MAIN PROMPT:\n" + main_prompt)
             print("=" * 60 + "\n")
-            _level_feedback_preview_printed = True
         return (aux_prompt, main_prompt)
 
     if mode in ("level_passed", "signals"):
@@ -144,8 +135,7 @@ def get_external_transition(
             test_code=test_code,
             entry_point=entry_point,
         )
-        global _level_passed_preview_printed
-        if not _level_passed_preview_printed:
+        if kwargs.get("preview", False):
             print("\n" + "=" * 60)
             print("EXTERNAL MODE PREVIEW: level_passed")
             print("-" * 60)
@@ -153,7 +143,6 @@ def get_external_transition(
             print("-" * 60)
             print("MAIN PROMPT:\n" + main_prompt)
             print("=" * 60 + "\n")
-            _level_passed_preview_printed = True
         return (aux_prompt, main_prompt)
 
     if mode in ("passed",):
@@ -168,8 +157,7 @@ def get_external_transition(
             test_code=test_code,
             entry_point=entry_point,
         )
-        global _passed_preview_printed
-        if not _passed_preview_printed:
+        if kwargs.get("preview", False):
             print("\n" + "=" * 60)
             print("EXTERNAL MODE PREVIEW: passed")
             print("-" * 60)
@@ -177,7 +165,6 @@ def get_external_transition(
             print("-" * 60)
             print("MAIN PROMPT:\n" + main_prompt)
             print("=" * 60 + "\n")
-            _passed_preview_printed = True
         return (aux_prompt, main_prompt)
 
     raise ValueError(f"Unsupported external transition mode: {mode}")
