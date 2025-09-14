@@ -88,6 +88,8 @@ def get_external_transition(
             aux_edits=aux_edits,
             main_edits=main_edits,
             entry_point=entry_point,
+            aux_completion=aux_comp,
+            main_completion=main_comp,
         )
 
         # Print preview only when explicitly requested via preview=True

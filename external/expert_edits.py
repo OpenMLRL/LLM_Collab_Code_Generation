@@ -5,7 +5,11 @@ from typing import List, Tuple
 
 from anthropic import Anthropic
 from openai import OpenAI
-from rewards.code_utils import concatenate_functions, extract_imports_from_prompt
+from rewards.code_utils import (
+    concatenate_functions,
+    extract_imports_from_prompt,
+    extract_specific_function,
+)
 
 
 def _extract_last_json_from_response(response_text: str) -> dict:
@@ -136,67 +140,41 @@ def format_followup_prompts(
     aux_edits: str,
     main_edits: str,
     entry_point: str = "",
+    aux_completion: str = "",
+    main_completion: str = "",
 ) -> Tuple[str, str]:
     """
-    Mode-specific formatter for next-turn prompts under expert_edits.
-
-    To preserve original behavior, we generate full prompts equivalent to the
-    first-turn formatters (aux/main) and append expert feedback at the end.
-    If entry_point cannot be resolved, fall back to appending to original.
+    Format the 2+ turn prompts for expert_edits mode to match other modes:
+    - Include the previous implementation snippet
+    - Include an expert-edited snippet line
+    - Ask to revise the function and output only code
     """
 
-    params = _extract_function_params_from_prompt(original_prompt)
-    params_str = ", ".join(params) if params else "..."
-
-    # Aux formatter text
-    aux_fmt = (
-        "Create a helper function for this coding problem.\n\n"
-        f"Problem:\n{original_prompt}\n\n"
-        "IMPORTANT INSTRUCTIONS:\n"
-        "- Output ONLY the function code, no explanations or examples\n"
-        "- Do NOT include markdown code blocks (```python)\n"
-        "- Do NOT include any text before or after the function\n"
-        "- Do NOT include test cases or example usage\n"
-        "- Create a helper function named 'aux' that can assist the main function\n"
-        "- The function should return useful data for solving the problem\n\n"
-        "Your output should follow this format:\n\n"
-        "def aux(...):\n # your function code here\nreturn result\n"
+    # Extract previous function implementations for context
+    prev_aux = extract_specific_function(aux_completion or "", "aux") or "<no implementation found>"
+    target_entry = entry_point or "main"
+    prev_main = (
+        extract_specific_function(main_completion or "", target_entry) or "<no implementation found>"
     )
 
-    # Main formatter text
-    main_fmt = (
-        "Solve this coding problem by implementing the required function.\n\n"
-        f"Problem:\n{original_prompt}\n\n"
-        "You have access to a helper function: aux(...)\n\n"
-        "IMPORTANT INSTRUCTIONS:\n"
-        "- Output ONLY the function code, no explanations or examples\n"
-        "- Do NOT include markdown code blocks (```python)  \n"
-        "- Do NOT include any text before or after the function\n"
-        "- Do NOT include test cases or example usage\n"
-        "- Do NOT redefine the aux() function\n"
-        + (
-            f"- Implement ONLY the '{entry_point}' function as specified\n"
-            if entry_point
-            else "- Implement ONLY the required function as specified\n"
-        )
-        + "- You can call aux() to assign value to a variable within your function if helpful\n\n"
-        + "Your output should follow this format:\n\n"
-        + (
-            f"def {entry_point}({params_str}):\n # your function code here\nreturn result\n"
-            if entry_point
-            else "def <entry_point>(...):\n # your function code here\nreturn result\n"
-        )
-    )
+    aux_lines = [
+        "Your previous aux(...) implementation:",
+        prev_aux,
+        "",
+        "Here is edited snippet from an expert model:",
+        (aux_edits or "").strip(),
+        "",
+        "Revise your aux(...) accordingly. Output ONLY the function code with no extra text.",
+    ]
 
-    def _append_edits(base: str, edits: str) -> str:
-        return base + (f"\n\nHere is the feedback from an expert:\n{edits}" if edits.strip() else "")
+    main_lines = [
+        "Your previous main implementation:",
+        prev_main,
+        "",
+        "Here is edited snippet from an expert model:",
+        (main_edits or "").strip(),
+        "",
+        f"Revise your {target_entry}(...) accordingly. Output ONLY the function code with no extra text.",
+    ]
 
-    # If we don't have entry_point, fall back to just appending
-    if not entry_point:
-        aux_prompt = _append_edits(original_prompt, aux_edits)
-        main_prompt = _append_edits(original_prompt, main_edits)
-        return aux_prompt, main_prompt
-
-    aux_prompt = _append_edits(aux_fmt, aux_edits)
-    main_prompt = _append_edits(main_fmt, main_edits)
-    return aux_prompt, main_prompt
+    return ("\n".join(aux_lines), "\n".join(main_lines))
