@@ -11,6 +11,7 @@ from . import passed
 # -----------------------------
 _context_resolver: Optional[Callable[[str], Optional[Dict[str, Any]]]] = None
 _expert_edits_preview_printed: bool = False
+_level_feedback_preview_printed: bool = False
 
 
 def set_context_resolver(fn: Callable[[str], Optional[Dict[str, Any]]]):
@@ -110,13 +111,29 @@ def get_external_transition(
         ctx = get_context(prompt) or {}
         entry_point = ctx.get("entry_point", "")
         test_code = ctx.get("tests_sandbox") or ctx.get("tests_eval", "")
-        return level_feedback.format_followup_prompts(
+        aux_prompt, main_prompt = level_feedback.format_followup_prompts(
             original_prompt=prompt,
             aux_completion=aux_comp,
             main_completion=main_comp,
             test_code=test_code,
             entry_point=entry_point,
         )
+        # One-time preview for visual confirmation (similar style to expert_edits)
+        global _level_feedback_preview_printed
+        if not _level_feedback_preview_printed:
+            def _preview(label: str, text: str, n: int = 400) -> str:
+                t = text.replace("\n", " ")
+                return f"{label}: " + (t[:n] + ("..." if len(t) > n else ""))
+
+            print("\n" + "=" * 60)
+            print("EXTERNAL MODE PREVIEW: level_feedback")
+            print("-" * 60)
+            print(_preview("AUX PROMPT", aux_prompt))
+            print("-" * 60)
+            print(_preview("MAIN PROMPT", main_prompt))
+            print("=" * 60 + "\n")
+            _level_feedback_preview_printed = True
+        return (aux_prompt, main_prompt)
 
     if mode in ("level_passed", "signals"):
         aux_comp, main_comp = agent_completions[0], agent_completions[1]
