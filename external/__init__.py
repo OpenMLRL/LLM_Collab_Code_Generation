@@ -5,6 +5,7 @@ from . import expert_edits
 from . import level_feedback
 from . import level_passed
 from . import passed
+from . import plain
 
 # -----------------------------
 # Context resolver API
@@ -165,4 +166,27 @@ def get_external_transition(
         print("=" * 60 + "\n")
         return (aux_prompt, main_prompt)
 
-    raise ValueError(f"Unsupported external transition mode: {mode}")
+    if mode in ("plain",):
+        aux_comp, main_comp = agent_completions[0], agent_completions[1]
+        ctx = get_context(prompt) or {}
+        entry_point = ctx.get("entry_point", "")
+        test_code = ctx.get("tests_sandbox") or ctx.get("tests_eval", "")
+        aux_prompt, main_prompt = plain.format_followup_prompts(
+            original_prompt=prompt,
+            aux_completion=aux_comp,
+            main_completion=main_comp,
+            test_code=test_code,
+            entry_point=entry_point,
+        )
+        print("\n" + "=" * 60)
+        print("EXTERNAL MODE PREVIEW: plain")
+        print("-" * 60)
+        print("AUX PROMPT:\n" + aux_prompt)
+        print("-" * 60)
+        print("MAIN PROMPT:\n" + main_prompt)
+        print("=" * 60 + "\n")
+        return (aux_prompt, main_prompt)
+
+    raise NotImplementedError(
+        f"External transition mode '{mode}' is not implemented yet."
+    )
