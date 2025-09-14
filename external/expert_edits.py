@@ -179,8 +179,8 @@ def format_followup_prompts(
             if entry_point
             else "- Implement ONLY the required function as specified\n"
         )
-        "- You can call aux() to assign value to a variable within your function if helpful\n\n"
-        "Your output should follow this format:\n\n"
+        + "- You can call aux() to assign value to a variable within your function if helpful\n\n"
+        + "Your output should follow this format:\n\n"
         + (
             f"def {entry_point}({params_str}):\n # your function code here\nreturn result\n"
             if entry_point
