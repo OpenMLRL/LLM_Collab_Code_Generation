@@ -91,7 +91,7 @@ def get_external_transition(
         )
 
         # Print preview only when explicitly requested via preview=True
-        if kwargs.get("preview", False):
+        if kwargs.get("preview", True):
             print("\n" + "=" * 60)
             print("EXTERNAL MODE PREVIEW: expert_edits")
             print("-" * 60)
@@ -113,7 +113,7 @@ def get_external_transition(
             test_code=test_code,
             entry_point=entry_point,
         )
-        if kwargs.get("preview", False):
+        if kwargs.get("preview", True):
             print("\n" + "=" * 60)
             print("EXTERNAL MODE PREVIEW: level_feedback")
             print("-" * 60)
@@ -135,7 +135,7 @@ def get_external_transition(
             test_code=test_code,
             entry_point=entry_point,
         )
-        if kwargs.get("preview", False):
+        if kwargs.get("preview", True):
             print("\n" + "=" * 60)
             print("EXTERNAL MODE PREVIEW: level_passed")
             print("-" * 60)
@@ -157,7 +157,7 @@ def get_external_transition(
             test_code=test_code,
             entry_point=entry_point,
         )
-        if kwargs.get("preview", False):
+        if kwargs.get("preview", True):
             print("\n" + "=" * 60)
             print("EXTERNAL MODE PREVIEW: passed")
             print("-" * 60)
