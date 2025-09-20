@@ -1,5 +1,7 @@
 """
 Generic single-agent training script for GRPO that supports multiple datasets and configurations.
+Now also supports multi-turn training with external transitions (similar to MAGRPO),
+by adapting external prompts for a single agent across turns.
 Uses YAML configuration files to define all parameters.
 """
 
@@ -20,6 +22,8 @@ from transformers import AutoModelForCausalLM, AutoTokenizer
 from rewards.code_rewards import execution_reward_aux
 from comlrl.utils.reward_processor import RewardProcessors
 from comlrl.trainers.magrpo import MAGRPOConfig, MAGRPOTrainer
+import external as external_ctx
+from external import get_external_transition
 
 
 def extract_function_params_from_prompt(prompt_text):
@@ -198,6 +202,7 @@ def main():
     parser = argparse.ArgumentParser(description="Train GRPO with configurable dataset")
     add_config_args(parser)
 
+    # Optional direct overrides similar to train_magrpo.py
     parser.add_argument(
         "--model_name",
         type=str,
@@ -209,6 +214,19 @@ def main():
         type=str,
         default=None,
         help="Base output directory (overrides config)",
+    )
+    parser.add_argument(
+        "--num_turns",
+        type=int,
+        default=None,
+        help="Number of turns for multi-turn training (overrides config)",
+    )
+    parser.add_argument(
+        "--turn_gradient_weights",
+        type=float,
+        nargs="+",
+        default=None,
+        help="Turn gradient weights for multi-turn training (overrides config)",
     )
 
     args = parser.parse_args()
@@ -230,6 +248,10 @@ def main():
         config.update({"model_name": args.model_name})
     if args.output_base_dir:
         config.update({"output": {"base_dir": args.output_base_dir}})
+    if args.num_turns is not None:
+        config.update({"grpo": {"num_turns": args.num_turns}})
+    if args.turn_gradient_weights is not None:
+        config.update({"grpo": {"turn_gradient_weights": args.turn_gradient_weights}})
 
     # Load model configuration
     model_config = config.get_model_config()
@@ -252,8 +274,30 @@ def main():
     train_split = config.get("dataset.train_split")
     eval_split = config.get("dataset.eval_split")
 
+    # Read GRPO section early (for multi-turn flags)
+    grpo_config = config.get_section("grpo") if hasattr(config, "get_section") else {}
+
+    # Determine single vs multi-turn
+    num_turns = grpo_config.get("num_turns", 1)
+    is_multi_turn = num_turns > 1
+
+    # Validate turn gradient weights for multi-turn
+    if is_multi_turn:
+        turn_weights = grpo_config.get("turn_gradient_weights", [1.0] * num_turns)
+        if len(turn_weights) != num_turns:
+            raise ValueError(
+                f"turn_gradient_weights must have {num_turns} values, got {len(turn_weights)}"
+            )
+        print(f"Multi-turn GRPO enabled: num_turns={num_turns}, weights={turn_weights}")
+    else:
+        print(f"Single-turn GRPO: num_turns={num_turns}")
+
     slurm_job_id = os.environ.get("SLURM_JOB_ID", "no_job_id")
-    output_dir = os.path.join(output_base_dir, f"job_{slurm_job_id}")
+    # Use different output directory prefix for multi-turn for clarity
+    if is_multi_turn:
+        output_dir = os.path.join(output_base_dir, f"mt_job_{slurm_job_id}")
+    else:
+        output_dir = os.path.join(output_base_dir, f"job_{slurm_job_id}")
     os.makedirs(output_dir, exist_ok=True)
 
     if hasattr(config, "save"):
@@ -303,10 +347,84 @@ def main():
     )
     print("Model loaded successfully!")
 
-    grpo_config = config.get_section("grpo") if hasattr(config, "get_section") else {}
-
     temperature = grpo_config.get("temperature", model_config.temperature)
     top_p = grpo_config.get("top_p", model_config.top_p)
+
+    # Register external context resolver using dataset items (for external modes)
+    def _normalize_prompt(p: str) -> str:
+        return " ".join((p or "").split()).strip()
+
+    context_map: Dict[str, Any] = {}
+
+    # Optionally restrict sandbox tests to the first N eval asserts
+    # Set grpo.sandbox_slice to an integer N (>0) to keep only the first N asserts
+    sandbox_slice = grpo_config.get("sandbox_slice", None)
+    try:
+        sandbox_slice = int(sandbox_slice) if sandbox_slice is not None else None
+    except (TypeError, ValueError):
+        sandbox_slice = None
+
+    import re as _re
+
+    def _make_sliced_assert_tests(test_code: str, n: int) -> str:
+        if not isinstance(test_code, str) or not test_code.strip():
+            return test_code
+        if n is None or n == 0:
+            return test_code
+        lines = test_code.splitlines()
+        preamble = []
+        check_idx = None
+        for idx, line in enumerate(lines):
+            if _re.match(r"\s*def\s+check\s*\(candidate\)\s*:\s*", line):
+                check_idx = idx
+                break
+            preamble.append(line)
+        asserts = []
+        search_start = check_idx + 1 if check_idx is not None else 0
+        for line in lines[search_start:]:
+            s = line.strip()
+            if s.startswith("assert") and "candidate" in s:
+                asserts.append(s)
+        if not asserts:
+            return test_code
+        preamble_text = "\n".join(preamble).strip()
+        new_parts = []
+        if preamble_text:
+            new_parts.append(preamble_text)
+        new_parts.append("def check(candidate):")
+        selected = asserts[:n] if n > 0 else asserts[n:]
+        for a in selected:
+            new_parts.append(f"    {a}")
+        return "\n".join(new_parts) + "\n"
+
+    def _register_split(ds):
+        try:
+            for item in ds:
+                key = _normalize_prompt(item.get("prompt", ""))
+                if key and key not in context_map:
+                    tests_eval = item.get("test", "")
+                    tests_sandbox = (
+                        _make_sliced_assert_tests(tests_eval, sandbox_slice)
+                        if sandbox_slice is not None and sandbox_slice != 0
+                        else tests_eval
+                    )
+                    context_map[key] = {
+                        "entry_point": item.get("entry_point", ""),
+                        "tests_eval": tests_eval,
+                        "tests_sandbox": tests_sandbox,
+                    }
+        except Exception:
+            pass
+
+    if 'train_dataset' in locals() and train_dataset is not None:
+        _register_split(train_dataset)
+    if 'eval_dataset' in locals() and eval_dataset is not None:
+        _register_split(eval_dataset)
+
+    def _resolver(prompt: str):
+        return context_map.get(_normalize_prompt(prompt))
+
+    external_ctx.set_context_resolver(_resolver)
 
     grpo_args = MAGRPOConfig(
         output_dir=output_dir,
@@ -319,6 +437,12 @@ def main():
         max_new_tokens=grpo_config.get("max_new_tokens", 256),
         temperature=temperature,
         top_p=top_p,
+        # Multi-turn parameters
+        num_turns=num_turns,
+        turn_gradient_weights=grpo_config.get(
+            "turn_gradient_weights", [1.0] * num_turns
+        ),
+        early_termination_weight=grpo_config.get("early_termination_weight", 2.0),
     )
 
     formatter = get_formatter(dataset_type)
@@ -328,14 +452,37 @@ def main():
         config.get_section("wandb") if hasattr(config, "get_section") else {}
     )
     model_short_name = model_name.split("/")[-1].lower()
-    wandb_name = wandb_section.get("name", f"grpo_{dataset_type}")
+    # Use different wandb name for multi-turn
+    if is_multi_turn:
+        wandb_name = wandb_section.get("name", f"mt_grpo_{dataset_type}")
+    else:
+        wandb_name = wandb_section.get("name", f"grpo_{dataset_type}")
+
+    # Compute tags and add self-evolved when using analysis-based external modes
+    external_mode = grpo_config.get("external_mode", "expert_edits")
+    default_tags = ["grpo", dataset_type or "code", f"turns_{num_turns}"]
+    tags_from_cfg = wandb_section.get("tags", default_tags)
+    tags = list(tags_from_cfg) if isinstance(tags_from_cfg, list) else default_tags
+    if external_mode in ["level_passed", "level_feedback", "passed"]:
+        if "self-evolved" not in tags:
+            tags.append("self-evolved")
+
+    # If sandbox_slice is active (non-zero), append _slice to run name
+    try:
+        if sandbox_slice is not None and int(sandbox_slice) != 0:
+            if not str(wandb_name).endswith("_slice"):
+                wandb_name = f"{wandb_name}_slice"
+            if "slice" not in tags:
+                tags.append("slice")
+    except Exception:
+        pass
 
     wandb_config = {
         "project": wandb_section.get("project", "mlrl"),
         "entity": wandb_section.get("entity", "nu-llpr"),
         "name": f"{wandb_name}_{model_short_name}",
         "dir": wandb_section.get("dir", "../../../projects/bepg/sliu30"),
-        "tags": wandb_section.get("tags", ["grpo", dataset_type, "single-agent"]),
+        "tags": tags,
     }
 
     reward_processor = None
@@ -358,6 +505,41 @@ def main():
 
     if reward_processor is not None:
         trainer_kwargs["reward_processors"] = reward_processor
+
+    # Multi-turn external transition support for single-agent GRPO
+    if (
+        is_multi_turn
+        and dataset_type
+        and dataset_type.lower() in ["humaneval", "coophumaneval"]
+    ):
+        expert_model = grpo_config.get("expert_model", "deepseek-coder")
+
+        def external_transition_wrapper(prompt, agent_completions, num_agents, **et_kwargs):
+            # Single-agent: treat completion as the main agent; aux is empty
+            main_best = agent_completions[0] if agent_completions else ""
+            aux_best = ""
+
+            original_prompt_flag = grpo_config.get("external_original_prompt", False)
+            previous_response_flag = grpo_config.get("external_previous_response", True)
+            handoff_strategy = grpo_config.get("external_handoff", "best")
+
+            # Call 2-agent external transition and take main prompt only
+            aux_prompt, main_prompt = get_external_transition(
+                prompt=prompt,
+                agent_completions=(aux_best, main_best),
+                num_agents=2,  # required by external module
+                expert_model=expert_model,
+                mode=external_mode,
+                original_prompt=original_prompt_flag,
+                previous_response=previous_response_flag,
+                handoff_strategy=handoff_strategy,
+                **et_kwargs,
+            )
+
+            # Return a list of prompts matching single-agent trainer expectation
+            return [main_prompt]
+
+        trainer_kwargs["external_transition"] = external_transition_wrapper
 
     trainer = MAGRPOTrainer(**trainer_kwargs)
     trainer.train()

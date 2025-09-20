@@ -1,0 +1,53 @@
+# Configuration for Multi-Turn HumanEval training with GRPO (single-agent)
+
+# Model configuration
+model:
+  name: "Qwen/Qwen2.5-Coder-3B"  # Options: "Qwen/Qwen2.5-Coder-3B", "bigcode/starcoder2-3b", etc.
+  type: "qwen"
+  temperature: 0.7
+  top_p: 0.9
+  max_length: 2048
+  tokenizer_kwargs:
+    trust_remote_code: true
+  model_kwargs:
+    trust_remote_code: true
+    torch_dtype: "bfloat16"
+
+# Dataset configuration
+dataset:
+  name: "openai/openai_humaneval"
+  type: "humaneval"  # Used to select formatters and reward function
+  train_split: "test[33:133]"
+  eval_split: "test[:32]"
+
+# Output configuration
+output:
+  base_dir: "../../../projects/bepg/sliu30/output_mt"
+  save_final_model: true
+
+# GRPO training configuration (multi-turn enabled via num_turns)
+grpo:
+  num_turns: 2  # Set > 1 for multi-turn training
+  num_train_epochs: 7
+  per_device_train_batch_size: 1
+  learning_rate: 2.0e-5
+  logging_steps: 50
+  save_steps: 200
+  num_generations: 4
+  max_new_tokens: 256
+  temperature: 0.8
+  top_p: 0.95
+  # Multi-turn specific parameters
+  turn_gradient_weights: [1.2, 0.8]  # Weights for different turns
+  early_termination_weight: 2.0  # Weight for early termination reward
+  external_mode: "expert_edits"    # Options: expert_edits (default), level_passed, level_feedback, passed, plain
+  expert_model: "deepseek-coder"   # Used by expert_edits mode only
+
+# Wandb configuration
+wandb:
+  project: "mlrl"
+  entity: "nu-llpr"
+  name: "mt_grpo_humaneval"  # Will be appended with model name in script
+  dir: "../../../projects/bepg/sliu30"
+  tags: ["mt_grpo", "humaneval", "single-agent", "multi-turn"]
+
