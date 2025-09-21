@@ -443,6 +443,7 @@ def main():
             "turn_gradient_weights", [1.0] * num_turns
         ),
         early_termination_weight=grpo_config.get("early_termination_weight", 2.0),
+        early_termination_threshold=grpo_config.get("early_termination_threshold", 2.1),
     )
 
     formatter = get_formatter(dataset_type)

@@ -444,6 +444,7 @@ def main():
             "turn_gradient_weights", [1.0] * num_turns
         ),
         early_termination_weight=magrpo_config.get("early_termination_weight", 2.0),
+        early_termination_threshold=magrpo_config.get("early_termination_threshold", 4.0),
     )
 
     # Get appropriate formatters and functions based on dataset type, agent count, and training mode

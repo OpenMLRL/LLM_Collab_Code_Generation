@@ -38,6 +38,8 @@ magrpo:
   temperature: 0.8
   top_p: 0.95
   num_agents: 2
+  # Early termination threshold for multi-agent (MAGRPO)
+  early_termination_threshold: 4.0
 
 # Wandb configuration
 wandb:

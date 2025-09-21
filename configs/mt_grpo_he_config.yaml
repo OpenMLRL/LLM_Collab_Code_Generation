@@ -40,6 +40,7 @@ grpo:
   # Multi-turn specific parameters
   turn_gradient_weights: [1.2, 0.8]  # Weights for different turns
   early_termination_weight: 2.0  # Weight for early termination reward
+  early_termination_threshold: 2.1
   external_mode: "expert_edits"    # Options: expert_edits (default), level_passed, level_feedback, passed, plain
   expert_model: "deepseek-coder"   # Used by expert_edits mode only
 
@@ -50,4 +51,3 @@ wandb:
   name: "mt_grpo_humaneval"  # Will be appended with model name in script
   dir: "../../../projects/bepg/sliu30"
   tags: ["mt_grpo", "humaneval", "single-agent", "multi-turn"]
-

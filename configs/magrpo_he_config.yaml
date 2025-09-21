@@ -36,6 +36,8 @@ magrpo:
   num_generations: 4
   max_new_tokens: 256
   num_agents: 2
+  # Early termination threshold for multi-agent (MAGRPO)
+  early_termination_threshold: 4.0
 
 # Wandb configuration
 wandb:
