@@ -124,6 +124,7 @@ def get_external_transition(
             main_completion=main_comp,
             expert_model=kwargs.get("expert_model", "deepseek-coder"),
             max_retries=kwargs.get("max_retries", 3),
+            num_agents=int(num_agents),
         )
 
         # Format the follow-up prompts for each agent using this mode's formatter

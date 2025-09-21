@@ -96,20 +96,29 @@ def analyze_code(
     main_completion: str,
     test_code: str,
     entry_point: str,
+    num_agent: int = 2,
 ) -> Dict[str, object]:
     """Static/dynamic analysis used by feedback modes."""
-    aux_func = extract_specific_function(aux_completion, "aux")
-    main_func = extract_specific_function(main_completion, entry_point)
-
-    aux_defined, aux_msg = check_function_definition(
-        aux_completion, "aux", "Aux function"
-    )
-    main_defined, main_msg = check_function_definition(
-        main_completion, entry_point, f"Main function ({entry_point})"
-    )
-
-    imports = extract_imports_from_prompt(original_prompt)
-    combined_code = concatenate_functions(aux_func, main_func, imports)
+    if int(num_agent) == 1:
+        aux_func = ""
+        main_func = extract_specific_function(main_completion, entry_point)
+        aux_defined, aux_msg = False, "Single-agent mode: aux not used"
+        main_defined, main_msg = check_function_definition(
+            main_completion, entry_point, f"Main function ({entry_point})"
+        )
+        imports = extract_imports_from_prompt(original_prompt)
+        combined_code = concatenate_functions("", main_func, imports)
+    else:
+        aux_func = extract_specific_function(aux_completion, "aux")
+        main_func = extract_specific_function(main_completion, entry_point)
+        aux_defined, aux_msg = check_function_definition(
+            aux_completion, "aux", "Aux function"
+        )
+        main_defined, main_msg = check_function_definition(
+            main_completion, entry_point, f"Main function ({entry_point})"
+        )
+        imports = extract_imports_from_prompt(original_prompt)
+        combined_code = concatenate_functions(aux_func, main_func, imports)
 
     syntax_ok, syntax_msg = check_syntax(combined_code, "Combined code")
     syntax_error = None
@@ -121,11 +130,16 @@ def analyze_code(
             syntax_error = {"line": e.lineno, "offset": e.offset, "msg": e.msg}
 
     # Aux usage signals
-    aux_called = check_aux_function_usage(main_func, "aux") if main_func else False
-    called_but_not_used, problematic = (
-        check_aux_call_without_usage(main_func, "aux") if main_func else (False, [])
-    )
-    wrapper = is_wrapper_function(main_func, "aux") if main_func else False
+    if int(num_agent) == 1:
+        aux_called = False
+        called_but_not_used, problematic = (False, [])
+        wrapper = False
+    else:
+        aux_called = check_aux_function_usage(main_func, "aux") if main_func else False
+        called_but_not_used, problematic = (
+            check_aux_call_without_usage(main_func, "aux") if main_func else (False, [])
+        )
+        wrapper = is_wrapper_function(main_func, "aux") if main_func else False
 
     # Run tests only if syntax OK
     tests_passed = 0
@@ -173,7 +187,12 @@ def format_followup_prompts(
     Produce detailed level_feedback prompts for each agent using previous code + diagnostics.
     """
     report = analyze_code(
-        original_prompt, aux_completion, main_completion, test_code, entry_point
+        original_prompt,
+        aux_completion,
+        main_completion,
+        test_code,
+        entry_point,
+        num_agent=num_agent,
     )
 
     # Single-agent: Only produce main prompt without aux references

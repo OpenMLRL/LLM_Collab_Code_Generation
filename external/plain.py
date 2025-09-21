@@ -19,7 +19,12 @@ def format_followup_prompts(
     instructions to revise. Mirrors the structure used by other modes.
     """
     r = analyze_code(
-        original_prompt, aux_completion, main_completion, test_code, entry_point
+        original_prompt,
+        aux_completion,
+        main_completion,
+        test_code,
+        entry_point,
+        num_agent=num_agent,
     )
 
     # Single-agent: only main prompt with no aux references

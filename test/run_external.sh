@@ -25,7 +25,18 @@ echo "Repo dir:   $REPO_DIR"
 echo "Script dir: $SCRIPT_DIR"
 
 cd "$REPO_DIR"
-"$PYTHON_BIN" "$SCRIPT_DIR/dump_external_prompts.py"
+
+# If REAL_EXPERT=1, request real expert edits with selected model (default deepseek-coder)
+EXPERT_ARGS=()
+if [[ "${REAL_EXPERT:-}" == "1" ]]; then
+  : "${EXPERT_MODEL:=deepseek-coder}"
+  if [[ -z "${DEEPSEEK_API_KEY:-}" ]]; then
+    echo "[warn] REAL_EXPERT=1 but DEEPSEEK_API_KEY is not set; request may fail." >&2
+  fi
+  EXPERT_ARGS+=("--real-expert" "--expert-model" "$EXPERT_MODEL")
+fi
+
+"$PYTHON_BIN" "$SCRIPT_DIR/dump_external_prompts.py" "${EXPERT_ARGS[@]}"
 
 echo
 echo "Generated files:"

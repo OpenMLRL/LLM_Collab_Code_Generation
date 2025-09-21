@@ -19,7 +19,12 @@ def format_followup_prompts(
     Returns prompts that include the previous code and a single pass/fail signal.
     """
     r = analyze_code(
-        original_prompt, aux_completion, main_completion, test_code, entry_point
+        original_prompt,
+        aux_completion,
+        main_completion,
+        test_code,
+        entry_point,
+        num_agent=num_agent,
     )
 
     # Consider 'passed' only if syntax is OK, main is defined, and all tests pass (when present)

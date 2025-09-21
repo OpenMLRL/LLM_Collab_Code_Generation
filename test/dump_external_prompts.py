@@ -11,6 +11,7 @@ Avoids network by stubbing expert_edits.add_expert_edits.
 
 import os
 import sys
+import argparse
 from typing import Dict
 
 
@@ -42,30 +43,68 @@ def build_context(prompt: str) -> Dict[str, str]:
 
 
 def main():
+    parser = argparse.ArgumentParser(description="Dump external prompts for 1/2 agents")
+    parser.add_argument(
+        "--real-expert",
+        action="store_true",
+        help="Force call real expert model for expert_edits (requires API key)",
+    )
+    parser.add_argument(
+        "--offline",
+        action="store_true",
+        help="Force offline stub for expert_edits (no network)",
+    )
+    parser.add_argument(
+        "--expert-model",
+        type=str,
+        default=os.environ.get("EXPERT_MODEL", "deepseek-coder"),
+        help="Expert model name for expert_edits",
+    )
+    args = parser.parse_args()
+
     add_repo_to_path()
 
-    # Stub external dependencies to avoid import errors before importing package
-    import types
+    # Default to real expert calls unless offline is requested
+    def _is_truthy(v: str) -> bool:
+        return str(v).lower() in ("1", "true", "yes", "y")
 
-    if "anthropic" not in sys.modules:
-        m = types.ModuleType("anthropic")
+    use_real_expert = True
+    if _is_truthy(os.environ.get("OFFLINE", "0")) or args.offline:
+        use_real_expert = False
+    if _is_truthy(os.environ.get("REAL_EXPERT", "0")):
+        use_real_expert = True
+    if args.real_expert:
+        use_real_expert = True
 
-        class _Anthropic:
-            def __init__(self, *a, **k):
-                pass
+    # Ensure 'anthropic' is importable (not used unless that model is chosen)
+    try:
+        import anthropic  # type: ignore  # noqa: F401
+    except Exception:
+        import types
 
-        # Provide minimal interface attributes if ever referenced accidentally
-        m.Anthropic = _Anthropic
-        sys.modules["anthropic"] = m
-    if "openai" not in sys.modules:
-        m2 = types.ModuleType("openai")
+        if "anthropic" not in sys.modules:
+            m = types.ModuleType("anthropic")
 
-        class _OpenAI:
-            def __init__(self, *a, **k):
-                pass
+            class _Anthropic:
+                def __init__(self, *a, **k):
+                    pass
 
-        m2.OpenAI = _OpenAI
-        sys.modules["openai"] = m2
+            m.Anthropic = _Anthropic
+            sys.modules["anthropic"] = m
+
+    # Stub openai only when not using real expert edits
+    if not use_real_expert:
+        import types
+
+        if "openai" not in sys.modules:
+            m2 = types.ModuleType("openai")
+
+            class _OpenAI:
+                def __init__(self, *a, **k):
+                    pass
+
+            m2.OpenAI = _OpenAI
+            sys.modules["openai"] = m2
 
     # Import our local package (ensure we don't shadow by this test module name later)
     import importlib
@@ -79,19 +118,20 @@ def main():
     external.set_context_resolver(resolver)
 
     # Monkey patch expert_edits.add_expert_edits to avoid network calls
-    from external import expert_edits as ee
+    if not use_real_expert:
+        from external import expert_edits as ee
 
-    def _stub_add_expert_edits(
-        prompt: str, aux_completion: str, main_completion: str, **kwargs
-    ):
-        # Return deterministic edits; leave aux empty for single-agent compatibility
-        return (
-            prompt,
-            "# AUX EDIT: (stub) helper not needed for this task",
-            "# MAIN EDIT: (stub) handle edge cases and negative inputs",
-        )
+        def _stub_add_expert_edits(
+            prompt: str, aux_completion: str, main_completion: str, **kwargs
+        ):
+            # Return deterministic edits; leave aux empty for single-agent compatibility
+            return (
+                prompt,
+                "# AUX EDIT: (stub) helper not needed for this task",
+                "# MAIN EDIT: (stub) handle edge cases and negative inputs",
+            )
 
-    ee.add_expert_edits = _stub_add_expert_edits  # type: ignore
+        ee.add_expert_edits = _stub_add_expert_edits  # type: ignore
 
     # Inputs
     original_prompt = "Write a function add(x: int, y: int) -> int that returns the sum of two integers."
@@ -120,6 +160,7 @@ def main():
                 agent_completions=[main_only_code],
                 num_agents=1,
                 mode=mode,
+                expert_model=args.expert_model if mode == "expert_edits" else None,
             )
             # get_external_transition returns [main_prompt] for single-agent
             if isinstance(prompts_1, (list, tuple)):
@@ -150,6 +191,7 @@ def main():
                 agent_completions=(aux_code, main_code),
                 num_agents=2,
                 mode=mode,
+                expert_model=args.expert_model if mode == "expert_edits" else None,
             )
             # get_external_transition returns (aux_prompt, main_prompt) for two agents
             if isinstance(prompts_2, (list, tuple)) and len(prompts_2) == 2:

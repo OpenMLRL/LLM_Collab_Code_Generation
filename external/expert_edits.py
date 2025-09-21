@@ -32,6 +32,7 @@ def add_expert_edits(
     main_completion: str,
     expert_model: str = "claude-3-5-sonnet-20241022",
     max_retries: int = 3,
+    num_agents: int = 2,
 ) -> Tuple[str, str, str]:
     """
     Produce expert edits for previous turn outputs.
@@ -44,9 +45,23 @@ def add_expert_edits(
     """
 
     imports = extract_imports_from_prompt(prompt)
-    combined_code = concatenate_functions(aux_completion, main_completion, imports)
+    if int(num_agents) == 1:
+        combined_code = concatenate_functions("", main_completion, imports)
+        expert_prompt = f"""You are an expert reviewing code written by a single agent for the task: {prompt}
 
-    expert_prompt = f"""You are an expert reviewing code collaboratively written by two agents for the task: {prompt}
+Your job is to return proposed edits for the main function as JSON with the key 'main'.
+Guidelines:
+1) If the target function is missing, provide a minimal correct implementation as the edit.
+2) If it exists, provide concise edits that would help pass the provided unit tests.
+3) If no changes are needed, respond with short note: "Perfect! No changes needed!" for that field.
+
+Provide only JSON in the following format: {{ "main": <string with edits or replacement> }}
+Here is the current code to consider:
+{combined_code}
+"""
+    else:
+        combined_code = concatenate_functions(aux_completion, main_completion, imports)
+        expert_prompt = f"""You are an expert reviewing code collaboratively written by two agents for the task: {prompt}
 The auxiliary agent implements a helper function (aux), and the main agent implements the task entry function.
 
 Your job is to return proposed edits for each agent as JSON with keys 'aux' and 'main'.

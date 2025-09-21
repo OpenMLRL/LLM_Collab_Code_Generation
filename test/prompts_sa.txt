@@ -7,7 +7,7 @@ def add(x, y):
     return x + y
 
 Here is an edited snippet from an expert model:
-# MAIN EDIT: (stub) handle edge cases and negative inputs
+Perfect! No changes needed!
 
 Revise your add(...) accordingly. Output ONLY the function code with no extra text.
 

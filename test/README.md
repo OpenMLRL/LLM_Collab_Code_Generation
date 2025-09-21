@@ -9,7 +9,9 @@
   - `python3 LLM_Collaboration_with_MARL/test/dump_external_prompts.py`
 
 - Notes
-  - Script runs offline: stubs `anthropic`/`openai` before importing and overrides `expert_edits.add_expert_edits`
+  - For `expert_edits` mode, the script now defaults to calling the real expert model (`deepseek-coder`).
+    - Set `DEEPSEEK_API_KEY` in your environment; otherwise requests will fail and may fall back to stub where applicable.
+    - To force offline stub, pass `--offline` to the script or set `OFFLINE=1`.
   - Output files located in `LLM_Collaboration_with_MARL/test/`:
     - `prompts_sa.txt` (single agent)
     - `prompts_ma.txt` (multi agent)

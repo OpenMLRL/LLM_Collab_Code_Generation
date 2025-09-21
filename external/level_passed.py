@@ -18,7 +18,12 @@ def format_followup_prompts(
     Produce concise level_passed prompts for each agent using previous code + signals.
     """
     r = analyze_code(
-        original_prompt, aux_completion, main_completion, test_code, entry_point
+        original_prompt,
+        aux_completion,
+        main_completion,
+        test_code,
+        entry_point,
+        num_agent=num_agent,
     )
 
     # Build compact signals
