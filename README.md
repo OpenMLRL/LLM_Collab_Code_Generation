@@ -89,7 +89,7 @@ Multi-turn training supports external transition modes for 2nd+ turns, set via `
 - `expert_edits` **(default)**: Uses an expert LLM to suggest edits.
   - Requires `magrpo.expert_model` in config (e.g., `deepseek-coder`, Claude, etc.).
   - Requires corrsponding API keys in env vars.
-- `level_passed`: Binary passed signals (impl found, syntax, tests summary, aux usage). 
+- `level_passed`: Binary passed signals (impl found, syntax, tests summary, aux usage).
 - `level_feedback`: Detailed diagnostics (impl found, syntax with line/col, per-test pass/fail errors, aux usage).
 - `passed`: A binary signal — "All levels passed" or "Not all levels passed".
 - `plain`: No signals or diagnostics.
@@ -123,4 +123,3 @@ python LLM_Collaboration_with_MARL/train_magrpo.py \
   --config LLM_Collaboration_with_MARL/configs/mt_magrpo_he_config.yaml \
   --override magrpo.external_mode='plain' magrpo.external_handoff='random'
 ```
-

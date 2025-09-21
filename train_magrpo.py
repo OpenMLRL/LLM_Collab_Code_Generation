@@ -94,7 +94,7 @@ You have access to a helper function: aux(...)
 
 IMPORTANT INSTRUCTIONS:
 - Output ONLY the function code, no explanations or examples
-- Do NOT include markdown code blocks (```python)  
+- Do NOT include markdown code blocks (```python)
 - Do NOT include any text before or after the function
 - Do NOT include test cases or example usage
 - Do NOT redefine the aux() function
@@ -394,6 +394,7 @@ def main():
         for a in selected:
             new_parts.append(f"    {a}")
         return "\n".join(new_parts) + "\n"
+
     def _register_split(ds):
         try:
             for item in ds:
@@ -413,9 +414,9 @@ def main():
         except Exception:
             pass
 
-    if 'train_dataset' in locals() and train_dataset is not None:
+    if "train_dataset" in locals() and train_dataset is not None:
         _register_split(train_dataset)
-    if 'eval_dataset' in locals() and eval_dataset is not None:
+    if "eval_dataset" in locals() and eval_dataset is not None:
         _register_split(eval_dataset)
 
     def _resolver(prompt: str):
@@ -444,7 +445,9 @@ def main():
             "turn_gradient_weights", [1.0] * num_turns
         ),
         early_termination_weight=magrpo_config.get("early_termination_weight", 2.0),
-        early_termination_threshold=magrpo_config.get("early_termination_threshold", 4.0),
+        early_termination_threshold=magrpo_config.get(
+            "early_termination_threshold", 4.0
+        ),
     )
 
     # Get appropriate formatters and functions based on dataset type, agent count, and training mode
@@ -523,11 +526,15 @@ def main():
         expert_model = magrpo_config.get("expert_model", "deepseek-coder")
         # external_mode already loaded above
 
-        def external_transition_wrapper(prompt, agent_completions, num_agents, **et_kwargs):
+        def external_transition_wrapper(
+            prompt, agent_completions, num_agents, **et_kwargs
+        ):
             # Returns full next-turn prompts per agent (strings)
             # Allow overrides via config and forwarded kwargs
             original_prompt_flag = magrpo_config.get("external_original_prompt", False)
-            previous_response_flag = magrpo_config.get("external_previous_response", True)
+            previous_response_flag = magrpo_config.get(
+                "external_previous_response", True
+            )
             handoff_strategy = magrpo_config.get("external_handoff", "best")
 
             return get_external_transition(

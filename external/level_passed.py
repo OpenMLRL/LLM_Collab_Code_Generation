@@ -12,17 +12,16 @@ def format_followup_prompts(
     entry_point: str,
     original_prompt_flag: bool = False,
     previous_response_flag: bool = True,
+    num_agent: int = 2,
 ) -> Tuple[str, str]:
     """
     Produce concise level_passed prompts for each agent using previous code + signals.
     """
-    r = analyze_code(original_prompt, aux_completion, main_completion, test_code, entry_point)
+    r = analyze_code(
+        original_prompt, aux_completion, main_completion, test_code, entry_point
+    )
 
     # Build compact signals
-    # Implementation signals
-    aux_impl = "OK" if r["aux_defined"] else "No implementation found in required structure"
-    main_impl = "OK" if r["main_defined"] else "No implementation found in required structure"
-
     # Syntax signals
     syntax_sig = "Syntax correct" if r["syntax_ok"] else "Syntax not correct"
 
@@ -36,7 +35,47 @@ def format_followup_prompts(
     else:
         test_sig = f"Passed {r['tests_passed']}/{r['tests_total']} tests"
 
-    # Aux usage signals (for main)
+    # Single-agent: only main prompt; exclude aux logic/signals
+    if int(num_agent) == 1:
+        main_impl = (
+            "OK"
+            if r["main_defined"]
+            else "No implementation found in required structure"
+        )
+        main_lines = []
+        if original_prompt_flag:
+            _aux_base, main_base = build_first_turn_prompts(
+                original_prompt, entry_point
+            )
+            main_lines.extend([main_base, ""])  # context then blank line
+        if previous_response_flag:
+            main_lines.extend(
+                [
+                    "Your previous implementation:",
+                    r.get("main_func") or "<no implementation found>",
+                    "",
+                ]
+            )
+        main_lines.extend(
+            [
+                "Signals:",
+                f"- Implementation: {main_impl}",
+                f"- Syntax: {syntax_sig}",
+                f"- Tests: {test_sig}",
+                "",
+                f"Revise your {entry_point}(...) accordingly. Output ONLY the function code.",
+            ]
+        )
+        return ("", "\n".join(main_lines))
+
+    # Multi-agent (default): original aux + main collaboration
+    aux_impl = (
+        "OK" if r["aux_defined"] else "No implementation found in required structure"
+    )
+    main_impl = (
+        "OK" if r["main_defined"] else "No implementation found in required structure"
+    )
+
     if not r["main_defined"]:
         aux_use_sig = "Main missing; cannot check aux usage"
     else:
@@ -47,7 +86,6 @@ def format_followup_prompts(
         else:
             aux_use_sig = "Aux call present and used"
 
-    # Compose prompts
     aux_lines = []
     main_lines = []
 
@@ -57,34 +95,42 @@ def format_followup_prompts(
         main_lines.extend([main_base, ""])  # context then blank line
 
     if previous_response_flag:
-        aux_lines.extend([
-            "Your previous aux(...) implementation:",
-            r.get("aux_func") or "<no implementation found>",
-            "",
-        ])
-        main_lines.extend([
-            "Your previous main implementation:",
-            r.get("main_func") or "<no implementation found>",
-            "",
-        ])
+        aux_lines.extend(
+            [
+                "Your previous aux(...) implementation:",
+                r.get("aux_func") or "<no implementation found>",
+                "",
+            ]
+        )
+        main_lines.extend(
+            [
+                "Your previous main implementation:",
+                r.get("main_func") or "<no implementation found>",
+                "",
+            ]
+        )
 
-    aux_lines.extend([
-        "Signals:",
-        f"- Implementation: {aux_impl}",
-        f"- Syntax: {syntax_sig}",
-        f"- Tests: {test_sig}",
-        "",
-        "Revise your aux(...) accordingly. Output ONLY the function code.",
-    ])
+    aux_lines.extend(
+        [
+            "Signals:",
+            f"- Implementation: {aux_impl}",
+            f"- Syntax: {syntax_sig}",
+            f"- Tests: {test_sig}",
+            "",
+            "Revise your aux(...) accordingly. Output ONLY the function code.",
+        ]
+    )
 
-    main_lines.extend([
-        "Signals:",
-        f"- Implementation: {main_impl}",
-        f"- Syntax: {syntax_sig}",
-        f"- Tests: {test_sig}",
-        f"- Aux usage: {aux_use_sig}",
-        "",
-        f"Revise your {entry_point}(...) accordingly. Output ONLY the function code.",
-    ])
+    main_lines.extend(
+        [
+            "Signals:",
+            f"- Implementation: {main_impl}",
+            f"- Syntax: {syntax_sig}",
+            f"- Tests: {test_sig}",
+            f"- Aux usage: {aux_use_sig}",
+            "",
+            f"Revise your {entry_point}(...) accordingly. Output ONLY the function code.",
+        ]
+    )
 
     return ("\n".join(aux_lines), "\n".join(main_lines))

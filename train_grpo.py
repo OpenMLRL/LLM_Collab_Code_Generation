@@ -416,9 +416,9 @@ def main():
         except Exception:
             pass
 
-    if 'train_dataset' in locals() and train_dataset is not None:
+    if "train_dataset" in locals() and train_dataset is not None:
         _register_split(train_dataset)
-    if 'eval_dataset' in locals() and eval_dataset is not None:
+    if "eval_dataset" in locals() and eval_dataset is not None:
         _register_split(eval_dataset)
 
     def _resolver(prompt: str):
@@ -515,20 +515,20 @@ def main():
     ):
         expert_model = grpo_config.get("expert_model", "deepseek-coder")
 
-        def external_transition_wrapper(prompt, agent_completions, num_agents, **et_kwargs):
-            # Single-agent: treat completion as the main agent; aux is empty
+        def external_transition_wrapper(
+            prompt, agent_completions, num_agents, **et_kwargs
+        ):
+            # Single-agent: pass prior main completion; aux is empty internally
             main_best = agent_completions[0] if agent_completions else ""
-            aux_best = ""
 
             original_prompt_flag = grpo_config.get("external_original_prompt", False)
             previous_response_flag = grpo_config.get("external_previous_response", True)
             handoff_strategy = grpo_config.get("external_handoff", "best")
 
-            # Call 2-agent external transition and take main prompt only
-            aux_prompt, main_prompt = get_external_transition(
+            prompts = get_external_transition(
                 prompt=prompt,
-                agent_completions=(aux_best, main_best),
-                num_agents=2,  # required by external module
+                agent_completions=[main_best],
+                num_agents=1,
                 expert_model=expert_model,
                 mode=external_mode,
                 original_prompt=original_prompt_flag,
@@ -537,8 +537,10 @@ def main():
                 **et_kwargs,
             )
 
-            # Return a list of prompts matching single-agent trainer expectation
-            return [main_prompt]
+            # Ensure list of one string is returned
+            if isinstance(prompts, (list, tuple)):
+                return list(prompts)
+            return [str(prompts)]
 
         trainer_kwargs["external_transition"] = external_transition_wrapper
 

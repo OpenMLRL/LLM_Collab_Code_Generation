@@ -53,21 +53,23 @@ def get_external_transition(
     Args:
         prompt: Original problem prompt.
         agent_completions: Best completions from previous turn (one per agent).
-        num_agents: Number of agents supported (currently 2).
+        num_agents: Number of agents (1 or 2).
         mode: External transition mode name (default: "expert_edits").
         **kwargs: Mode-specific parameters (e.g., expert_model, retries).
 
     Returns:
         A list/tuple of full prompts for each agent to use in the next turn.
     """
-    if num_agents != 2:
+    if int(num_agents) not in (1, 2):
         raise ValueError(
-            f"External transition currently supports 2 agents, got {num_agents}."
+            f"External transition supports 1 or 2 agents, got {num_agents}."
         )
 
-    if not isinstance(agent_completions, (list, tuple)) or len(agent_completions) != 2:
+    if not isinstance(agent_completions, (list, tuple)) or len(
+        agent_completions
+    ) != int(num_agents):
         raise ValueError(
-            f"Expected 2 agent completions but got {len(agent_completions) if isinstance(agent_completions, (list, tuple)) else 'invalid type'}"
+            f"Expected {num_agents} agent completions but got {len(agent_completions) if isinstance(agent_completions, (list, tuple)) else 'invalid type'}"
         )
 
     # Route to the requested mode implementation
@@ -78,13 +80,27 @@ def get_external_transition(
     handoff_strategy = (kwargs.get("handoff_strategy") or "best").lower()
 
     # Optional pool of candidate completions from the previous turn (per agent)
-    # Expected shape: (List[str] for aux, List[str] for main)
+    # Expected shape when num_agents==2: (List[str] for aux, List[str] for main)
+    # When num_agents==1: List[str] for main or a tuple where main candidates are in the last position
     candidate_pool = kwargs.get("agent_candidate_completions")
 
     def select_handoff(prev_best_aux: str, prev_best_main: str) -> Tuple[str, str]:
         if handoff_strategy != "random" or not candidate_pool:
             return prev_best_aux, prev_best_main
         try:
+            if int(num_agents) == 1:
+                # Single-agent: only choose for main
+                if isinstance(candidate_pool, (list, tuple)):
+                    # If tuple/list of lists, pick the last as main pool; if flat list, use it directly
+                    if len(candidate_pool) >= 1 and isinstance(candidate_pool[0], str):
+                        main_pool = candidate_pool  # flat list
+                    else:
+                        main_pool = candidate_pool[-1]
+                else:
+                    main_pool = None
+                chosen_main = random.choice(main_pool) if main_pool else prev_best_main
+                return "", chosen_main
+            # Two agents
             aux_pool, main_pool = candidate_pool
             chosen_aux = random.choice(aux_pool) if aux_pool else prev_best_aux
             chosen_main = random.choice(main_pool) if main_pool else prev_best_main
@@ -94,8 +110,14 @@ def get_external_transition(
             return prev_best_aux, prev_best_main
 
     if mode == "expert_edits":
-        aux_best, main_best = agent_completions[0], agent_completions[1]
-        aux_comp, main_comp = select_handoff(aux_best, main_best)
+        if int(num_agents) == 1:
+            main_best = agent_completions[0]
+            _aux_best = ""
+            _aux_comp, main_comp = select_handoff("", main_best)
+            aux_comp = ""  # isolate aux in single-agent mode
+        else:
+            aux_best, main_best = agent_completions[0], agent_completions[1]
+            aux_comp, main_comp = select_handoff(aux_best, main_best)
         original_prompt, aux_edits, main_edits = expert_edits.add_expert_edits(
             prompt=prompt,
             aux_completion=aux_comp,
@@ -116,21 +138,29 @@ def get_external_transition(
             main_completion=main_comp,
             original_prompt_flag=original_prompt_flag,
             previous_response_flag=previous_response_flag,
+            num_agent=int(num_agents),
         )
 
-        # Print preview only when explicitly requested via preview=True
+        # Print preview
         print("\n" + "=" * 60)
         print("EXTERNAL MODE PREVIEW: expert_edits")
         print("-" * 60)
-        print("AUX PROMPT:\n" + aux_prompt)
-        print("-" * 60)
+        if int(num_agents) == 2:
+            print("AUX PROMPT:\n" + aux_prompt)
+            print("-" * 60)
         print("MAIN PROMPT:\n" + main_prompt)
         print("=" * 60 + "\n")
-        return (aux_prompt, main_prompt)
+
+        return (aux_prompt, main_prompt) if int(num_agents) == 2 else [main_prompt]
 
     if mode == "level_feedback":
-        aux_best, main_best = agent_completions[0], agent_completions[1]
-        aux_comp, main_comp = select_handoff(aux_best, main_best)
+        if int(num_agents) == 1:
+            main_best = agent_completions[0]
+            aux_comp, main_comp = select_handoff("", main_best)
+            aux_comp = ""
+        else:
+            aux_best, main_best = agent_completions[0], agent_completions[1]
+            aux_comp, main_comp = select_handoff(aux_best, main_best)
         ctx = get_context(prompt) or {}
         entry_point = ctx.get("entry_point", "")
         test_code = ctx.get("tests_sandbox") or ctx.get("tests_eval", "")
@@ -142,19 +172,26 @@ def get_external_transition(
             entry_point=entry_point,
             original_prompt_flag=original_prompt_flag,
             previous_response_flag=previous_response_flag,
+            num_agent=int(num_agents),
         )
         print("\n" + "=" * 60)
         print("EXTERNAL MODE PREVIEW: level_feedback")
         print("-" * 60)
-        print("AUX PROMPT:\n" + aux_prompt)
-        print("-" * 60)
+        if int(num_agents) == 2:
+            print("AUX PROMPT:\n" + aux_prompt)
+            print("-" * 60)
         print("MAIN PROMPT:\n" + main_prompt)
         print("=" * 60 + "\n")
-        return (aux_prompt, main_prompt)
+        return (aux_prompt, main_prompt) if int(num_agents) == 2 else [main_prompt]
 
     if mode == "level_passed":
-        aux_best, main_best = agent_completions[0], agent_completions[1]
-        aux_comp, main_comp = select_handoff(aux_best, main_best)
+        if int(num_agents) == 1:
+            main_best = agent_completions[0]
+            aux_comp, main_comp = select_handoff("", main_best)
+            aux_comp = ""
+        else:
+            aux_best, main_best = agent_completions[0], agent_completions[1]
+            aux_comp, main_comp = select_handoff(aux_best, main_best)
         ctx = get_context(prompt) or {}
         entry_point = ctx.get("entry_point", "")
         test_code = ctx.get("tests_sandbox") or ctx.get("tests_eval", "")
@@ -166,19 +203,26 @@ def get_external_transition(
             entry_point=entry_point,
             original_prompt_flag=original_prompt_flag,
             previous_response_flag=previous_response_flag,
+            num_agent=int(num_agents),
         )
         print("\n" + "=" * 60)
         print("EXTERNAL MODE PREVIEW: level_passed")
         print("-" * 60)
-        print("AUX PROMPT:\n" + aux_prompt)
-        print("-" * 60)
+        if int(num_agents) == 2:
+            print("AUX PROMPT:\n" + aux_prompt)
+            print("-" * 60)
         print("MAIN PROMPT:\n" + main_prompt)
         print("=" * 60 + "\n")
-        return (aux_prompt, main_prompt)
+        return (aux_prompt, main_prompt) if int(num_agents) == 2 else [main_prompt]
 
     if mode == "passed":
-        aux_best, main_best = agent_completions[0], agent_completions[1]
-        aux_comp, main_comp = select_handoff(aux_best, main_best)
+        if int(num_agents) == 1:
+            main_best = agent_completions[0]
+            aux_comp, main_comp = select_handoff("", main_best)
+            aux_comp = ""
+        else:
+            aux_best, main_best = agent_completions[0], agent_completions[1]
+            aux_comp, main_comp = select_handoff(aux_best, main_best)
         ctx = get_context(prompt) or {}
         entry_point = ctx.get("entry_point", "")
         test_code = ctx.get("tests_sandbox") or ctx.get("tests_eval", "")
@@ -190,19 +234,26 @@ def get_external_transition(
             entry_point=entry_point,
             original_prompt_flag=original_prompt_flag,
             previous_response_flag=previous_response_flag,
+            num_agent=int(num_agents),
         )
         print("\n" + "=" * 60)
         print("EXTERNAL MODE PREVIEW: passed")
         print("-" * 60)
-        print("AUX PROMPT:\n" + aux_prompt)
-        print("-" * 60)
+        if int(num_agents) == 2:
+            print("AUX PROMPT:\n" + aux_prompt)
+            print("-" * 60)
         print("MAIN PROMPT:\n" + main_prompt)
         print("=" * 60 + "\n")
-        return (aux_prompt, main_prompt)
+        return (aux_prompt, main_prompt) if int(num_agents) == 2 else [main_prompt]
 
     if mode == "plain":
-        aux_best, main_best = agent_completions[0], agent_completions[1]
-        aux_comp, main_comp = select_handoff(aux_best, main_best)
+        if int(num_agents) == 1:
+            main_best = agent_completions[0]
+            aux_comp, main_comp = select_handoff("", main_best)
+            aux_comp = ""
+        else:
+            aux_best, main_best = agent_completions[0], agent_completions[1]
+            aux_comp, main_comp = select_handoff(aux_best, main_best)
         ctx = get_context(prompt) or {}
         entry_point = ctx.get("entry_point", "")
         test_code = ctx.get("tests_sandbox") or ctx.get("tests_eval", "")
@@ -214,15 +265,17 @@ def get_external_transition(
             entry_point=entry_point,
             original_prompt_flag=original_prompt_flag,
             previous_response_flag=previous_response_flag,
+            num_agent=int(num_agents),
         )
         print("\n" + "=" * 60)
         print("EXTERNAL MODE PREVIEW: plain")
         print("-" * 60)
-        print("AUX PROMPT:\n" + aux_prompt)
-        print("-" * 60)
+        if int(num_agents) == 2:
+            print("AUX PROMPT:\n" + aux_prompt)
+            print("-" * 60)
         print("MAIN PROMPT:\n" + main_prompt)
         print("=" * 60 + "\n")
-        return (aux_prompt, main_prompt)
+        return (aux_prompt, main_prompt) if int(num_agents) == 2 else [main_prompt]
 
     supported = ["expert_edits", "level_feedback", "level_passed", "passed", "plain"]
     raise NotImplementedError(

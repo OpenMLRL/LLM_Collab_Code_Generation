@@ -50,4 +50,3 @@ def build_first_turn_prompts(original_prompt: str, entry_point: str) -> Tuple[st
     )
 
     return aux_fmt, main_fmt
-

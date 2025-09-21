@@ -77,7 +77,11 @@ Here is the current combined code to consider:
                     api_key=os.getenv("DEEPSEEK_API_KEY"),
                     base_url="https://api.deepseek.com",
                 )
-                model_name = "deepseek-coder" if expert_model == "deepseek-coder" else expert_model
+                model_name = (
+                    "deepseek-coder"
+                    if expert_model == "deepseek-coder"
+                    else expert_model
+                )
                 resp = client.chat.completions.create(
                     model=model_name,
                     messages=[{"role": "user", "content": expert_prompt}],
@@ -90,7 +94,9 @@ Here is the current combined code to consider:
                     api_key=os.getenv("DASHSCOPE_API_KEY"),
                     base_url="https://dashscope-intl.aliyuncs.com/compatible-mode/v1",
                 )
-                model_name = "qwen3-coder" if expert_model == "qwen3-coder" else expert_model
+                model_name = (
+                    "qwen3-coder" if expert_model == "qwen3-coder" else expert_model
+                )
                 resp = client.chat.completions.create(
                     model=model_name,
                     messages=[{"role": "user", "content": expert_prompt}],
@@ -145,6 +151,7 @@ def format_followup_prompts(
     main_completion: str = "",
     original_prompt_flag: bool = False,
     previous_response_flag: bool = True,
+    num_agent: int = 2,
 ) -> Tuple[str, str]:
     """
     Format the 2+ turn prompts for expert_edits mode to match other modes:
@@ -153,40 +160,81 @@ def format_followup_prompts(
     - Ask to revise the function and output only code
     """
 
-    # Extract previous function implementations for context
-    prev_aux = extract_specific_function(aux_completion or "", "aux") or "<no implementation found>"
     target_entry = entry_point or "main"
+
+    # Single-agent: only build main prompt; no aux references
+    if int(num_agent) == 1:
+        main_lines: List[str] = []
+
+        prev_main = (
+            extract_specific_function(main_completion or "", target_entry)
+            or "<no implementation found>"
+        )
+
+        if original_prompt_flag:
+            _aux_base, main_base = build_first_turn_prompts(
+                original_prompt, target_entry
+            )
+            main_lines.extend([main_base, ""])  # context then blank line
+
+        if previous_response_flag:
+            main_lines.extend(
+                [
+                    "Your previous implementation:",
+                    prev_main,
+                    "",
+                ]
+            )
+
+        main_lines.extend(
+            [
+                "Here is an edited snippet from an expert model:",
+                (main_edits or "").strip(),
+                "",
+                f"Revise your {target_entry}(...) accordingly. Output ONLY the function code with no extra text.",
+            ]
+        )
+
+        return ("", "\n".join(main_lines))
+
+    # Multi-agent (default): keep original aux + main collaboration logic
+    prev_aux = (
+        extract_specific_function(aux_completion or "", "aux")
+        or "<no implementation found>"
+    )
     prev_main = (
-        extract_specific_function(main_completion or "", target_entry) or "<no implementation found>"
+        extract_specific_function(main_completion or "", target_entry)
+        or "<no implementation found>"
     )
 
-    aux_lines = []
-    main_lines = []
+    aux_lines: List[str] = []
+    main_lines: List[str] = []
 
-    # Optional: include original first-turn prompts at the top
     if original_prompt_flag:
         aux_base, main_base = build_first_turn_prompts(original_prompt, target_entry)
         aux_lines.extend([aux_base, ""])  # add a blank line after context
         main_lines.extend([main_base, ""])
 
-    # Optional: include previous responses
     if previous_response_flag:
         aux_lines.extend(["Your previous aux(...) implementation:", prev_aux, ""])
         main_lines.extend(["Your previous main implementation:", prev_main, ""])
 
-    # Always include external message for this mode
-    aux_lines.extend([
-        "Here is edited snippet from an expert model:",
-        (aux_edits or "").strip(),
-        "",
-        "Revise your aux(...) accordingly. Output ONLY the function code with no extra text.",
-    ])
+    aux_lines.extend(
+        [
+            "Here is edited snippet from an expert model:",
+            (aux_edits or "").strip(),
+            "",
+            "Revise your aux(...) accordingly. Output ONLY the function code with no extra text.",
+        ]
+    )
 
-    main_lines.extend([
-        "Here is edited snippet from an expert model:",
-        (main_edits or "").strip(),
-        "",
-        f"Revise your {target_entry}(...) accordingly. Output ONLY the function code with no extra text.",
-    ])
+    main_lines.extend(
+        [
+            "Here is edited snippet from an expert model:",
+            (main_edits or "").strip(),
+            "",
+            f"Revise your {target_entry}(...) accordingly. Output ONLY the function code with no extra text.",
+        ]
+    )
 
     return ("\n".join(aux_lines), "\n".join(main_lines))

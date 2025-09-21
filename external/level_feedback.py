@@ -17,7 +17,9 @@ from rewards.code_utils import (
 )
 
 
-def _run_tests(combined_code: str, test_code: str, entry_point: str) -> Tuple[int, int, List[Dict[str, str]]]:
+def _run_tests(
+    combined_code: str, test_code: str, entry_point: str
+) -> Tuple[int, int, List[Dict[str, str]]]:
     """
     Execute extracted test cases and return (passed, total, details list).
     Each details item: {status: 'pass'|'fail', case: <assert code>, error_type, error_message}
@@ -99,7 +101,9 @@ def analyze_code(
     aux_func = extract_specific_function(aux_completion, "aux")
     main_func = extract_specific_function(main_completion, entry_point)
 
-    aux_defined, aux_msg = check_function_definition(aux_completion, "aux", "Aux function")
+    aux_defined, aux_msg = check_function_definition(
+        aux_completion, "aux", "Aux function"
+    )
     main_defined, main_msg = check_function_definition(
         main_completion, entry_point, f"Main function ({entry_point})"
     )
@@ -163,6 +167,7 @@ def format_followup_prompts(
     entry_point: str,
     original_prompt_flag: bool = False,
     previous_response_flag: bool = True,
+    num_agent: int = 2,
 ) -> Tuple[str, str]:
     """
     Produce detailed level_feedback prompts for each agent using previous code + diagnostics.
@@ -170,6 +175,53 @@ def format_followup_prompts(
     report = analyze_code(
         original_prompt, aux_completion, main_completion, test_code, entry_point
     )
+
+    # Single-agent: Only produce main prompt without aux references
+    if int(num_agent) == 1:
+        main_lines: List[str] = []
+        if original_prompt_flag:
+            _aux_base, main_base = build_first_turn_prompts(
+                original_prompt, entry_point
+            )
+            main_lines.extend([main_base, ""])  # context then blank line
+        if previous_response_flag:
+            main_lines.extend(
+                [
+                    "Your previous implementation:",
+                    report.get("main_func") or "<no implementation found>",
+                    "",
+                ]
+            )
+
+        main_lines.extend(
+            [
+                "Static and execution diagnostics:",
+                f"- Main definition: {'FOUND' if report['main_defined'] else 'MISSING'} ({report['main_message']})",
+                f"- Syntax: {'OK' if report['syntax_ok'] else 'ERROR'} ({report['syntax_message']})",
+            ]
+        )
+        if report["syntax_error"]:
+            se = report["syntax_error"]
+            main_lines.append(
+                f"  SyntaxError at line {se.get('line')}, col {se.get('offset')}: {se.get('msg')}"
+            )
+        if report["tests_total"] > 0:
+            main_lines.append(
+                f"- Tests: {report['tests_passed']}/{report['tests_total']} passed"
+            )
+            for td in report["test_details"]:
+                if td.get("status") == "fail":
+                    main_lines.append(
+                        f"  Failed case: {td.get('case')} -> {td.get('error_type')}: {td.get('error_message')}"
+                    )
+        else:
+            main_lines.append("- Tests: no test cases found")
+
+        main_lines.append(
+            f"\nRevise your {entry_point}(...) accordingly. Output ONLY the function code with no extra text."
+        )
+
+        return ("", "\n".join(main_lines))
 
     aux_lines: List[str] = []
     main_lines: List[str] = []
@@ -180,23 +232,29 @@ def format_followup_prompts(
         main_lines.extend([main_base, ""])  # context then blank line
 
     if previous_response_flag:
-        aux_lines.extend([
-            "Your previous aux(...) implementation:",
-            report.get("aux_func") or "<no implementation found>",
-            "",
-        ])
-        main_lines.extend([
-            "Your previous main implementation:",
-            report.get("main_func") or "<no implementation found>",
-            "",
-        ])
+        aux_lines.extend(
+            [
+                "Your previous aux(...) implementation:",
+                report.get("aux_func") or "<no implementation found>",
+                "",
+            ]
+        )
+        main_lines.extend(
+            [
+                "Your previous main implementation:",
+                report.get("main_func") or "<no implementation found>",
+                "",
+            ]
+        )
 
-    aux_lines.extend([
-        "Static and execution diagnostics:",
-        f"- Aux definition: {'FOUND' if report['aux_defined'] else 'MISSING'} ({report['aux_message']})",
-        f"- Main definition: {'FOUND' if report['main_defined'] else 'MISSING'} ({report['main_message']})",
-        f"- Syntax: {'OK' if report['syntax_ok'] else 'ERROR'} ({report['syntax_message']})",
-    ])
+    aux_lines.extend(
+        [
+            "Static and execution diagnostics:",
+            f"- Aux definition: {'FOUND' if report['aux_defined'] else 'MISSING'} ({report['aux_message']})",
+            f"- Main definition: {'FOUND' if report['main_defined'] else 'MISSING'} ({report['main_message']})",
+            f"- Syntax: {'OK' if report['syntax_ok'] else 'ERROR'} ({report['syntax_message']})",
+        ]
+    )
     if report["syntax_error"]:
         se = report["syntax_error"]
         aux_lines.append(
@@ -215,12 +273,14 @@ def format_followup_prompts(
     else:
         aux_lines.append("- Tests: no test cases found")
 
-    main_lines.extend([
-        "Static and execution diagnostics:",
-        f"- Main definition: {'FOUND' if report['main_defined'] else 'MISSING'} ({report['main_message']})",
-        f"- Aux definition: {'FOUND' if report['aux_defined'] else 'MISSING'} ({report['aux_message']})",
-        f"- Syntax: {'OK' if report['syntax_ok'] else 'ERROR'} ({report['syntax_message']})",
-    ])
+    main_lines.extend(
+        [
+            "Static and execution diagnostics:",
+            f"- Main definition: {'FOUND' if report['main_defined'] else 'MISSING'} ({report['main_message']})",
+            f"- Aux definition: {'FOUND' if report['aux_defined'] else 'MISSING'} ({report['aux_message']})",
+            f"- Syntax: {'OK' if report['syntax_ok'] else 'ERROR'} ({report['syntax_message']})",
+        ]
+    )
     if report["syntax_error"]:
         se = report["syntax_error"]
         main_lines.append(
