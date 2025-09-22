@@ -115,11 +115,11 @@ python LLM_Collaboration_with_MARL/train_magrpo.py \
 
 ### Handoff Strategy
 
-In MAGRPO, since agents generate a few responses per turn, we need to hand off one for efficiency, else the number of generations per turn will increase exponentially. External handoff controls which previous response is used as context for the later turns. **By default, the "best" completion per agent from the prior turn is used.** Random handoff requires the training loop to supply a candidate pool of previous-turn completions per agent to the external transition. If only a single completion per agent is available, random falls back to the best completion.
+In MAGRPO/GRPO multi-turn training, we hand off one prior completion per agent to keep compute bounded. The trainer selects this per the `handoff` mode: **default `random`**, or `best`. Selection happens in the CoMLRL trainer; external modes simply format the next-turn prompts using the provided completions. Configure via `magrpo.handoff` or `grpo.handoff` in your config or `--override`.
 
 
 ```bash
 python LLM_Collaboration_with_MARL/train_magrpo.py \
   --config LLM_Collaboration_with_MARL/configs/mt_magrpo_he_config.yaml \
-  --override magrpo.external_mode='plain' magrpo.external_handoff='random'
+  --override magrpo.external_mode='plain' magrpo.handoff='best'
 ```

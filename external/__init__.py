@@ -1,5 +1,4 @@
 from typing import Any, Callable, Dict, List, Tuple, Union, Optional
-import random
 
 # Mode implementations live alongside this file
 from . import expert_edits
@@ -52,7 +51,7 @@ def get_external_transition(
 
     Args:
         prompt: Original problem prompt.
-        agent_completions: Best completions from previous turn (one per agent).
+        agent_completions: Selected completions from previous turn (one per agent).
         num_agents: Number of agents (1 or 2).
         mode: External transition mode name (default: "expert_edits").
         **kwargs: Mode-specific parameters (e.g., expert_model, retries).
@@ -77,47 +76,13 @@ def get_external_transition(
     # Pull common flags controlling prompt composition
     original_prompt_flag = kwargs.get("original_prompt", False)
     previous_response_flag = kwargs.get("previous_response", True)
-    handoff_strategy = (kwargs.get("handoff_strategy") or "best").lower()
-
-    # Optional pool of candidate completions from the previous turn (per agent)
-    # Expected shape when num_agents==2: (List[str] for aux, List[str] for main)
-    # When num_agents==1: List[str] for main or a tuple where main candidates are in the last position
-    candidate_pool = kwargs.get("agent_candidate_completions")
-
-    def select_handoff(prev_best_aux: str, prev_best_main: str) -> Tuple[str, str]:
-        if handoff_strategy != "random" or not candidate_pool:
-            return prev_best_aux, prev_best_main
-        try:
-            if int(num_agents) == 1:
-                # Single-agent: only choose for main
-                if isinstance(candidate_pool, (list, tuple)):
-                    # If tuple/list of lists, pick the last as main pool; if flat list, use it directly
-                    if len(candidate_pool) >= 1 and isinstance(candidate_pool[0], str):
-                        main_pool = candidate_pool  # flat list
-                    else:
-                        main_pool = candidate_pool[-1]
-                else:
-                    main_pool = None
-                chosen_main = random.choice(main_pool) if main_pool else prev_best_main
-                return "", chosen_main
-            # Two agents
-            aux_pool, main_pool = candidate_pool
-            chosen_aux = random.choice(aux_pool) if aux_pool else prev_best_aux
-            chosen_main = random.choice(main_pool) if main_pool else prev_best_main
-            return chosen_aux, chosen_main
-        except Exception:
-            # Fallback safely to best if pool malformed
-            return prev_best_aux, prev_best_main
 
     if mode == "expert_edits":
         if int(num_agents) == 1:
-            main_best = agent_completions[0]
-            _aux_best = ""
-            _aux_comp, main_comp = select_handoff("", main_best)
+            main_comp = agent_completions[0]
             aux_comp = ""  # isolate aux in single-agent mode
         else:
-            aux_best, main_best = agent_completions[0], agent_completions[1]
-            aux_comp, main_comp = select_handoff(aux_best, main_best)
+            aux_comp, main_comp = agent_completions[0], agent_completions[1]
         original_prompt, aux_edits, main_edits = expert_edits.add_expert_edits(
             prompt=prompt,
             aux_completion=aux_comp,
@@ -156,12 +121,10 @@ def get_external_transition(
 
     if mode == "level_feedback":
         if int(num_agents) == 1:
-            main_best = agent_completions[0]
-            aux_comp, main_comp = select_handoff("", main_best)
+            main_comp = agent_completions[0]
             aux_comp = ""
         else:
-            aux_best, main_best = agent_completions[0], agent_completions[1]
-            aux_comp, main_comp = select_handoff(aux_best, main_best)
+            aux_comp, main_comp = agent_completions[0], agent_completions[1]
         ctx = get_context(prompt) or {}
         entry_point = ctx.get("entry_point", "")
         test_code = ctx.get("tests_sandbox") or ctx.get("tests_eval", "")
@@ -187,12 +150,10 @@ def get_external_transition(
 
     if mode == "level_passed":
         if int(num_agents) == 1:
-            main_best = agent_completions[0]
-            aux_comp, main_comp = select_handoff("", main_best)
+            main_comp = agent_completions[0]
             aux_comp = ""
         else:
-            aux_best, main_best = agent_completions[0], agent_completions[1]
-            aux_comp, main_comp = select_handoff(aux_best, main_best)
+            aux_comp, main_comp = agent_completions[0], agent_completions[1]
         ctx = get_context(prompt) or {}
         entry_point = ctx.get("entry_point", "")
         test_code = ctx.get("tests_sandbox") or ctx.get("tests_eval", "")
@@ -218,12 +179,10 @@ def get_external_transition(
 
     if mode == "passed":
         if int(num_agents) == 1:
-            main_best = agent_completions[0]
-            aux_comp, main_comp = select_handoff("", main_best)
+            main_comp = agent_completions[0]
             aux_comp = ""
         else:
-            aux_best, main_best = agent_completions[0], agent_completions[1]
-            aux_comp, main_comp = select_handoff(aux_best, main_best)
+            aux_comp, main_comp = agent_completions[0], agent_completions[1]
         ctx = get_context(prompt) or {}
         entry_point = ctx.get("entry_point", "")
         test_code = ctx.get("tests_sandbox") or ctx.get("tests_eval", "")
@@ -249,12 +208,10 @@ def get_external_transition(
 
     if mode == "plain":
         if int(num_agents) == 1:
-            main_best = agent_completions[0]
-            aux_comp, main_comp = select_handoff("", main_best)
+            main_comp = agent_completions[0]
             aux_comp = ""
         else:
-            aux_best, main_best = agent_completions[0], agent_completions[1]
-            aux_comp, main_comp = select_handoff(aux_best, main_best)
+            aux_comp, main_comp = agent_completions[0], agent_completions[1]
         ctx = get_context(prompt) or {}
         entry_point = ctx.get("entry_point", "")
         test_code = ctx.get("tests_sandbox") or ctx.get("tests_eval", "")

@@ -448,6 +448,7 @@ def main():
         early_termination_threshold=magrpo_config.get(
             "early_termination_threshold", 4.0
         ),
+        handoff=magrpo_config.get("handoff", "random"),
     )
 
     # Get appropriate formatters and functions based on dataset type, agent count, and training mode
@@ -527,7 +528,7 @@ def main():
         # external_mode already loaded above
 
         def external_transition_wrapper(
-            prompt, agent_completions, num_agents, **et_kwargs
+            prompt, agent_completions, num_agents
         ):
             # Returns full next-turn prompts per agent (strings)
             # Allow overrides via config and forwarded kwargs
@@ -535,8 +536,6 @@ def main():
             previous_response_flag = magrpo_config.get(
                 "external_previous_response", True
             )
-            handoff_strategy = magrpo_config.get("external_handoff", "best")
-
             return get_external_transition(
                 prompt=prompt,
                 agent_completions=agent_completions,
@@ -545,8 +544,6 @@ def main():
                 mode=external_mode,
                 original_prompt=original_prompt_flag,
                 previous_response=previous_response_flag,
-                handoff_strategy=handoff_strategy,
-                **et_kwargs,
             )
 
         trainer_kwargs["external_transition"] = external_transition_wrapper

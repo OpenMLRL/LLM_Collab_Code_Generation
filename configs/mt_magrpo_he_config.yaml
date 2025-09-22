@@ -37,6 +37,8 @@ magrpo:
   num_generations: 4
   max_new_tokens: 256
   num_agents: 2
+  # Handoff selection for previous-turn completions: 'random' or 'best'
+  handoff: random
   # Multi-turn specific parameters
   turn_gradient_weights: [1.2, 0.8]  # Weights for different turns
   early_termination_weight: 2.0  # Weight for early termination reward

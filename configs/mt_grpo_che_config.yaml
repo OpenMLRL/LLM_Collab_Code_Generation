@@ -38,6 +38,8 @@ grpo:
   max_new_tokens: 256
   temperature: 0.8
   top_p: 0.95
+  # Handoff selection for previous-turn completions: 'random' or 'best'
+  handoff: random
   # Multi-turn specific parameters
   turn_gradient_weights: [1.2, 0.8]
   early_termination_weight: 2.0

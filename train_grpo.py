@@ -444,6 +444,7 @@ def main():
         ),
         early_termination_weight=grpo_config.get("early_termination_weight", 2.0),
         early_termination_threshold=grpo_config.get("early_termination_threshold", 2.1),
+        handoff=grpo_config.get("handoff", "random"),
     )
 
     formatter = get_formatter(dataset_type)
@@ -516,15 +517,13 @@ def main():
         expert_model = grpo_config.get("expert_model", "deepseek-coder")
 
         def external_transition_wrapper(
-            prompt, agent_completions, num_agents, **et_kwargs
+            prompt, agent_completions, num_agents
         ):
             # Single-agent: pass prior main completion; aux is empty internally
             main_best = agent_completions[0] if agent_completions else ""
 
             original_prompt_flag = grpo_config.get("external_original_prompt", False)
             previous_response_flag = grpo_config.get("external_previous_response", True)
-            handoff_strategy = grpo_config.get("external_handoff", "best")
-
             prompts = get_external_transition(
                 prompt=prompt,
                 agent_completions=[main_best],
@@ -533,8 +532,6 @@ def main():
                 mode=external_mode,
                 original_prompt=original_prompt_flag,
                 previous_response=previous_response_flag,
-                handoff_strategy=handoff_strategy,
-                **et_kwargs,
             )
 
             # Ensure list of one string is returned
