@@ -17,7 +17,7 @@ model:
 dataset:
   name: "openai/openai_humaneval"
   type: "humaneval"  # Used to select formatters and reward function
-  train_split: "test[33:133]"
+  train_split: "test[33:163]"
   eval_split: "test[:32]"
 
 # Output configuration
@@ -43,7 +43,8 @@ grpo:
   turn_gradient_weights: [1.2, 0.8]  # Weights for different turns
   early_termination_weight: 2.0  # Weight for early termination reward
   early_termination_threshold: 2.1
-  external_mode: "expert_edits"    # Options: expert_edits (default), level_passed, level_feedback, passed, plain
+  external_mode: "level_feedback"    # Options: level_feedback (default), expert_edits, level_passed, passed, plain
+  sandbox_slice: 1
   expert_model: "deepseek-coder"   # Used by expert_edits mode only
 
 # Wandb configuration

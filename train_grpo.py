@@ -357,12 +357,17 @@ def main():
     context_map: Dict[str, Any] = {}
 
     # Optionally restrict sandbox tests to the first N eval asserts
-    # Set grpo.sandbox_slice to an integer N (>0) to keep only the first N asserts
-    sandbox_slice = grpo_config.get("sandbox_slice", None)
-    try:
-        sandbox_slice = int(sandbox_slice) if sandbox_slice is not None else None
-    except (TypeError, ValueError):
-        sandbox_slice = None
+    # Default: keep only the first assert (sandbox_slice=1)
+    # Set grpo.sandbox_slice to an integer N (>0) to keep the first N asserts,
+    # or to 0 / None / 'all' to keep all eval asserts.
+    _sandbox_val = grpo_config.get("sandbox_slice", 1)
+    if isinstance(_sandbox_val, str) and _sandbox_val.strip().lower() == "all":
+        sandbox_slice = 0
+    else:
+        try:
+            sandbox_slice = int(_sandbox_val) if _sandbox_val is not None else None
+        except (TypeError, ValueError):
+            sandbox_slice = None
 
     import re as _re
 

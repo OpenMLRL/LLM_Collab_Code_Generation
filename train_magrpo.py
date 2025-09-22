@@ -347,12 +347,17 @@ def main():
     context_map = {}
 
     # Optionally restrict sandbox tests to the first N eval asserts
-    # Set magrpo.sandbox_slice to an integer N (>0) to keep only the first N asserts
-    sandbox_slice = magrpo_config.get("sandbox_slice", None)
-    try:
-        sandbox_slice = int(sandbox_slice) if sandbox_slice is not None else None
-    except (TypeError, ValueError):
-        sandbox_slice = None
+    # Default: keep only the first assert (sandbox_slice=1)
+    # Set magrpo.sandbox_slice to an integer N (>0) to keep the first N asserts,
+    # or to 0 / None / 'all' to keep all eval asserts.
+    _sandbox_val = magrpo_config.get("sandbox_slice", 1)
+    if isinstance(_sandbox_val, str) and _sandbox_val.strip().lower() == "all":
+        sandbox_slice = 0
+    else:
+        try:
+            sandbox_slice = int(_sandbox_val) if _sandbox_val is not None else None
+        except (TypeError, ValueError):
+            sandbox_slice = None
 
     import re
 
@@ -470,7 +475,7 @@ def main():
         wandb_name = wandb_section.get("name", f"magrpo_{dataset_type}")
 
     # Compute tags and add self-evolved when using analysis-based external modes
-    external_mode = magrpo_config.get("external_mode", "expert_edits")
+    external_mode = magrpo_config.get("external_mode", "level_feedback")
     default_tags = ["magrpo", dataset_type or "code", f"turns_{num_turns}"]
     tags_from_cfg = wandb_section.get("tags", default_tags)
     # Ensure list

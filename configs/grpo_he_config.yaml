@@ -18,7 +18,7 @@ model:
 dataset:
   name: "openai/openai_humaneval"
   type: "humaneval"  # Used to select formatters and reward function
-  train_split: "test[33:133]"
+  train_split: "test[33:163]"
   eval_split: "test[:32]"
 
 # Output configuration
@@ -39,6 +39,9 @@ grpo:
   top_p: 0.95
   # Handoff selection for previous-turn completions: 'random' or 'best' (used in multi-turn)
   handoff: random
+  # External transition defaults (used when multi-turn is enabled)
+  external_mode: "level_feedback"
+  sandbox_slice: 1
   # Early termination threshold for single-agent (GRPO)
   early_termination_threshold: 2.1
 

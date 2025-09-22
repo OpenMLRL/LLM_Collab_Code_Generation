@@ -18,8 +18,8 @@ model:
 dataset:
   name: "LovelyBuggies/CoopHumaneval"
   type: "coophumaneval"  # Used to select formatters and reward function
-  train_split: "test[:50]"
-  eval_split: "test[50:66]"
+  train_split: "test[:16]"
+  eval_split: "test[16:]"
 
 # Output configuration
 output:
@@ -45,7 +45,8 @@ magrpo:
   turn_gradient_weights: [1.2, 0.8]  # Weights for different turns
   early_termination_weight: 2.0
   early_termination_threshold: 4.0
-  external_mode: "expert_edits"    # Options: expert_edits (default), level_passed, level_feedback
+  external_mode: "level_feedback"    # Options: level_feedback (default), expert_edits, level_passed, passed, plain
+  sandbox_slice: 1
   expert_model: "deepseek-coder"   # Used by expert_edits mode only
 
 # Wandb configuration

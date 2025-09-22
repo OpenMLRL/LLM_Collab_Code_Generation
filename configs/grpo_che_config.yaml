@@ -17,8 +17,8 @@ model:
 dataset:
   name: "CoMLRL/CoopHumaneval"
   type: "coophumaneval"  # Used to select formatters and reward function
-  train_split: "test[:50]"
-  eval_split: "test[50:66]"
+  train_split: "test[:16]"
+  eval_split: "test[16:]"
 
 # Output configuration
 output:
@@ -38,6 +38,9 @@ grpo:
   top_p: 0.95
   # Handoff selection for previous-turn completions: 'random' or 'best' (used in multi-turn)
   handoff: random
+  # External transition defaults (used when multi-turn is enabled)
+  external_mode: "level_feedback"
+  sandbox_slice: 1
   # Early termination threshold for single-agent (GRPO)
   early_termination_threshold: 2.1
 
