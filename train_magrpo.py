@@ -16,8 +16,6 @@ from typing import Any, Dict, Optional
 from config import Config, add_config_args, parse_overrides
 from datasets import load_dataset
 from transformers import AutoModelForCausalLM, AutoTokenizer
-from huggingface_hub import login
-import os
 
 # Single-turn code logger no longer used directly; multi-turn logger handles all cases
 from loggers.mt_code_logger import (
@@ -30,39 +28,6 @@ from comlrl.utils.reward_processor import RewardProcessors
 from comlrl.trainers.magrpo import MAGRPOConfig, MAGRPOTrainer
 import external as external_ctx
 from external import get_external_transition
-
-
-def setup_huggingface_auth(is_private=False):
-    """Set up Hugging Face authentication for private datasets.
-    
-    Args:
-        is_private (bool): Whether the dataset is private and requires authentication
-    """
-    if not is_private:
-        print("Dataset is public, no authentication needed")
-        return
-    
-    print("Dataset is private, setting up authentication...")
-    
-    # Check if already logged in
-    try:
-        from huggingface_hub import whoami
-        whoami()
-        print("Already authenticated with Hugging Face")
-        return
-    except Exception:
-        pass
-    
-    # Try to get token from environment variable
-    hf_token = os.getenv("HUGGINGFACE_HUB_TOKEN") or os.getenv("HF_TOKEN")
-    
-    if hf_token:
-        print("Using Hugging Face token from environment variable")
-        login(token=hf_token)
-    else:
-        print("No Hugging Face token found in environment variables.")
-        print("Please login to Hugging Face to access private datasets:")
-        login()
 
 
 def extract_function_params_from_prompt(prompt_text):
