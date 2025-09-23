@@ -52,7 +52,7 @@ python LLM_Collaboration_with_MARL/train_grpo.py \
 # Multi-turn override example
 python LLM_Collaboration_with_MARL/train_magrpo.py \
   --config LLM_Collaboration_with_MARL/configs/mt_magrpo_che_config.yaml \
-  --override dataset.train_split='test[:16]' dataset.eval_split='test[16:]' \
+  --override dataset.train_split='test[16:]' dataset.eval_split='test[:16]' \
   magrpo.num_turns=2 magrpo.turn_gradient_weights=[1.5,0.5]
 ```
 ### Legacy Command-Line Args

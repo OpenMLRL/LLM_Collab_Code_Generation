@@ -17,8 +17,8 @@ model:
 dataset:
   name: "CoMLRL/CoopHumaneval"
   type: "coophumaneval"  # Used to select formatters and reward function
-  train_split: "test[:16]"
-  eval_split: "test[16:]"
+  train_split: "test[16:]"
+  eval_split: "test[:16]"
 
 # Output configuration
 output:
