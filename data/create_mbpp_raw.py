@@ -46,9 +46,16 @@ def convert_mbpp_to_coophumaneval_format():
             counter += 1
         used_function_names.add(function_name)
         
-        # Create the prompt in coophumaneval format
-        # The prompt should be the function signature with docstring
-        prompt = f"def {function_name}():\n    '''{example['prompt']}\n    '''\n"
+        # Extract function parameters from the original code
+        code = example["code"]
+        params_match = re.search(r'def\s+\w+\s*\(([^)]*)\)', code)
+        if params_match:
+            params_str = params_match.group(1).strip()
+            # Use the original parameters from the code
+            prompt = f"def {function_name}({params_str}):\n    '''{example['prompt']}\n    '''\n"
+        else:
+            # Fallback if no parameters found
+            prompt = f"def {function_name}():\n    '''{example['prompt']}\n    '''\n"
         
         # Create test cases in che format
         test_cases = []
