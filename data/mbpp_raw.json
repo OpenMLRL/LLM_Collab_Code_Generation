@@ -32,7 +32,7 @@
   {
     "task_id": "MBPP/5",
     "prompt": "def str_to_list():\n    '''Write a function to remove characters from the first string which are present in the second string.\n    '''\n",
-    "test": "def check(candidate):\n    assert remove_dirty_chars(\"probasscurve\", \"pros\") == 'bacuve'\n    assert remove_dirty_chars(\"digitalindia\", \"talent\") == 'digiidi'\n    assert remove_dirty_chars(\"exoticmiles\", \"toxic\") == 'emles'",
+    "test": "def check(candidate):\n    assert candidate(\"probasscurve\", \"pros\") == 'bacuve'\n    assert candidate(\"digitalindia\", \"talent\") == 'digiidi'\n    assert candidate(\"exoticmiles\", \"toxic\") == 'emles'",
     "entry_point": "str_to_list"
   },
   {
@@ -50,7 +50,7 @@
   {
     "task_id": "MBPP/8",
     "prompt": "def rev():\n    '''Write a python function to check if a given number is one less than twice its reverse.\n    '''\n",
-    "test": "def check(candidate):\n    assert check(70) == False\n    assert check(23) == False\n    assert check(73) == True",
+    "test": "def check(candidate):\n    assert candidate(70) == False\n    assert candidate(23) == False\n    assert candidate(73) == True",
     "entry_point": "rev"
   },
   {
@@ -128,7 +128,7 @@
   {
     "task_id": "MBPP/21",
     "prompt": "def find_equal_tuple():\n    '''Write a function to find whether all the given tuples have equal length or not.\n    '''\n",
-    "test": "def check(candidate):\n    assert get_equal([(11, 22, 33), (44, 55, 66)]) == True\n    assert get_equal([(1, 2, 3), (4, 5, 6, 7)]) == False\n    assert get_equal([(1, 2), (3, 4)]) == True",
+    "test": "def check(candidate):\n    assert candidate([(11, 22, 33), (44, 55, 66)]) == True\n    assert candidate([(1, 2, 3), (4, 5, 6, 7)]) == False\n    assert candidate([(1, 2), (3, 4)]) == True",
     "entry_point": "find_equal_tuple"
   },
   {
@@ -176,7 +176,7 @@
   {
     "task_id": "MBPP/29",
     "prompt": "def volume_sphere():\n    '''Write a function to find the volume of a sphere.\n    '''\n",
-    "test": "def check(candidate):\n    assert math.isclose(candidate(10), 4188.790204786391, rel_tol=0.001)\n    assert math.isclose(candidate(25), 65449.84694978735, rel_tol=0.001)\n    assert math.isclose(candidate(20), 33510.32163829113, rel_tol=0.001)",
+    "test": "def check(candidate):\n    assert math.candidate(candidate(10), 4188.790204786391, rel_tol=0.001)\n    assert math.candidate(candidate(25), 65449.84694978735, rel_tol=0.001)\n    assert math.candidate(candidate(20), 33510.32163829113, rel_tol=0.001)",
     "entry_point": "volume_sphere"
   },
   {
@@ -194,7 +194,7 @@
   {
     "task_id": "MBPP/32",
     "prompt": "def surfacearea_sphere():\n    '''Write a function to find the surface area of a sphere.\n    '''\n",
-    "test": "def check(candidate):\n    assert math.isclose(candidate(10), 1256.6370614359173, rel_tol=0.001)\n    assert math.isclose(candidate(15), 2827.4333882308138, rel_tol=0.001)\n    assert math.isclose(candidate(20), 5026.548245743669, rel_tol=0.001)",
+    "test": "def check(candidate):\n    assert math.candidate(candidate(10), 1256.6370614359173, rel_tol=0.001)\n    assert math.candidate(candidate(15), 2827.4333882308138, rel_tol=0.001)\n    assert math.candidate(candidate(20), 5026.548245743669, rel_tol=0.001)",
     "entry_point": "surfacearea_sphere"
   },
   {
@@ -272,7 +272,7 @@
   {
     "task_id": "MBPP/45",
     "prompt": "def multiply_num():\n    '''Write a function to multiply all the numbers in a list and divide with the length of the list.\n    '''\n",
-    "test": "def check(candidate):\n    assert math.isclose(candidate((8, 2, 3, -1, 7)), -67.2, rel_tol=0.001)\n    assert math.isclose(candidate((-10,-20,-30)), -2000.0, rel_tol=0.001)\n    assert math.isclose(candidate((19,15,18)), 1710.0, rel_tol=0.001)",
+    "test": "def check(candidate):\n    assert math.candidate(candidate((8, 2, 3, -1, 7)), -67.2, rel_tol=0.001)\n    assert math.candidate(candidate((-10,-20,-30)), -2000.0, rel_tol=0.001)\n    assert math.candidate(candidate((19,15,18)), 1710.0, rel_tol=0.001)",
     "entry_point": "multiply_num"
   },
   {
@@ -338,7 +338,7 @@
   {
     "task_id": "MBPP/56",
     "prompt": "def common_in_nested_lists():\n    '''Write a function to find the common elements in given nested lists.\n    '''\n",
-    "test": "def check(candidate):\n    assert set(candidate([[12, 18, 23, 25, 45], [7, 12, 18, 24, 28], [1, 5, 8, 12, 15, 16, 18]]))==set([18, 12])\n    assert set(candidate([[12, 5, 23, 25, 45], [7, 11, 5, 23, 28], [1, 5, 8, 18, 23, 16]]))==set([5,23])\n    assert set(candidate([[2, 3,4, 1], [4, 5], [6,4, 8],[4, 5], [6, 8,4]]))==set([4])",
+    "test": "def check(candidate):\n    assert candidate(candidate([[12, 18, 23, 25, 45], [7, 12, 18, 24, 28], [1, 5, 8, 12, 15, 16, 18]]))==candidate([18, 12])\n    assert candidate(candidate([[12, 5, 23, 25, 45], [7, 11, 5, 23, 28], [1, 5, 8, 18, 23, 16]]))==candidate([5,23])\n    assert candidate(candidate([[2, 3,4, 1], [4, 5], [6,4, 8],[4, 5], [6, 8,4]]))==candidate([4])",
     "entry_point": "common_in_nested_lists"
   },
   {
@@ -392,7 +392,7 @@
   {
     "task_id": "MBPP/65",
     "prompt": "def angle_complex():\n    '''Write a function to get the angle of a complex number.\n    '''\n",
-    "test": "def check(candidate):\n    assert math.isclose(candidate(0,1j), 1.5707963267948966, rel_tol=0.001)\n    assert math.isclose(candidate(2,1j), 0.4636476090008061, rel_tol=0.001)\n    assert math.isclose(candidate(0,2j), 1.5707963267948966, rel_tol=0.001)",
+    "test": "def check(candidate):\n    assert math.candidate(candidate(0,1j), 1.5707963267948966, rel_tol=0.001)\n    assert math.candidate(candidate(2,1j), 0.4636476090008061, rel_tol=0.001)\n    assert math.candidate(candidate(0,2j), 1.5707963267948966, rel_tol=0.001)",
     "entry_point": "angle_complex"
   },
   {
@@ -458,7 +458,7 @@
   {
     "task_id": "MBPP/76",
     "prompt": "def zero_count():\n    '''Write a function to find the ratio of zeroes to non-zeroes in an array of integers.\n    '''\n",
-    "test": "def check(candidate):\n    assert math.isclose(candidate([0, 1, 2, -1, -5, 6, 0, -3, -2, 3, 4, 6, 8]), 0.181818, rel_tol=0.001)\n    assert math.isclose(candidate([2, 1, 2, -1, -5, 6, 4, -3, -2, 3, 4, 6, 8]), 0.00, rel_tol=0.001)\n    assert math.isclose(candidate([2, 4, -6, -9, 11, -12, 14, -5, 17]), 0.00, rel_tol=0.001)",
+    "test": "def check(candidate):\n    assert math.candidate(candidate([0, 1, 2, -1, -5, 6, 0, -3, -2, 3, 4, 6, 8]), 0.181818, rel_tol=0.001)\n    assert math.candidate(candidate([2, 1, 2, -1, -5, 6, 4, -3, -2, 3, 4, 6, 8]), 0.00, rel_tol=0.001)\n    assert math.candidate(candidate([2, 4, -6, -9, 11, -12, 14, -5, 17]), 0.00, rel_tol=0.001)",
     "entry_point": "zero_count"
   },
   {
@@ -470,13 +470,13 @@
   {
     "task_id": "MBPP/78",
     "prompt": "def circle_circumference():\n    '''Write a function to find the circumference of a circle.\n    '''\n",
-    "test": "def check(candidate):\n    assert math.isclose(candidate(10), 62.830000000000005, rel_tol=0.001)\n    assert math.isclose(candidate(5), 31.415000000000003, rel_tol=0.001)\n    assert math.isclose(candidate(4), 25.132, rel_tol=0.001)",
+    "test": "def check(candidate):\n    assert math.candidate(candidate(10), 62.830000000000005, rel_tol=0.001)\n    assert math.candidate(candidate(5), 31.415000000000003, rel_tol=0.001)\n    assert math.candidate(candidate(4), 25.132, rel_tol=0.001)",
     "entry_point": "circle_circumference"
   },
   {
     "task_id": "MBPP/79",
     "prompt": "def extract_singly():\n    '''Write a function to flatten the list of lists into a single set of numbers.\n    '''\n",
-    "test": "def check(candidate):\n    assert set(candidate([(3, 4, 5), (4, 5, 7), (1, 4)])) == set([3, 4, 5, 7, 1])\n    assert set(candidate([(1, 2, 3), (4, 2, 3), (7, 8)])) == set([1, 2, 3, 4, 7, 8])\n    assert set(candidate([(7, 8, 9), (10, 11, 12), (10, 11)])) == set([7, 8, 9, 10, 11, 12])",
+    "test": "def check(candidate):\n    assert candidate(candidate([(3, 4, 5), (4, 5, 7), (1, 4)])) == candidate([3, 4, 5, 7, 1])\n    assert candidate(candidate([(1, 2, 3), (4, 2, 3), (7, 8)])) == candidate([1, 2, 3, 4, 7, 8])\n    assert candidate(candidate([(7, 8, 9), (10, 11, 12), (10, 11)])) == candidate([7, 8, 9, 10, 11, 12])",
     "entry_point": "extract_singly"
   },
   {
@@ -524,13 +524,13 @@
   {
     "task_id": "MBPP/87",
     "prompt": "def area_polygon():\n    '''Write a function to calculate the area of a regular polygon given the length and number of its sides.\n    '''\n",
-    "test": "def check(candidate):\n    assert math.isclose(candidate(4, 20), 400., rel_tol=0.001)\n    assert math.isclose(candidate(10, 15), 1731.197, rel_tol=0.001)\n    assert math.isclose(candidate(9, 7), 302.909, rel_tol=0.001)",
+    "test": "def check(candidate):\n    assert math.candidate(candidate(4, 20), 400., rel_tol=0.001)\n    assert math.candidate(candidate(10, 15), 1731.197, rel_tol=0.001)\n    assert math.candidate(candidate(9, 7), 302.909, rel_tol=0.001)",
     "entry_point": "area_polygon"
   },
   {
     "task_id": "MBPP/88",
     "prompt": "def div_sum():\n    '''Write a function to determine if the sum of the divisors of two integers are the same.\n    '''\n",
-    "test": "def check(candidate):\n    assert are_equivalent(36, 57) == False\n    assert are_equivalent(2, 4) == False\n    assert are_equivalent(23, 47) == True",
+    "test": "def check(candidate):\n    assert candidate(36, 57) == False\n    assert candidate(2, 4) == False\n    assert candidate(23, 47) == True",
     "entry_point": "div_sum"
   },
   {
@@ -626,13 +626,13 @@
   {
     "task_id": "MBPP/104",
     "prompt": "def larg_nnum():\n    '''Write a function that takes in a list and an integer n and returns a list containing the n largest items from the list.\n    '''\n",
-    "test": "def check(candidate):\n    assert set(candidate([10, 20, 50, 70, 90, 20, 50, 40, 60, 80, 100],2))==set([100,90])\n    assert set(candidate([10, 20, 50, 70, 90, 20, 50, 40, 60, 80, 100],5))==set([100,90,80,70,60])\n    assert set(candidate([10, 20, 50, 70, 90, 20, 50, 40, 60, 80, 100],3))==set([100,90,80])",
+    "test": "def check(candidate):\n    assert candidate(candidate([10, 20, 50, 70, 90, 20, 50, 40, 60, 80, 100],2))==candidate([100,90])\n    assert candidate(candidate([10, 20, 50, 70, 90, 20, 50, 40, 60, 80, 100],5))==candidate([100,90,80,70,60])\n    assert candidate(candidate([10, 20, 50, 70, 90, 20, 50, 40, 60, 80, 100],3))==candidate([100,90,80])",
     "entry_point": "larg_nnum"
   },
   {
     "task_id": "MBPP/105",
     "prompt": "def lateralsuface_cylinder():\n    '''Write a function to find the lateral surface area of a cylinder.\n    '''\n",
-    "test": "def check(candidate):\n    assert math.isclose(candidate(10,5), 314.15000000000003, rel_tol=0.001)\n    assert math.isclose(candidate(4,5), 125.66000000000001, rel_tol=0.001)\n    assert math.isclose(candidate(4,10), 251.32000000000002, rel_tol=0.001)",
+    "test": "def check(candidate):\n    assert math.candidate(candidate(10,5), 314.15000000000003, rel_tol=0.001)\n    assert math.candidate(candidate(4,5), 125.66000000000001, rel_tol=0.001)\n    assert math.candidate(candidate(4,10), 251.32000000000002, rel_tol=0.001)",
     "entry_point": "lateralsuface_cylinder"
   },
   {
@@ -692,7 +692,7 @@
   {
     "task_id": "MBPP/115",
     "prompt": "def babylonian_squareroot():\n    '''Write a function for computing square roots using the babylonian method.\n    '''\n",
-    "test": "def check(candidate):\n    assert math.isclose(candidate(10), 3.162277660168379, rel_tol=0.001)\n    assert math.isclose(candidate(2), 1.414213562373095, rel_tol=0.001)\n    assert math.isclose(candidate(9), 3.0, rel_tol=0.001)",
+    "test": "def check(candidate):\n    assert math.candidate(candidate(10), 3.162277660168379, rel_tol=0.001)\n    assert math.candidate(candidate(2), 1.414213562373095, rel_tol=0.001)\n    assert math.candidate(candidate(9), 3.0, rel_tol=0.001)",
     "entry_point": "babylonian_squareroot"
   },
   {
@@ -704,7 +704,7 @@
   {
     "task_id": "MBPP/117",
     "prompt": "def harmonic_sum():\n    '''Write a function that takes in an integer n and calculates the harmonic sum of n-1.\n    '''\n",
-    "test": "def check(candidate):\n    assert math.isclose(candidate(7), 2.5928571428571425, rel_tol=0.001)\n    assert math.isclose(candidate(4), 2.083333333333333, rel_tol=0.001)\n    assert math.isclose(candidate(19), 3.547739657143682, rel_tol=0.001)",
+    "test": "def check(candidate):\n    assert math.candidate(candidate(7), 2.5928571428571425, rel_tol=0.001)\n    assert math.candidate(candidate(4), 2.083333333333333, rel_tol=0.001)\n    assert math.candidate(candidate(19), 3.547739657143682, rel_tol=0.001)",
     "entry_point": "harmonic_sum"
   },
   {
@@ -848,7 +848,7 @@
   {
     "task_id": "MBPP/141",
     "prompt": "def volume_cylinder():\n    '''Write a function that takes in the radius and height of a cylinder and returns the the volume.\n    '''\n",
-    "test": "def check(candidate):\n    assert math.isclose(candidate(10,5), 1570.7500000000002, rel_tol=0.001)\n    assert math.isclose(candidate(4,5), 251.32000000000002, rel_tol=0.001)\n    assert math.isclose(candidate(4,10), 502.64000000000004, rel_tol=0.001)",
+    "test": "def check(candidate):\n    assert math.candidate(candidate(10,5), 1570.7500000000002, rel_tol=0.001)\n    assert math.candidate(candidate(4,5), 251.32000000000002, rel_tol=0.001)\n    assert math.candidate(candidate(4,10), 502.64000000000004, rel_tol=0.001)",
     "entry_point": "volume_cylinder"
   },
   {
@@ -913,9 +913,9 @@
   },
   {
     "task_id": "MBPP/152",
-    "prompt": "def square_Sum():\n    '''Write a python function takes in an integer n and returns the sum of squares of first n even natural numbers.\n    '''\n",
+    "prompt": "def square_Sum_1():\n    '''Write a python function takes in an integer n and returns the sum of squares of first n even natural numbers.\n    '''\n",
     "test": "def check(candidate):\n    assert candidate(2) == 20\n    assert candidate(3) == 56\n    assert candidate(4) == 120",
-    "entry_point": "square_Sum"
+    "entry_point": "square_Sum_1"
   },
   {
     "task_id": "MBPP/153",
@@ -974,7 +974,7 @@
   {
     "task_id": "MBPP/162",
     "prompt": "def count_binary_seq():\n    '''Write a function to find the count of all binary sequences of length 2n such that sum of first n bits is same as sum of last n bits.\n    '''\n",
-    "test": "def check(candidate):\n    assert math.isclose(candidate(1), 2.0, rel_tol=0.001)\n    assert math.isclose(candidate(2), 6.0, rel_tol=0.001)\n    assert math.isclose(candidate(3), 20.0, rel_tol=0.001)",
+    "test": "def check(candidate):\n    assert math.candidate(candidate(1), 2.0, rel_tol=0.001)\n    assert math.candidate(candidate(2), 6.0, rel_tol=0.001)\n    assert math.candidate(candidate(3), 20.0, rel_tol=0.001)",
     "entry_point": "count_binary_seq"
   },
   {
@@ -1034,7 +1034,7 @@
   {
     "task_id": "MBPP/172",
     "prompt": "def volume_cone():\n    '''Write a function to find the volume of a cone.\n    '''\n",
-    "test": "def check(candidate):\n    assert math.isclose(candidate(5,12), 314.15926535897927, rel_tol=0.001)\n    assert math.isclose(candidate(10,15), 1570.7963267948965, rel_tol=0.001)\n    assert math.isclose(candidate(19,17), 6426.651371693521, rel_tol=0.001)",
+    "test": "def check(candidate):\n    assert math.candidate(candidate(5,12), 314.15926535897927, rel_tol=0.001)\n    assert math.candidate(candidate(10,15), 1570.7963267948965, rel_tol=0.001)\n    assert math.candidate(candidate(19,17), 6426.651371693521, rel_tol=0.001)",
     "entry_point": "volume_cone"
   },
   {
@@ -1165,9 +1165,9 @@
   },
   {
     "task_id": "MBPP/194",
-    "prompt": "def snake_to_camel():\n    '''Write a function to convert the given snake case string to camel case string.\n    '''\n",
+    "prompt": "def snake_to_camel_1():\n    '''Write a function to convert the given snake case string to camel case string.\n    '''\n",
     "test": "def check(candidate):\n    assert candidate('android_tv') == 'AndroidTv'\n    assert candidate('google_pixel') == 'GooglePixel'\n    assert candidate('apple_watch') == 'AppleWatch'",
-    "entry_point": "snake_to_camel"
+    "entry_point": "snake_to_camel_1"
   },
   {
     "task_id": "MBPP/195",
@@ -1309,9 +1309,9 @@
   },
   {
     "task_id": "MBPP/218",
-    "prompt": "def remove_odd():\n    '''Write a function to remove odd characters in a string.\n    '''\n",
+    "prompt": "def remove_odd_1():\n    '''Write a function to remove odd characters in a string.\n    '''\n",
     "test": "def check(candidate):\n    assert candidate(\"python\")==(\"yhn\")\n    assert candidate(\"program\")==(\"rga\")\n    assert candidate(\"language\")==(\"agae\")",
-    "entry_point": "remove_odd"
+    "entry_point": "remove_odd_1"
   },
   {
     "task_id": "MBPP/219",

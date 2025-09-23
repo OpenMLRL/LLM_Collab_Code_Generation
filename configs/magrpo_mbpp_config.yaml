@@ -15,9 +15,8 @@ model:
 
 # Dataset configuration
 dataset:
-  name: "CoMLRL/MBPP"
+  name: "ryankamiri/MBPP"
   type: "coophumaneval"  # Used to select formatters and reward function
-  private: true  # Set to true if the dataset is private and requires authentication
   train_split: "test[:50]"
   eval_split: "test[50:66]"
 

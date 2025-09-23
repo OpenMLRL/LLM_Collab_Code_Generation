@@ -24,6 +24,7 @@ def convert_mbpp_to_coophumaneval_format():
     print(f"Loaded {len(test_data)} examples from MBPP sanitized dataset")
     
     converted_data = []
+    used_function_names = set()
     
     for i, example in enumerate(test_data):
         # Extract function name from code
@@ -31,6 +32,19 @@ def convert_mbpp_to_coophumaneval_format():
         if not function_name:
             print(f"Warning: Could not extract function name from example {i}")
             continue
+        
+        # Ensure function name is valid (no spaces, special chars)
+        function_name = re.sub(r'[^a-zA-Z0-9_]', '_', function_name)
+        if not re.match(r'^[a-zA-Z_][a-zA-Z0-9_]*$', function_name):
+            function_name = f"function_{i}"
+        
+        # Ensure unique function names
+        original_function_name = function_name
+        counter = 1
+        while function_name in used_function_names:
+            function_name = f"{original_function_name}_{counter}"
+            counter += 1
+        used_function_names.add(function_name)
         
         # Create the prompt in coophumaneval format
         # The prompt should be the function signature with docstring
@@ -42,6 +56,16 @@ def convert_mbpp_to_coophumaneval_format():
             # Convert assert statements to use candidate() instead of function name
             # Replace function name with candidate in assert statements
             test_with_candidate = test.replace(f"{function_name}(", "candidate(")
+            
+            # Also handle cases where the test might call a different function name
+            # Extract any function calls in the assert statement
+            # Find function calls in the assert statement
+            func_calls = re.findall(r'(\w+)\s*\(', test_with_candidate)
+            for func_call in func_calls:
+                if func_call != "candidate" and func_call != "assert":
+                    # Replace any function call with candidate
+                    test_with_candidate = test_with_candidate.replace(f"{func_call}(", "candidate(")
+            
             test_cases.append(test_with_candidate)
         
         # Create test string in che format: def check(candidate): + assert statements
