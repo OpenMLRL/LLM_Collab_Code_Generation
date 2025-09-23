@@ -1,0 +1,49 @@
+# Configuration for MBPP training with MAGRPO
+
+# Model configuration
+model:
+  name: "Qwen/Qwen2.5-Coder-3B"
+  type: "qwen"
+  temperature: 0.7
+  top_p: 0.9
+  max_length: 2048
+  tokenizer_kwargs:
+    trust_remote_code: true
+  model_kwargs:
+    trust_remote_code: true
+    torch_dtype: "auto"
+
+# Dataset configuration
+dataset:
+  name: "ryankamiri/MBPP"
+  type: "coophumaneval"  # Used to select formatters and reward function
+  train_split: "test[:50]"
+  eval_split: "test[50:66]"
+
+# Output configuration
+output:
+  base_dir: "/output"
+  save_final_model: true
+
+# MAGRPO training configuration
+magrpo:
+  num_train_epochs: 20
+  per_device_train_batch_size: 1
+  learning_rate: 2.0e-5
+  logging_steps: 50
+  save_steps: 200
+  num_generations: 4
+  max_new_tokens: 256
+  temperature: 0.8
+  top_p: 0.95
+  num_agents: 2
+  # Early termination threshold for multi-agent (MAGRPO)
+  early_termination_threshold: 4.0
+
+# Wandb configuration
+wandb:
+  project: "mlrl"
+  entity: "ryanamiri05-northeastern-university"
+  name: "magrpo_mbpp"  # Will be appended with model name in script
+  dir: "./"
+  tags: ["magrpo", "mbpp", "multi-agent"]
