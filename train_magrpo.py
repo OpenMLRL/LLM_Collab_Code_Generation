@@ -351,13 +351,18 @@ def main():
     # Set external.sandbox_slice to an integer N (>0) to keep the first N asserts,
     # or to 0 / None / 'all' to keep all eval asserts.
     _sandbox_val = external_cfg.get("sandbox_slice", 1)
-    if isinstance(_sandbox_val, str) and _sandbox_val.strip().lower() == "all":
-        sandbox_slice = 0
-    else:
-        try:
-            sandbox_slice = int(_sandbox_val) if _sandbox_val is not None else None
-        except (TypeError, ValueError):
+    if isinstance(_sandbox_val, str):
+        _sv = _sandbox_val.strip().lower()
+        if _sv == "all":
+            sandbox_slice = 0
+        elif _sv.lstrip("-").isdigit():
+            sandbox_slice = int(_sv)
+        else:
             sandbox_slice = None
+    elif isinstance(_sandbox_val, int):
+        sandbox_slice = _sandbox_val
+    else:
+        sandbox_slice = None if _sandbox_val is None else 0
 
     import re
 
@@ -478,6 +483,7 @@ def main():
     external_cfg = config.get_section("external") if hasattr(config, "get_section") else {}
     # Compute tags and add self-evolved when using analysis-based external modes
     external_mode = external_cfg.get("mode", "level_feedback")
+    handoff_mode = magrpo_config.get("handoff", "random")
     default_tags = ["magrpo", dataset_type or "code", f"turns_{num_turns}"]
     tags_from_cfg = wandb_section.get("tags", default_tags)
     # Ensure list
@@ -486,12 +492,25 @@ def main():
         if "self-evolved" not in tags:
             tags.append("self-evolved")
 
+    # Collect full config sections for W&B searchability
+    dataset_section = config.get_section("dataset") if hasattr(config, "get_section") else {}
+    model_section = config.get_section("model") if hasattr(config, "get_section") else {}
+    output_section = config.get_section("output") if hasattr(config, "get_section") else {}
+
     wandb_config = {
         "project": wandb_section.get("project", "mlrl"),
         "entity": wandb_section.get("entity", "nu-llpr"),
         "name": f"{wandb_name}_{model_short_name}",
         "dir": wandb_section.get("dir", "../../../projects/bepg/sliu30"),
         "tags": tags,
+        # Provide full sections for the trainer to log cleanly
+        "config_sections": {
+            "dataset": dataset_section,
+            "model": model_section,
+            "output": output_section,
+            "external": external_cfg,
+            "trainer": magrpo_config,
+        },
     }
 
     # Get num_agents from magrpo config (where it belongs for MAGRPO training)
