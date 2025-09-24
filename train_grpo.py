@@ -202,32 +202,7 @@ def main():
     parser = argparse.ArgumentParser(description="Train GRPO with configurable dataset")
     add_config_args(parser)
 
-    # Optional direct overrides similar to train_magrpo.py
-    parser.add_argument(
-        "--model_name",
-        type=str,
-        default=None,
-        help="Model name to use (overrides config)",
-    )
-    parser.add_argument(
-        "--output_base_dir",
-        type=str,
-        default=None,
-        help="Base output directory (overrides config)",
-    )
-    parser.add_argument(
-        "--num_turns",
-        type=int,
-        default=None,
-        help="Number of turns for multi-turn training (overrides config)",
-    )
-    parser.add_argument(
-        "--turn_gradient_weights",
-        type=float,
-        nargs="+",
-        default=None,
-        help="Turn gradient weights for multi-turn training (overrides config)",
-    )
+    
 
     args = parser.parse_args()
 
@@ -244,14 +219,7 @@ def main():
         overrides = parse_overrides(args.override)
         config.update(overrides)
 
-    if args.model_name:
-        config.update({"model_name": args.model_name})
-    if args.output_base_dir:
-        config.update({"output": {"base_dir": args.output_base_dir}})
-    if args.num_turns is not None:
-        config.update({"grpo": {"num_turns": args.num_turns}})
-    if args.turn_gradient_weights is not None:
-        config.update({"grpo": {"turn_gradient_weights": args.turn_gradient_weights}})
+    
 
     # Load model configuration
     model_config = config.get_model_config()

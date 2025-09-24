@@ -5,7 +5,6 @@ This repository contains training scripts and configurations for the paper "LLM 
 - [Training Scripts](#training-scripts)
   - [Default Configs](#default-configs)
   - [Parameter Overrides](#parameter-overrides)
-  - [Legacy Command-Line Args](#legacy-command-line-args)
 - [Multi-Turn Settings](#multi-turn-settings)
   - [2+Turn Prompt Composition](#2turn-prompt-composition)
   - [External Modes](#external-modes)
@@ -54,21 +53,6 @@ python LLM_Collaboration_with_MARL/train_magrpo.py \
   --config LLM_Collaboration_with_MARL/configs/mt_magrpo_che_config.yaml \
   --override dataset.train_split='test[16:]' dataset.eval_split='test[:16]' \
   magrpo.num_turns=2 magrpo.turn_gradient_weights=[1.5,0.5]
-```
-### Legacy Command-Line Args
-
-You can also override with direct flags:
-
-```bash
-# Override model name
-python LLM_Collaboration_with_MARL/train_magrpo.py \
-  --config LLM_Collaboration_with_MARL/configs/magrpo_he_config.yaml \
-  --model_name Qwen/Qwen2.5-Coder-7B
-
-# Multi-turn direct args
-python LLM_Collaboration_with_MARL/train_magrpo.py \
-  --config LLM_Collaboration_with_MARL/configs/mt_magrpo_he_config.yaml \
-  --num_epochs 10 --num_turns 2 --turn_gradient_weights 1.2 0.8
 ```
 ## Multi-Turn Settings
 
