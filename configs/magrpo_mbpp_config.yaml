@@ -22,7 +22,7 @@ dataset:
 
 # Output configuration
 output:
-  base_dir: "../../projects/llpr/amiri.ry/dev/output_mt"
+  base_dir: "output_mt"
   save_final_model: true
 
 # MAGRPO training configuration
@@ -45,5 +45,5 @@ wandb:
   project: "mlrl"
   entity: "ryanamiri05-northeastern-university"
   name: "magrpo_mbpp"  # Will be appended with model name in script
-  dir: "../../projects/llpr/amiri.ry/dev"
+  dir: "."
   tags: ["magrpo", "mbpp", "multi-agent"]
