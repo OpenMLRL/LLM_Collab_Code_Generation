@@ -45,6 +45,7 @@ magrpo:
   turn_gradient_weights: [1.2, 0.8]
   early_termination_weight: 2.0
   early_termination_threshold: 4.0
+  reward_shift: null
 
 # wandb
 wandb:

@@ -42,6 +42,7 @@ magrpo:
   num_agents: 2
   handoff: random
   early_termination_threshold: 4.0
+  reward_shift: null
 
 # wandb
 wandb:

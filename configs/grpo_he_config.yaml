@@ -43,6 +43,7 @@ grpo:
   top_p: 0.95
   handoff: random
   early_termination_threshold: 2.1
+  reward_shift: null
 
 # wandb
 wandb:

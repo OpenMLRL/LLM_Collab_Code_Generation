@@ -513,9 +513,24 @@ def main():
     }
 
     reward_processor = None
+    # Optional scale
     if config.get("reward_processor.enabled", False):
         scale_factor = config.get("reward_processor.scale_factor", 1)
         reward_processor = RewardProcessors.scale(factor=scale_factor)
+    # Optional shift via grpo.reward_shift
+    shift_val = grpo_config.get("reward_shift", None)
+    if shift_val is not None:
+        try:
+            shift_val_f = float(shift_val)
+        except (TypeError, ValueError):
+            shift_val_f = None
+        if shift_val_f is not None:
+            shift_proc = RewardProcessors.shift(value=shift_val_f)
+            if reward_processor is None:
+                reward_processor = shift_proc
+            else:
+                prev = reward_processor
+                reward_processor = (lambda p=prev, s=shift_proc: (lambda x: s(p(x))))()
 
     # Use agents=[model] to keep dtype and loading behavior aligned with MAGRPO
     trainer_kwargs = {
