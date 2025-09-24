@@ -247,6 +247,11 @@ def main():
         output_dir = os.path.join(output_base_dir, f"job_{slurm_job_id}")
 
     os.makedirs(output_dir, exist_ok=True)
+    
+    # Log the full output directory path
+    print(f"\n{'='*60}")
+    print(f"OUTPUT DIRECTORY: {os.path.abspath(output_dir)}")
+    print(f"{'='*60}")
 
     if hasattr(config, "save"):
         config_save_path = os.path.join(output_dir, "config.yaml")

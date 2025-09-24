@@ -27,7 +27,7 @@ output:
 
 # MAGRPO training configuration
 magrpo:
-  num_train_epochs: 20
+  num_train_epochs: 70
   per_device_train_batch_size: 1
   learning_rate: 2.0e-5
   logging_steps: 50
