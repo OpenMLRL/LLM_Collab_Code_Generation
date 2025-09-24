@@ -307,12 +307,15 @@ def main():
         config_save_path = os.path.join(output_dir, "config.yaml")
         config.save(config_save_path)
 
+    train_dataset = None
+    eval_dataset = None
     try:
         train_dataset = load_dataset(dataset_name, split=train_split)
         eval_dataset = load_dataset(dataset_name, split=eval_split)
 
     except Exception as e:
         print(f"Error loading dataset: {e}")
+        return
 
     print(f"\nUsing model: {model_name}")
     print(f"Model type: {model_config.type}")
