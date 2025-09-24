@@ -350,6 +350,9 @@ def main():
     temperature = grpo_config.get("temperature", model_config.temperature)
     top_p = grpo_config.get("top_p", model_config.top_p)
 
+    # External configuration (mode, sandbox, expert model, context flags)
+    external_cfg = config.get_section("external") if hasattr(config, "get_section") else {}
+
     # Register external context resolver using dataset items (for external modes)
     def _normalize_prompt(p: str) -> str:
         return " ".join((p or "").split()).strip()
@@ -470,8 +473,7 @@ def main():
     else:
         wandb_name = wandb_section.get("name", f"grpo_{dataset_type}")
 
-    # External configuration
-    external_cfg = config.get_section("external") if hasattr(config, "get_section") else {}
+    # external_cfg already loaded above
     # Compute tags and add self-evolved when using analysis-based external modes
     external_mode = external_cfg.get("mode", "level_feedback")
     handoff_mode = grpo_config.get("handoff", "random")
