@@ -1,7 +1,4 @@
-# Configuration for HumanEval single-agent training with GRPO
-# Based on train_he_single_agent.py parameters
-
-# Model configuration
+# model
 model:
   name: "Qwen/Qwen2.5-Coder-3B"
   type: "qwen"
@@ -14,41 +11,43 @@ model:
     trust_remote_code: true
     torch_dtype: "auto"
 
-# Dataset configuration
+# dataset
 dataset:
   name: "openai/openai_humaneval"
-  type: "humaneval"  # Used to select formatters and reward function
+  type: "humaneval"
   train_split: "test[33:163]"
   eval_split: "test[:32]"
 
-# Output configuration
+# output
 output:
-  base_dir: "../../../projects/bepg/tchen19/output"
-  save_final_model: true
+  base_dir: "../../../work/hdd/bepg/sliu30/output_st_grpo"
+  save_final_model: false
 
-# GRPO training configuration
+# external
+external:
+  mode: "level_feedback"
+  sandbox_slice: 1
+  original_prompt: true
+  previous_response: true
+
+# grpo
 grpo:
   num_train_epochs: 10
   per_device_train_batch_size: 1
   learning_rate: 1.0e-5
   logging_steps: 50
   save_steps: 200
-  num_generations: 4  # Number of completions to generate per prompt
+  num_generations: 4
   max_new_tokens: 256
   temperature: 0.8
   top_p: 0.95
-  # Handoff selection for previous-turn completions: 'random' or 'best' (used in multi-turn)
   handoff: random
-  # External transition defaults (used when multi-turn is enabled)
-  external_mode: "level_feedback"
-  sandbox_slice: 1
-  # Early termination threshold for single-agent (GRPO)
   early_termination_threshold: 2.1
 
-# Wandb configuration
+# wandb
 wandb:
   project: "mlrl"
   entity: "nu-llpr"
-  name: "grpo_humaneval"  # Will be appended with model name in script
-  dir: "../../../projects/bepg/sliu30"
+  name: "grpo_humaneval"
+  dir: "../../../work/hdd/bepg/sliu30/output_st_grpo"
   tags: ["grpo", "humaneval", "single-agent"]

@@ -84,10 +84,10 @@ python LLM_Collaboration_with_MARL/train_magrpo.py \
 
 ### External Modes
 
-Multi-turn training supports external transition modes for 2nd+ turns, set via `magrpo.external_mode`:
+Multi-turn training supports external transition modes for 2nd+ turns, set via `external.mode`:
 
 - `level_feedback` **(default)**: Detailed diagnostics (impl found, syntax with line/col, per-test pass/fail errors, aux usage).
-- Requires `magrpo.expert_model` in config (e.g., `deepseek-coder`, Claude, etc.).
+ - Requires `external.expert_model` in config when using `expert_edits` (e.g., `deepseek-coder`, Claude, etc.). This parameter is ignored for other modes (`level_feedback`, `level_passed`, `passed`, `plain`).
 - Requires corrsponding API keys in env vars.
 - `level_passed`: Binary passed signals (impl found, syntax, tests summary, aux usage).
 - `passed`: A binary signal — "All levels passed" or "Not all levels passed".
@@ -97,18 +97,18 @@ Multi-turn training supports external transition modes for 2nd+ turns, set via `
 # HumanEval with detailed feedback signals
 python LLM_Collaboration_with_MARL/train_magrpo.py \
   --config LLM_Collaboration_with_MARL/configs/mt_magrpo_he_config.yaml \
-  --override magrpo.external_mode='level_feedback'
+  --override external.mode='level_feedback'
 ```
 
 ### Sandbox Tests
 
-The external modes obtain `entry_point` and tests via an internal resolver registered by the training script. **By default, sandbox executes only the first assert (`sandbox_slice=1`).** Use all eval tests by setting `sandbox_slice` to `0`, `None`, or `'all'`. A negative value uses the last N asserts. Note: `sandbox_slice` only affects analysis-based modes (`level_feedback`, `level_passed`, `passed`), and it has no effect on `expert_edits`.
+The external modes obtain `entry_point` and tests via an internal resolver registered by the training script. **By default, sandbox executes only the first assert (`sandbox_slice=1`).** Use all eval tests by setting `external.sandbox_slice` to `0`, `None`, or `'all'`. A negative value uses the last N asserts. Note: `external.sandbox_slice` only affects analysis-based modes (`level_feedback`, `level_passed`, `passed`), and it has no effect on `expert_edits`.
 
 ```bash
-# Add a magrpo.sandbox_slice to override
+# Add an external.sandbox_slice override
 python LLM_Collaboration_with_MARL/train_magrpo.py \
   --config LLM_Collaboration_with_MARL/configs/mt_magrpo_che_config.yaml \
-  --override magrpo.external_mode='level_feedback' magrpo.sandbox_slice=-2
+  --override external.mode='level_feedback' external.sandbox_slice=-2
 ```
 
 ### Handoff Strategy
@@ -119,5 +119,5 @@ In MAGRPO/GRPO multi-turn training, we hand off one prior completion per agent t
 ```bash
 python LLM_Collaboration_with_MARL/train_magrpo.py \
   --config LLM_Collaboration_with_MARL/configs/mt_magrpo_he_config.yaml \
-  --override magrpo.external_mode='plain' magrpo.handoff='best'
+  --override external.mode='plain' magrpo.handoff='best'
 ```

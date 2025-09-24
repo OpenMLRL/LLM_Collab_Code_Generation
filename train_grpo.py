@@ -358,9 +358,9 @@ def main():
 
     # Optionally restrict sandbox tests to the first N eval asserts
     # Default: keep only the first assert (sandbox_slice=1)
-    # Set grpo.sandbox_slice to an integer N (>0) to keep the first N asserts,
+    # Set external.sandbox_slice to an integer N (>0) to keep the first N asserts,
     # or to 0 / None / 'all' to keep all eval asserts.
-    _sandbox_val = grpo_config.get("sandbox_slice", 1)
+    _sandbox_val = external_cfg.get("sandbox_slice", 1)
     if isinstance(_sandbox_val, str) and _sandbox_val.strip().lower() == "all":
         sandbox_slice = 0
     else:
@@ -465,8 +465,10 @@ def main():
     else:
         wandb_name = wandb_section.get("name", f"grpo_{dataset_type}")
 
+    # External configuration
+    external_cfg = config.get_section("external") if hasattr(config, "get_section") else {}
     # Compute tags and add self-evolved when using analysis-based external modes
-    external_mode = grpo_config.get("external_mode", "expert_edits")
+    external_mode = external_cfg.get("mode", "level_feedback")
     default_tags = ["grpo", dataset_type or "code", f"turns_{num_turns}"]
     tags_from_cfg = wandb_section.get("tags", default_tags)
     tags = list(tags_from_cfg) if isinstance(tags_from_cfg, list) else default_tags
@@ -519,7 +521,7 @@ def main():
         and dataset_type
         and dataset_type.lower() in ["humaneval", "coophumaneval"]
     ):
-        expert_model = grpo_config.get("expert_model", "deepseek-coder")
+        expert_model = external_cfg.get("expert_model", "deepseek-coder")
 
         def external_transition_wrapper(
             prompt, agent_completions, num_agents
@@ -527,8 +529,8 @@ def main():
             # Single-agent: pass prior main completion; aux is empty internally
             main_best = agent_completions[0] if agent_completions else ""
 
-            original_prompt_flag = grpo_config.get("external_original_prompt", False)
-            previous_response_flag = grpo_config.get("external_previous_response", True)
+            original_prompt_flag = external_cfg.get("original_prompt", True)
+            previous_response_flag = external_cfg.get("previous_response", True)
             prompts = get_external_transition(
                 prompt=prompt,
                 agent_completions=[main_best],
@@ -549,7 +551,7 @@ def main():
     trainer = MAGRPOTrainer(**trainer_kwargs)
     trainer.train()
 
-    save_final = config.get("output.save_final_model", True)
+    save_final = config.get("output.save_final_model", False)
     if save_final:
         save_path = config.get(
             "output.save_path", os.path.join(output_dir, "final_model")
