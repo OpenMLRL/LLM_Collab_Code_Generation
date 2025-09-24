@@ -27,11 +27,12 @@ output:
 
 # MAGRPO training configuration
 magrpo:
-  num_train_epochs: 70
+  num_train_epochs: 20
   per_device_train_batch_size: 1
-  learning_rate: 2.0e-5
+  learning_rate: 4.0e-5
   logging_steps: 50
   save_steps: 200
+  save_epochs: 1
   num_generations: 4
   max_new_tokens: 256
   temperature: 0.8
