@@ -90,17 +90,7 @@ def mt_humaneval_logger(
 
             # sample_metrics["num_turns"] = num_turns  # optional if needed elsewhere
 
-        # Calculate turn-to-turn improvements
-        if len(turn_rewards) >= 2:
-            for turn_idx in range(1, len(turn_rewards)):
-                if (
-                    f"turn_{turn_idx + 1}/improvement_from_turn_{turn_idx}"
-                    not in sample_metrics
-                ):
-                    improvement = turn_rewards[turn_idx] - turn_rewards[turn_idx - 1]
-                    sample_metrics[
-                        f"turn_{turn_idx + 1}/improvement_from_turn_{turn_idx}"
-                    ] = improvement
+        # No turn-to-turn improvement metrics
 
         # Overall metrics
         if turn_rewards:
@@ -161,26 +151,7 @@ def aggregate_mt_humaneval_metrics_for_logging(
             if values:
                 aggregated[f"{turn_prefix}/avg_{metric}"] = np.mean(values)
 
-        # Improvement metrics
-        if turn > 1:
-            improvement_key = f"{turn_prefix}/improvement_from_turn_{turn - 1}"
-            values = [
-                sample[improvement_key]
-                for sample in metrics_list
-                if improvement_key in sample
-            ]
-            if values:
-                aggregated[f"{turn_prefix}/avg_improvement"] = np.mean(values)
+        # No improvement metrics
 
-    # Overall aggregated metrics
-    overall_reward_keys = [
-        "overall/best_turn_reward",
-        "overall/final_turn_reward",
-        "overall/avg_turn_reward",
-    ]
-    for key in overall_reward_keys:
-        values = [sample[key] for sample in metrics_list if key in sample]
-        if values:
-            aggregated[key.replace("overall/", "avg_")] = np.mean(values)
-
+    # Only return per-turn aggregates
     return aggregated
