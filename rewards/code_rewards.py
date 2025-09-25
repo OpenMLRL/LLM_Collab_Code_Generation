@@ -13,12 +13,12 @@ from rewards.code_utils import (
     check_function_definition,
     check_syntax,
     cleanup_code,
-    compute_ast_edit_distance,
     compute_aux_usefulness_delta,
     concatenate_functions,
     extract_imports_from_prompt,
     extract_specific_function,
     extract_test_cases,
+    is_wrapper_function,
     timeout_handler,
     valid_format_gate,
 )
@@ -52,7 +52,7 @@ def execution_reward_aux(
 
     DENSE COOPERATION BONUSES (only if aux is used on passing tests):
     - Use-aux bonus (0 → 0.5): Proportional to fraction of passing tests where aux contributes
-    - Non-wrapper bonus (0 → 0.6): Scale by AST edit-distance between main and simple wrapper
+    - Non-wrapper bonus (0 or 0.6): Binary bonus if main is NOT a simple wrapper around aux
     - Aux usefulness Δ (0 → 0.6): Run tests with aux stubbed; reward proportional to pass_rate_true - pass_rate_stub
 
     PENALTIES:
@@ -349,17 +349,23 @@ def execution_reward_aux(
         
         cooperation_bonus = 0.0
         
+        # Check if main is a wrapper (do this once and reuse)
+        is_wrapper = is_wrapper_function(main_func, "aux") if main_func else False
+        
         if passed_tests > 0 and aux_func and aux_used_on_passing:
             # Use-aux bonus (0 → 0.5): Proportional to fraction of passing tests where aux return contributes
             use_aux_bonus = 0.5 * (passed_tests / total_tests)
             cooperation_bonus += use_aux_bonus
             print(f"✅ Use-aux bonus: +{use_aux_bonus:.3f} (proportional to test pass rate)")
             
-            # Non-wrapper bonus (0 → 0.6): Scale by AST edit-distance between main and wrapper
-            ast_distance = compute_ast_edit_distance(main_func, "aux")
-            non_wrapper_bonus = 0.6 * ast_distance
-            cooperation_bonus += non_wrapper_bonus
-            print(f"✅ Non-wrapper bonus: +{non_wrapper_bonus:.3f} (AST distance: {ast_distance:.3f})")
+            # Non-wrapper bonus (0 or 0.6): Binary check if main is not a simple wrapper
+            if not is_wrapper:
+                non_wrapper_bonus = 0.6
+                cooperation_bonus += non_wrapper_bonus
+                print(f"✅ Non-wrapper bonus: +{non_wrapper_bonus:.3f} (main is not a simple wrapper)")
+            else:
+                non_wrapper_bonus = 0.0
+                print(f"⚠️  No non-wrapper bonus: main is a simple wrapper")
             
             # Aux usefulness delta (0 → 0.6): Run tests with aux stubbed
             try:
@@ -412,6 +418,7 @@ def execution_reward_aux(
                     print(f"   📍 {call}")
             else:
                 print("✅ All aux function calls properly use return values")
+            
         
         # Check for runtime timeout or unsafe operations
         if timeout_count > 0:

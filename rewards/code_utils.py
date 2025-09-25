@@ -1,6 +1,5 @@
 import ast
 import re
-import difflib
 import signal
 
 
@@ -712,55 +711,6 @@ def valid_format_gate(code):
         return False
         
     return True
-
-
-def compute_ast_edit_distance(main_code, aux_function_name="aux"):
-    """
-    Compute AST edit distance between main function body and a simple wrapper.
-    Returns normalized distance (0.0 = identical to wrapper, 1.0 = completely different).
-    """
-    if not main_code or not aux_function_name:
-        return 1.0
-    
-    try:
-        # Parse main function AST
-        main_tree = ast.parse(main_code)
-        
-        # Find the main function
-        main_func = None
-        for node in ast.walk(main_tree):
-            if isinstance(node, ast.FunctionDef):
-                main_func = node
-                break
-        
-        if not main_func:
-            return 1.0
-        
-        # Create a simple wrapper AST: return aux(...)
-        wrapper_code = f"def wrapper():\n    return {aux_function_name}()"
-        wrapper_tree = ast.parse(wrapper_code)
-        wrapper_func = None
-        for node in ast.walk(wrapper_tree):
-            if isinstance(node, ast.FunctionDef):
-                wrapper_func = node
-                break
-        
-        if not wrapper_func:
-            return 1.0
-        
-        # Compare function bodies using string similarity as a proxy for AST distance
-        main_body = ast.unparse(main_func.body) if hasattr(ast, 'unparse') else str(main_func.body)
-        wrapper_body = ast.unparse(wrapper_func.body) if hasattr(ast, 'unparse') else str(wrapper_func.body)
-        
-        # Use difflib to compute similarity
-        similarity = difflib.SequenceMatcher(None, main_body, wrapper_body).ratio()
-        distance = 1.0 - similarity
-        
-        return distance
-        
-    except (SyntaxError, AttributeError):
-        # If parsing fails, assume it's not a wrapper
-        return 1.0
 
 
 def compute_aux_usefulness_delta(combined_code, test_cases_list, aux_function_name="aux"):
