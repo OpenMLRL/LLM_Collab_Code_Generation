@@ -249,16 +249,9 @@ def main():
     num_turns = grpo_config.get("num_turns", 1)
     is_multi_turn = num_turns > 1
 
-    # Validate turn gradient weights for multi-turn
-    if is_multi_turn:
-        turn_weights = grpo_config.get("turn_gradient_weights", [1.0] * num_turns)
-        if len(turn_weights) != num_turns:
-            raise ValueError(
-                f"turn_gradient_weights must have {num_turns} values, got {len(turn_weights)}"
-            )
-        print(f"Multi-turn GRPO enabled: num_turns={num_turns}, weights={turn_weights}")
-    else:
-        print(f"Single-turn GRPO: num_turns={num_turns}")
+    print(f"Multi-turn GRPO enabled: num_turns={num_turns}") if is_multi_turn else print(
+        f"Single-turn GRPO: num_turns={num_turns}"
+    )
 
     slurm_job_id = os.environ.get("SLURM_JOB_ID", "no_job_id")
     # Use different output directory prefix for multi-turn for clarity
