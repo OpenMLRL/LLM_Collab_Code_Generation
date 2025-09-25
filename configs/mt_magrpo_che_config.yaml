@@ -42,6 +42,7 @@ magrpo:
   max_new_tokens: 256
   temperature: 0.8
   top_p: 0.95
+  joint_mode: cross
   num_agents: 2
   discount: 0.9
   reward_shift: -4

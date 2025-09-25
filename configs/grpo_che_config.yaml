@@ -39,6 +39,7 @@ grpo:
   save_steps: 200
   num_generations: 4
   max_new_tokens: 256
+  joint_mode: cross
   temperature: 0.8
   top_p: 0.95
   discount: 0.9

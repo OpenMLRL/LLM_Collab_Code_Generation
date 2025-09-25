@@ -40,6 +40,7 @@ magrpo:
   save_steps: 200
   num_generations: 4
   max_new_tokens: 256
+  joint_mode: cross
   num_agents: 2
   discount: 0.9
   reward_shift: -4
