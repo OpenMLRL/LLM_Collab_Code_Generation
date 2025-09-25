@@ -42,7 +42,7 @@ grpo:
   temperature: 0.8
   top_p: 0.95
   discount: 0.9
-  reward_shift: -4
+  reward_shift: -2.1
 
 # wandb
 wandb:
