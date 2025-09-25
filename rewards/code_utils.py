@@ -1,6 +1,7 @@
 import ast
 import re
 import difflib
+import signal
 
 
 class TimeoutException(Exception):
@@ -778,9 +779,22 @@ def compute_aux_usefulness_delta(combined_code, test_cases_list, aux_function_na
         passed_true = 0
         for test_case in test_cases_list:
             try:
+                # Set timeout for each test
+                signal.signal(signal.SIGALRM, timeout_handler)
+                signal.alarm(5)  # 5 second timeout
+                
                 exec(test_case, exec_globals)
                 passed_true += 1
+                
+                # Clear timeout after successful test
+                signal.alarm(0)
+            except TimeoutException:
+                signal.alarm(0)  # Clear timeout
+                # Test timed out, don't count as passed
+                pass
             except:
+                signal.alarm(0)  # Clear timeout
+                # Test failed, don't count as passed
                 pass
         
         pass_rate_true = passed_true / len(test_cases_list) if test_cases_list else 0.0
@@ -806,9 +820,22 @@ def compute_aux_usefulness_delta(combined_code, test_cases_list, aux_function_na
         passed_stub = 0
         for test_case in test_cases_list:
             try:
+                # Set timeout for each test
+                signal.signal(signal.SIGALRM, timeout_handler)
+                signal.alarm(5)  # 5 second timeout
+                
                 exec(test_case, exec_globals_stub)
                 passed_stub += 1
+                
+                # Clear timeout after successful test
+                signal.alarm(0)
+            except TimeoutException:
+                signal.alarm(0)  # Clear timeout
+                # Test timed out, don't count as passed
+                pass
             except:
+                signal.alarm(0)  # Clear timeout
+                # Test failed, don't count as passed
                 pass
         
         pass_rate_stub = passed_stub / len(test_cases_list) if test_cases_list else 0.0

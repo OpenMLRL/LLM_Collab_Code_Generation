@@ -362,10 +362,26 @@ def execution_reward_aux(
             print(f"✅ Non-wrapper bonus: +{non_wrapper_bonus:.3f} (AST distance: {ast_distance:.3f})")
             
             # Aux usefulness delta (0 → 0.6): Run tests with aux stubbed
-            aux_usefulness = compute_aux_usefulness_delta(combined_code, test_cases_list, "aux")
-            aux_usefulness_bonus = 0.6 * aux_usefulness
-            cooperation_bonus += aux_usefulness_bonus
-            print(f"✅ Aux usefulness bonus: +{aux_usefulness_bonus:.3f} (usefulness: {aux_usefulness:.3f})")
+            try:
+                # Set timeout for aux usefulness calculation (30 seconds total)
+                signal.signal(signal.SIGALRM, timeout_handler)
+                signal.alarm(30)
+                
+                aux_usefulness = compute_aux_usefulness_delta(combined_code, test_cases_list, "aux")
+                aux_usefulness_bonus = 0.6 * aux_usefulness
+                cooperation_bonus += aux_usefulness_bonus
+                print(f"✅ Aux usefulness bonus: +{aux_usefulness_bonus:.3f} (usefulness: {aux_usefulness:.3f})")
+                
+                # Clear timeout after successful calculation
+                signal.alarm(0)
+            except TimeoutException:
+                signal.alarm(0)  # Clear timeout
+                print("⚠️  Aux usefulness calculation timed out - skipping bonus")
+                aux_usefulness_bonus = 0.0
+            except Exception as e:
+                signal.alarm(0)  # Clear timeout
+                print(f"⚠️  Aux usefulness calculation failed: {e} - skipping bonus")
+                aux_usefulness_bonus = 0.0
             
             reward += cooperation_bonus
             print(f"🎉 Total cooperation bonus: +{cooperation_bonus:.3f} (total: {reward:.3f})")
