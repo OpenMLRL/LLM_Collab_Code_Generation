@@ -241,18 +241,9 @@ def main():
     num_turns = magrpo_config.get("num_turns", 1)
     is_multi_turn = num_turns > 1
 
-    # Validate turn gradient weights for multi-turn
-    if is_multi_turn:
-        turn_weights = magrpo_config.get("turn_gradient_weights", [1.0] * num_turns)
-        if len(turn_weights) != num_turns:
-            raise ValueError(
-                f"turn_gradient_weights must have {num_turns} values, got {len(turn_weights)}"
-            )
-        print(
-            f"Multi-turn training enabled: num_turns={num_turns}, weights={turn_weights}"
-        )
-    else:
-        print(f"Single-turn training: num_turns={num_turns}")
+    print(f"Multi-turn training enabled: num_turns={num_turns}") if is_multi_turn else print(
+        f"Single-turn training: num_turns={num_turns}"
+    )
 
     slurm_job_id = os.environ.get("SLURM_JOB_ID", "no_job_id")
 
@@ -418,14 +409,8 @@ def main():
         top_p=top_p,
         # Multi-turn parameters (automatically handled based on num_turns)
         num_turns=num_turns,
-        turn_gradient_weights=magrpo_config.get(
-            "turn_gradient_weights", [1.0] * num_turns
-        ),
-        early_termination_weight=magrpo_config.get("early_termination_weight", 2.0),
-        early_termination_threshold=magrpo_config.get(
-            "early_termination_threshold", 4.0
-        ),
-        handoff=magrpo_config.get("handoff", "random"),
+        discount=magrpo_config.get("discount", 0.9),
+        discount=magrpo_config.get("discount", 0.9),
     )
 
     # Get appropriate formatters and functions based on dataset type, agent count, and training mode
@@ -449,7 +434,6 @@ def main():
     # external_cfg already loaded above
     # Compute tags and add self-evolved when using analysis-based external modes
     external_mode = external_cfg.get("mode", "level_feedback")
-    handoff_mode = magrpo_config.get("handoff", "random")
     default_tags = ["magrpo", dataset_type or "code", f"turns_{num_turns}"]
     tags_from_cfg = wandb_section.get("tags", default_tags)
     # Ensure list

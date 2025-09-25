@@ -41,10 +41,7 @@ magrpo:
   num_generations: 4
   max_new_tokens: 256
   num_agents: 2
-  handoff: random
-  turn_gradient_weights: [1.2, 0.8]
-  early_termination_weight: 2.0
-  early_termination_threshold: 4.0
+  discount: 0.9
   reward_shift: null
 
 # wandb

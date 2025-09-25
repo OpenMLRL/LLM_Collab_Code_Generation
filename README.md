@@ -94,14 +94,3 @@ python LLM_Collaboration_with_MARL/train_magrpo.py \
   --config LLM_Collaboration_with_MARL/configs/mt_magrpo_che_config.yaml \
   --override external.mode='level_feedback' external.sandbox_slice=-2
 ```
-
-### Handoff Strategy
-
-In MAGRPO/GRPO multi-turn training, we hand off one prior completion per agent to keep compute bounded. The trainer selects this per the `handoff` mode: **default `random`**, or `best`. Selection happens in the CoMLRL trainer; external modes simply format the next-turn prompts using the provided completions. Configure via `magrpo.handoff` or `grpo.handoff` in your config or `--override`.
-
-
-```bash
-python LLM_Collaboration_with_MARL/train_magrpo.py \
-  --config LLM_Collaboration_with_MARL/configs/mt_magrpo_he_config.yaml \
-  --override external.mode='plain' magrpo.handoff='best'
-```

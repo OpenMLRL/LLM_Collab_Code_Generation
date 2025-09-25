@@ -420,12 +420,7 @@ def main():
         top_p=top_p,
         # Multi-turn parameters
         num_turns=num_turns,
-        turn_gradient_weights=grpo_config.get(
-            "turn_gradient_weights", [1.0] * num_turns
-        ),
-        early_termination_weight=grpo_config.get("early_termination_weight", 2.0),
-        early_termination_threshold=grpo_config.get("early_termination_threshold", 2.1),
-        handoff=grpo_config.get("handoff", "random"),
+        discount=grpo_config.get("discount", 0.9),
     )
 
     formatter = get_formatter(dataset_type)
@@ -444,7 +439,6 @@ def main():
     # external_cfg already loaded above
     # Compute tags and add self-evolved when using analysis-based external modes
     external_mode = external_cfg.get("mode", "level_feedback")
-    handoff_mode = grpo_config.get("handoff", "random")
     default_tags = ["grpo", dataset_type or "code", f"turns_{num_turns}"]
     tags_from_cfg = wandb_section.get("tags", default_tags)
     tags = list(tags_from_cfg) if isinstance(tags_from_cfg, list) else default_tags

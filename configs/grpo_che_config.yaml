@@ -41,8 +41,7 @@ grpo:
   max_new_tokens: 256
   temperature: 0.8
   top_p: 0.95
-  handoff: random
-  early_termination_threshold: 2.1
+  discount: 0.9
   reward_shift: null
 
 # wandb
