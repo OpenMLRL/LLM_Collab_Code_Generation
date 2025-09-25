@@ -4,8 +4,7 @@ import numpy as np
 
 
 def mt_humaneval_logger(
-    completions1_turns: List[List[str]],
-    completions2_turns: List[List[str]],
+    agent_completions_turns: List[List[List[str]]],
     test_cases: List[str],
     entry_points: List[str],
     prompts: Optional[List[str]] = None,
@@ -14,8 +13,7 @@ def mt_humaneval_logger(
     Multi-turn logger for code generation tasks (HumanEval/CoopHumanEval) with aux + main function collaboration.
 
     Args:
-        completions1_turns: List of lists - [sample][turn] completions for agent 1
-        completions2_turns: List of lists - [sample][turn] completions for agent 2
+        agent_completions_turns: List per agent -> per sample -> per turn completions
         test_cases: List of test cases
         entry_points: List of entry point function names
         prompts: Optional list of prompts for import extraction
@@ -27,12 +25,20 @@ def mt_humaneval_logger(
 
     all_metrics = []
 
-    # Get number of turns from the data
-    num_turns = (
-        len(completions1_turns[0])
-        if completions1_turns and completions1_turns[0]
-        else 0
+    # Derive completions for aux/main from agent_completions_turns
+    # agent_completions_turns shape: [num_agents][num_samples][num_turns]
+    if not agent_completions_turns or len(agent_completions_turns) == 0:
+        return []
+
+    num_agents = len(agent_completions_turns)
+    # Use first agent as aux (if available), last agent as main
+    aux_per_sample_turns = (
+        agent_completions_turns[0] if num_agents >= 2 else [[""] * len(agent_completions_turns[0][0]) for _ in range(len(agent_completions_turns[0]))]
     )
+    main_per_sample_turns = agent_completions_turns[-1]
+
+    # Get number of turns from the data (assume consistent across samples)
+    num_turns = len(main_per_sample_turns[0]) if main_per_sample_turns and main_per_sample_turns[0] else 0
 
     for i in range(len(test_cases)):
         sample_metrics = {
@@ -47,18 +53,18 @@ def mt_humaneval_logger(
             # Extract completions for this turn
             turn_completions1 = [
                 (
-                    completions1_turns[j][turn_idx]
-                    if j < len(completions1_turns)
-                    and turn_idx < len(completions1_turns[j])
+                    aux_per_sample_turns[j][turn_idx]
+                    if j < len(aux_per_sample_turns)
+                    and turn_idx < len(aux_per_sample_turns[j])
                     else ""
                 )
                 for j in range(len(test_cases))
             ]
             turn_completions2 = [
                 (
-                    completions2_turns[j][turn_idx]
-                    if j < len(completions2_turns)
-                    and turn_idx < len(completions2_turns[j])
+                    main_per_sample_turns[j][turn_idx]
+                    if j < len(main_per_sample_turns)
+                    and turn_idx < len(main_per_sample_turns[j])
                     else ""
                 )
                 for j in range(len(test_cases))

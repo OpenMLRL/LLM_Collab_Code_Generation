@@ -239,34 +239,4 @@ def code_reward_logger(
     return all_metrics
 
 
-def aggregate_code_metrics_for_logging(metrics_list):
-    """
-    Aggregate code generation metrics from multiple samples for wandb logging.
-    """
-    if not metrics_list:
-        return {}
-
-    requested_metrics = [
-        "level_1_reward",
-        "level_2_reward",
-        "level_3_reward",
-        "total_reward",
-        "test_reward",
-        "passed_tests",
-        "total_tests",
-        "passed_rate",
-        "timeout_num",
-        "bonus_reward",
-        "aux_usage_bonus",
-        "anti_wrapper_bonus",
-        "called_wo_used_deduction",  # NEW METRIC ADDED
-        "gated_total_reward",
-    ]
-
-    aggregated = {}
-    for key in requested_metrics:
-        values = [sample[key] for sample in metrics_list if key in sample]
-        if values:
-            aggregated[f"avg_{key}"] = np.mean(values)
-
-    return aggregated
+# Legacy single-turn aggregator removed in favor of multi-turn aggregator

@@ -17,10 +17,7 @@ from config import Config, add_config_args, parse_overrides
 from datasets import load_dataset
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
-from loggers.code_logger import (
-    aggregate_code_metrics_for_logging,
-    code_reward_logger,
-)
+# Single-turn code logger no longer used directly; multi-turn logger handles all cases
 from loggers.mt_code_logger import (
     aggregate_mt_humaneval_metrics_for_logging,
     mt_humaneval_logger,
@@ -121,23 +118,17 @@ def get_formatters(dataset_type: str, num_agents: int):
 
 def get_logger_and_aggregator(dataset_type: str, is_multi_turn: bool = False):
     """
-    Get the appropriate logger and aggregator functions based on dataset type.
-    For multi-turn training with code datasets, use the multi-turn logger.
+    Get the logger and aggregator functions based on dataset type.
+    Standardized to a single modern interface that accepts agent_completions_turns.
     """
     if dataset_type is None:
         return None, None
 
-    # For multi-turn training with code datasets, use multi-turn logger
-    if is_multi_turn and dataset_type.lower() in ["humaneval", "coophumaneval"]:
+    # Use unified multi-turn compatible logger/aggregator for code datasets
+    if dataset_type.lower() in ["humaneval", "coophumaneval"]:
         return mt_humaneval_logger, aggregate_mt_humaneval_metrics_for_logging
 
-    # Standard single-turn loggers
-    logger_map = {
-        "humaneval": (code_reward_logger, aggregate_code_metrics_for_logging),
-        "coophumaneval": (code_reward_logger, aggregate_code_metrics_for_logging),
-    }
-
-    return logger_map.get(dataset_type.lower(), (None, None))
+    return None, None
 
 
 def get_reward_function(dataset_type: str, num_agents: int):
