@@ -505,6 +505,7 @@ def main():
         "wandb_config": wandb_config,
         "eval_logger": eval_logger,
         "eval_aggregator": eval_aggregator,
+        "dataset_type": dataset_type,
     }
 
     if reward_processor is not None:

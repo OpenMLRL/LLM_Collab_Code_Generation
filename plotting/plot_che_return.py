@@ -63,11 +63,11 @@ def plot_combined_two_panels():
     # Define columns for single-turn
     single_columns = [
         "_step",
-        "eval/details/avg_total_reward",
-        "eval/details/avg_level_1_reward",
-        "eval/details/avg_level_2_reward",
-        "eval/details/avg_level_3_reward",
-        "eval/details/avg_bonus_reward",
+        "eval/turn_1/avg_total_reward",
+        "eval/turn_1/avg_level_1_reward",
+        "eval/turn_1/avg_level_2_reward",
+        "eval/turn_1/avg_level_3_reward",
+        "eval/turn_1/avg_bonus_reward",
         "run_name",
         "run_id",
     ]
@@ -82,13 +82,13 @@ def plot_combined_two_panels():
     df_single = df_single.dropna(subset=essential_single)
 
     # Calculate single-turn component rewards
-    df_single["structure_reward"] = df_single["eval/details/avg_level_1_reward"]
-    df_single["syntax_reward"] = df_single["eval/details/avg_level_2_reward"]
+    df_single["structure_reward"] = df_single["eval/turn_1/avg_level_1_reward"]
+    df_single["syntax_reward"] = df_single["eval/turn_1/avg_level_2_reward"]
     df_single["tests_reward"] = (
-        df_single["eval/details/avg_level_3_reward"]
-        - df_single["eval/details/avg_bonus_reward"]
+        df_single["eval/turn_1/avg_level_3_reward"]
+        - df_single["eval/turn_1/avg_bonus_reward"]
     )
-    df_single["cooperation_reward"] = df_single["eval/details/avg_bonus_reward"]
+    df_single["cooperation_reward"] = df_single["eval/turn_1/avg_bonus_reward"]
 
     # Process multi-turn dataframe
     df_mt = pd.concat(mt_data, ignore_index=True)
@@ -178,7 +178,7 @@ def plot_combined_two_panels():
         df_single_uniform.groupby("uniform_step")
         .agg(
             {
-                "eval/details/avg_total_reward": ["mean", "std"],
+                "eval/turn_1/avg_total_reward": ["mean", "std"],
                 "structure_reward": ["mean", "std"],
                 "syntax_reward": ["mean", "std"],
                 "tests_reward": ["mean", "std"],

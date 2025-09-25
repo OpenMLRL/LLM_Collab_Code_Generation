@@ -105,69 +105,7 @@ def execution_reward_single_agent(completions, batch_items=None):
     return raw_rewards
 
 
-def create_execution_reward_function(combined_reward_func):
-    """Factory function to create execution reward functions for different datasets."""
-
-    def execution_reward(completions, batch_items=None):
-        """
-        Single agent reward function that splits generated text into two paragraphs
-        and uses the combined reward function.
-        """
-        import re
-
-        def split_paragraphs(response):
-            """
-            Split response into two paragraphs using [PARAGRAPH_SPLIT] delimiter.
-            If delimiter not found, try to split by "Paragraph 2:" marker.
-            If that fails, split by ratio.
-            """
-            response = response.strip()
-            delimiter = "[PARAGRAPH_SPLIT]"
-
-            if delimiter in response:
-                # Split using delimiter
-                paragraphs = response.split(
-                    delimiter, 1
-                )  # Split only on first occurrence
-                para1 = paragraphs[0].strip()
-                para2 = paragraphs[1].strip() if len(paragraphs) > 1 else ""
-            else:
-                # Try to find "Paragraph 2:" marker
-                para2_pattern = re.compile(r"Paragraph 2:\s*", re.IGNORECASE)
-                match = para2_pattern.search(response)
-
-                if match:
-                    # Split at "Paragraph 2:" marker
-                    para1 = response[: match.start()].strip()
-                    para2 = response[match.end() :].strip()
-                else:
-                    # Fallback: split by random ratio (2.0-3.0x)
-                    import random
-
-                    ratio = random.uniform(2.0, 3.0)
-                    split_point = int(len(response) / (1 + ratio))
-                    para1 = response[:split_point].strip()
-                    para2 = response[split_point:].strip()
-
-            # Clean up any remaining paragraph markers
-            para1 = re.sub(r"^Paragraph 1:\s*", "", para1, flags=re.IGNORECASE)
-            para2 = re.sub(r"^Paragraph 2:\s*", "", para2, flags=re.IGNORECASE)
-
-            return para1, para2
-
-        # Split each completion into two paragraphs
-        completions1 = []  # First paragraphs
-        completions2 = []  # Second paragraphs
-
-        for completion in completions:
-            para1, para2 = split_paragraphs(completion)
-            completions1.append(para1)
-            completions2.append(para2)
-
-        rewards = combined_reward_func(completions1, completions2)
-        return rewards
-
-    return execution_reward
+## Removed dead factory create_execution_reward_function (unused)
 
 
 def get_formatter(dataset_type: str):
@@ -498,6 +436,7 @@ def main():
         "eval_dataset": eval_dataset,
         "tokenizer": tokenizer,
         "wandb_config": wandb_config,
+        "dataset_type": dataset_type,
     }
 
     if reward_processor is not None:
