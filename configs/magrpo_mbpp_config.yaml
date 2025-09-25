@@ -17,8 +17,8 @@ model:
 dataset:
   name: "ryankamiri/MBPP"
   type: "coophumaneval"  # Used to select formatters and reward function
-  train_split: "test[33:163]"
-  eval_split: "test[:32]"
+  train_split: "test[15:65]"
+  eval_split: "test[:15]"
 
 # Output configuration
 output:
