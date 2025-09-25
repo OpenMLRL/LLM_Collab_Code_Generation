@@ -1,6 +1,5 @@
 import ast
 import re
-import signal
 
 
 class TimeoutException(Exception):
@@ -713,104 +712,25 @@ def valid_format_gate(code):
     return True
 
 
-def compute_aux_usefulness_delta(combined_code, test_cases_list, aux_function_name="aux"):
+def check_ast_collaboration(combined_code, aux_function_name="aux"):
     """
-    Compute aux usefulness delta by comparing test pass rates with and without aux.
-    Returns delta (0.0 = aux not needed, 1.0 = aux essential).
+    Use AST to check if aux function is actually called in the combined code.
+    Returns True if aux is called, False otherwise.
     """
-    if not combined_code or not test_cases_list:
-        return 0.0
+    if not combined_code or not aux_function_name:
+        return False
     
     try:
-        # Run tests with original code
-        exec_globals = {}
-        exec(combined_code, exec_globals)
+        tree = ast.parse(combined_code)
         
-        passed_true = 0
-        for test_case in test_cases_list:
-            try:
-                # Set timeout for each test
-                signal.signal(signal.SIGALRM, timeout_handler)
-                signal.alarm(5)  # 5 second timeout
-                
-                exec(test_case, exec_globals)
-                passed_true += 1
-                
-                # Clear timeout after successful test
-                signal.alarm(0)
-            except TimeoutException:
-                signal.alarm(0)  # Clear timeout
-                # Test timed out, don't count as passed
-                pass
-            except:
-                signal.alarm(0)  # Clear timeout
-                # Test failed, don't count as passed
-                pass
+        # Check if aux is actually called in the AST
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Call):
+                if isinstance(node.func, ast.Name) and node.func.id == aux_function_name:
+                    return True
         
-        pass_rate_true = passed_true / len(test_cases_list) if test_cases_list else 0.0
-        
-        # Create stubbed version where aux returns None
-        stubbed_code = combined_code.replace(
-            f"def {aux_function_name}(",
-            f"def {aux_function_name}_stub("
-        )
-        stubbed_code = stubbed_code.replace(
-            f"{aux_function_name}(",
-            f"{aux_function_name}_stub("
-        )
-        
-        # Add stub function
-        stub_func = f"def {aux_function_name}(*args, **kwargs):\n    return None"
-        stubbed_code = f"{stubbed_code}\n\n{stub_func}"
-        
-        # Run tests with stubbed code
-        exec_globals_stub = {}
-        exec(stubbed_code, exec_globals_stub)
-        
-        passed_stub = 0
-        for test_case in test_cases_list:
-            try:
-                # Set timeout for each test
-                signal.signal(signal.SIGALRM, timeout_handler)
-                signal.alarm(5)  # 5 second timeout
-                
-                exec(test_case, exec_globals_stub)
-                passed_stub += 1
-                
-                # Clear timeout after successful test
-                signal.alarm(0)
-            except TimeoutException:
-                signal.alarm(0)  # Clear timeout
-                # Test timed out, don't count as passed
-                pass
-            except:
-                signal.alarm(0)  # Clear timeout
-                # Test failed, don't count as passed
-                pass
-        
-        pass_rate_stub = passed_stub / len(test_cases_list) if test_cases_list else 0.0
-        
-        # Compute delta
-        delta = pass_rate_true - pass_rate_stub
-        return max(0.0, delta)  # Ensure non-negative
-        
-    except Exception:
-        return 0.0
+        return False
+    except SyntaxError:
+        return False
 
 
-def check_aux_used_on_passing_tests(main_code, test_cases_list, aux_function_name="aux"):
-    """
-    Check if aux is called AND its return value is consumed in passing test execution paths.
-    Returns True if aux is properly used on passing tests, False otherwise.
-    """
-    if not main_code or not test_cases_list or aux_function_name not in main_code:
-        return False
-    
-    # Check if main function uses aux
-    if not check_aux_function_usage(main_code, aux_function_name):
-        return False
-    
-    # For now, we'll use a simplified check - if aux is called and there are passing tests,
-    # we assume it's being used properly. A more sophisticated analysis would require
-    # tracing execution paths, which is complex.
-    return True

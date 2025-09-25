@@ -9,11 +9,10 @@ VERBOSE = True
 from rewards.code_utils import (
     TimeoutException,
     check_aux_call_without_assignment,
-    check_aux_used_on_passing_tests,
+    check_ast_collaboration,
     check_function_definition,
     check_syntax,
     cleanup_code,
-    compute_aux_usefulness_delta,
     concatenate_functions,
     extract_imports_from_prompt,
     extract_specific_function,
@@ -50,16 +49,15 @@ def execution_reward_aux(
     DEPENDENCY GATE:
     - Cap total reward ≤ 2.0 if any tests pass but aux is not called/used
 
-    DENSE COOPERATION BONUSES (only if aux is used on passing tests):
-    - Use-aux bonus (0 → 0.5): Proportional to fraction of passing tests where aux contributes
-    - Non-wrapper bonus (0 or 0.6): Binary bonus if main is NOT a simple wrapper around aux
-    - Aux usefulness Δ (0 → 0.6): Run tests with aux stubbed; reward proportional to pass_rate_true - pass_rate_stub
+    LEVEL 4 (Cooperation Bonuses - only if aux is used on passing tests):
+    - AST collaboration bonus (0 or 1.0): Binary bonus if aux is called (AST-detected)
+    - Non-wrapper bonus (0 or 1.0): Binary bonus if main is NOT a simple wrapper around aux
 
     PENALTIES:
     - -0.5 if aux is called but return ignored
     - -0.2 if runtime timeout or unsafe operation
 
-    Final reward is clipped between 0.0 and 4.0.
+    Total possible: 4.5 (1.0 + 0.5 + 1.0 = 2.5 base, +2.0 Level 4 bonus = 4.5 max)
     """
     # Local print override based on VERBOSE
     if not VERBOSE:
@@ -331,73 +329,52 @@ def execution_reward_aux(
         print("\n🔒 DEPENDENCY GATE")
         print("-" * 20)
         
-        aux_used_on_passing = check_aux_used_on_passing_tests(main_func, test_cases_list, "aux")
-        print(f"Aux used on passing tests: {aux_used_on_passing}")
+        # Use AST to check if aux is actually called
+        aux_called = check_ast_collaboration(combined_code, "aux")
+        print(f"Aux called (AST-detected): {aux_called}")
         
-        if passed_tests > 0 and not aux_used_on_passing:
+        if passed_tests > 0 and not aux_called:
             reward = min(reward, 2.0)
-            print(f"⚠️  DEPENDENCY GATE: Aux not used on passing tests - capping reward at 2.0")
+            print(f"⚠️  DEPENDENCY GATE: Aux not called - capping reward at 2.0")
             print(f"   Current reward: {reward}")
         else:
-            print("✅ DEPENDENCY GATE: Aux properly used or no passing tests")
+            print("✅ DEPENDENCY GATE: Aux properly called or no passing tests")
 
         # ================================================================
-        # DENSE COOPERATION BONUSES
+        # LEVEL 4: COOPERATION BONUSES
         # ================================================================
-        print("\n🎁 DENSE COOPERATION BONUSES")
-        print("-" * 30)
+        print("\n🎁 LEVEL 4: COOPERATION BONUSES")
+        print("-" * 35)
         
-        cooperation_bonus = 0.0
+        level_4_reward = 0.0
         
         # Check if main is a wrapper (do this once and reuse)
         is_wrapper = is_wrapper_function(main_func, "aux") if main_func else False
         
-        if passed_tests > 0 and aux_func and aux_used_on_passing:
-            # Use-aux bonus (0 → 0.5): Proportional to fraction of passing tests where aux return contributes
-            use_aux_bonus = 0.5 * (passed_tests / total_tests)
-            cooperation_bonus += use_aux_bonus
-            print(f"✅ Use-aux bonus: +{use_aux_bonus:.3f} (proportional to test pass rate)")
+        if passed_tests > 0 and aux_func and aux_called:
+            # AST collaboration bonus (0 or 1.0): Binary bonus if aux is called
+            ast_collaboration_bonus = 1.0
+            level_4_reward += ast_collaboration_bonus
+            print(f"✅ AST collaboration bonus: +{ast_collaboration_bonus:.3f} (aux is called)")
             
-            # Non-wrapper bonus (0 or 0.6): Binary check if main is not a simple wrapper
+            # Non-wrapper bonus (0 or 1.0): Binary check if main is not a simple wrapper
             if not is_wrapper:
-                non_wrapper_bonus = 0.6
-                cooperation_bonus += non_wrapper_bonus
+                non_wrapper_bonus = 1.0
+                level_4_reward += non_wrapper_bonus
                 print(f"✅ Non-wrapper bonus: +{non_wrapper_bonus:.3f} (main is not a simple wrapper)")
             else:
                 non_wrapper_bonus = 0.0
                 print(f"⚠️  No non-wrapper bonus: main is a simple wrapper")
             
-            # Aux usefulness delta (0 → 0.6): Run tests with aux stubbed
-            try:
-                # Set timeout for aux usefulness calculation (30 seconds total)
-                signal.signal(signal.SIGALRM, timeout_handler)
-                signal.alarm(30)
-                
-                aux_usefulness = compute_aux_usefulness_delta(combined_code, test_cases_list, "aux")
-                aux_usefulness_bonus = 0.6 * aux_usefulness
-                cooperation_bonus += aux_usefulness_bonus
-                print(f"✅ Aux usefulness bonus: +{aux_usefulness_bonus:.3f} (usefulness: {aux_usefulness:.3f})")
-                
-                # Clear timeout after successful calculation
-                signal.alarm(0)
-            except TimeoutException:
-                signal.alarm(0)  # Clear timeout
-                print("⚠️  Aux usefulness calculation timed out - skipping bonus")
-                aux_usefulness_bonus = 0.0
-            except Exception as e:
-                signal.alarm(0)  # Clear timeout
-                print(f"⚠️  Aux usefulness calculation failed: {e} - skipping bonus")
-                aux_usefulness_bonus = 0.0
-            
-            reward += cooperation_bonus
-            print(f"🎉 Total cooperation bonus: +{cooperation_bonus:.3f} (total: {reward:.3f})")
+            reward += level_4_reward
+            print(f"🎉 Level 4 cooperation reward: +{level_4_reward:.3f} (total: {reward:.3f})")
         else:
             if passed_tests == 0:
-                print("⚠️  No tests passed - no cooperation bonuses")
+                print("⚠️  No tests passed - no Level 4 cooperation bonuses")
             if not aux_func:
-                print("⚠️  No aux function - no cooperation bonuses")
-            if not aux_used_on_passing:
-                print("⚠️  Aux not used on passing tests - no cooperation bonuses")
+                print("⚠️  No aux function - no Level 4 cooperation bonuses")
+            if not aux_called:
+                print("⚠️  Aux not called - no Level 4 cooperation bonuses")
 
         # ================================================================
         # PENALTIES
@@ -431,9 +408,9 @@ def execution_reward_aux(
         else:
             print("✅ No penalties applied")
 
-        # Clip final reward between 0 and 4.0
-        reward = max(0.0, min(4.0, reward))
-        print(f"\n🏆 FINAL REWARD: {reward:.3f} / 4.0")
+        # Clip final reward between 0 and 4.5
+        reward = max(0.0, min(4.5, reward))
+        print(f"\n🏆 FINAL REWARD: {reward:.3f} / 4.5")
         rewards.append(reward)
 
     return rewards

@@ -132,6 +132,7 @@ def aggregate_mt_humaneval_metrics_for_logging(
             "level_1_reward",
             "level_2_reward",
             "level_3_reward",
+            "level_4_reward",
             "total_reward",
             "test_reward",
             "passed_tests",
