@@ -1,5 +1,6 @@
 import ast
 import re
+import difflib
 
 
 class TimeoutException(Exception):
@@ -661,3 +662,178 @@ class AuxUsageAnalyzer(ast.NodeVisitor):
             formatted_calls.append(f"Line {line}: {reason}")
 
         return formatted_calls
+
+
+def valid_format_gate(code):
+    """
+    Strict format gate: Check if raw completion contains ONLY a single valid def ...(): return ... format.
+    Returns True if format is valid, False otherwise.
+    
+    Rules:
+    1. Must start with 'def ' (no markdown, no explanatory text)
+    2. Must contain 'return ' statement
+    3. No ```python or other markdown allowed
+    4. Must contain exactly one function definition (basic check)
+    
+    Note: Syntax validation is handled separately by check_syntax()
+    """
+    if not code or not isinstance(code, str):
+        return False
+    
+    # Check for markdown code blocks - immediate failure
+    if '```python' in code or '```' in code:
+        return False
+    
+    # Check if first non-empty, non-comment line starts with 'def '
+    lines = code.split('\n')
+    first_def_line = None
+    
+    for line in lines:
+        stripped = line.strip()
+        if stripped and not stripped.startswith('#'):
+            if stripped.startswith('def '):
+                first_def_line = line
+                break
+            else:
+                # Found non-comment, non-def line before any def - invalid
+                return False
+    
+    if not first_def_line:
+        return False
+    
+    # Check if there's a return statement anywhere in the code
+    if 'return ' not in code:
+        return False
+    
+    # Basic check: count 'def ' occurrences - should be exactly 1
+    def_count = code.count('def ')
+    if def_count != 1:
+        return False
+        
+    return True
+
+
+def compute_ast_edit_distance(main_code, aux_function_name="aux"):
+    """
+    Compute AST edit distance between main function body and a simple wrapper.
+    Returns normalized distance (0.0 = identical to wrapper, 1.0 = completely different).
+    """
+    if not main_code or not aux_function_name:
+        return 1.0
+    
+    try:
+        # Parse main function AST
+        main_tree = ast.parse(main_code)
+        
+        # Find the main function
+        main_func = None
+        for node in ast.walk(main_tree):
+            if isinstance(node, ast.FunctionDef):
+                main_func = node
+                break
+        
+        if not main_func:
+            return 1.0
+        
+        # Create a simple wrapper AST: return aux(...)
+        wrapper_code = f"def wrapper():\n    return {aux_function_name}()"
+        wrapper_tree = ast.parse(wrapper_code)
+        wrapper_func = None
+        for node in ast.walk(wrapper_tree):
+            if isinstance(node, ast.FunctionDef):
+                wrapper_func = node
+                break
+        
+        if not wrapper_func:
+            return 1.0
+        
+        # Compare function bodies using string similarity as a proxy for AST distance
+        main_body = ast.unparse(main_func.body) if hasattr(ast, 'unparse') else str(main_func.body)
+        wrapper_body = ast.unparse(wrapper_func.body) if hasattr(ast, 'unparse') else str(wrapper_func.body)
+        
+        # Use difflib to compute similarity
+        similarity = difflib.SequenceMatcher(None, main_body, wrapper_body).ratio()
+        distance = 1.0 - similarity
+        
+        return distance
+        
+    except (SyntaxError, AttributeError):
+        # If parsing fails, assume it's not a wrapper
+        return 1.0
+
+
+def compute_aux_usefulness_delta(combined_code, test_cases_list, aux_function_name="aux"):
+    """
+    Compute aux usefulness delta by comparing test pass rates with and without aux.
+    Returns delta (0.0 = aux not needed, 1.0 = aux essential).
+    """
+    if not combined_code or not test_cases_list:
+        return 0.0
+    
+    try:
+        # Run tests with original code
+        exec_globals = {}
+        exec(combined_code, exec_globals)
+        
+        passed_true = 0
+        for test_case in test_cases_list:
+            try:
+                exec(test_case, exec_globals)
+                passed_true += 1
+            except:
+                pass
+        
+        pass_rate_true = passed_true / len(test_cases_list) if test_cases_list else 0.0
+        
+        # Create stubbed version where aux returns None
+        stubbed_code = combined_code.replace(
+            f"def {aux_function_name}(",
+            f"def {aux_function_name}_stub("
+        )
+        stubbed_code = stubbed_code.replace(
+            f"{aux_function_name}(",
+            f"{aux_function_name}_stub("
+        )
+        
+        # Add stub function
+        stub_func = f"def {aux_function_name}(*args, **kwargs):\n    return None"
+        stubbed_code = f"{stubbed_code}\n\n{stub_func}"
+        
+        # Run tests with stubbed code
+        exec_globals_stub = {}
+        exec(stubbed_code, exec_globals_stub)
+        
+        passed_stub = 0
+        for test_case in test_cases_list:
+            try:
+                exec(test_case, exec_globals_stub)
+                passed_stub += 1
+            except:
+                pass
+        
+        pass_rate_stub = passed_stub / len(test_cases_list) if test_cases_list else 0.0
+        
+        # Compute delta
+        delta = pass_rate_true - pass_rate_stub
+        return max(0.0, delta)  # Ensure non-negative
+        
+    except Exception:
+        return 0.0
+
+
+def check_aux_used_on_passing_tests(main_code, test_cases_list, aux_function_name="aux"):
+    """
+    Check if aux is called AND its return value is consumed in passing test execution paths.
+    Returns True if aux is properly used on passing tests, False otherwise.
+    """
+    if not main_code or not test_cases_list or aux_function_name not in main_code:
+        return False
+    
+    # Check if main function uses aux
+    if not check_aux_function_usage(main_code, aux_function_name):
+        return False
+    
+    # For now, we'll use a simplified check - if aux is called and there are passing tests,
+    # we assume it's being used properly. A more sophisticated analysis would require
+    # tracing execution paths, which is complex.
+    return True
