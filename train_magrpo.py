@@ -468,8 +468,8 @@ def main():
     if config.get("reward_processor.enabled", False):
         scale_factor = config.get("reward_processor.scale_factor", 1)
         reward_processor = RewardProcessors.scale(factor=scale_factor)
-    # Optional shift via magrpo.reward_shift
-    shift_val = magrpo_config.get("reward_shift", None)
+    # Optional shift via magrpo.reward_shift (default: -4 for code tasks)
+    shift_val = magrpo_config.get("reward_shift", -4)
     if shift_val is not None:
         try:
             shift_val_f = float(shift_val)

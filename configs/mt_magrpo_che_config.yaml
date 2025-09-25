@@ -44,7 +44,7 @@ magrpo:
   top_p: 0.95
   num_agents: 2
   discount: 0.9
-  reward_shift: null
+  reward_shift: -4
 
 # wandb
 wandb:

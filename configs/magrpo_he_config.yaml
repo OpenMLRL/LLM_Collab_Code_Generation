@@ -41,7 +41,7 @@ magrpo:
   max_new_tokens: 256
   num_agents: 2
   discount: 0.9
-  reward_shift: null
+  reward_shift: -4
 
 # wandb
 wandb:
