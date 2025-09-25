@@ -38,50 +38,12 @@ def mt_humaneval_logger(
         sample_metrics = {
             "sample_id": i,
             "entry_point": entry_points[i],
-            "num_turns": 0,
-            "early_termination": False,
-            "termination_turn": -1,
         }
 
-        # Process each turn
+        # Process each turn without early termination
         turn_rewards = []
-        early_terminated = False
 
         for turn_idx in range(num_turns):
-            if early_terminated:
-                # Fill with max values for remaining turns
-                turn_rewards.append(4.0)
-
-                # Add perfect metrics for this turn
-                sample_metrics[f"turn_{turn_idx + 1}/total_reward"] = 4.0
-                sample_metrics[f"turn_{turn_idx + 1}/gated_total_reward"] = 4.0
-                sample_metrics[f"turn_{turn_idx + 1}/level_1_reward"] = 1.0
-                sample_metrics[f"turn_{turn_idx + 1}/level_2_reward"] = 0.5
-                sample_metrics[f"turn_{turn_idx + 1}/level_3_reward"] = 2.5
-                sample_metrics[f"turn_{turn_idx + 1}/test_reward"] = 1.0
-                sample_metrics[f"turn_{turn_idx + 1}/passed_tests"] = (
-                    sample_metrics.get(f"turn_1/total_tests", 0)
-                )
-                sample_metrics[f"turn_{turn_idx + 1}/total_tests"] = sample_metrics.get(
-                    f"turn_1/total_tests", 0
-                )
-                sample_metrics[f"turn_{turn_idx + 1}/passed_rate"] = 1.0
-                sample_metrics[f"turn_{turn_idx + 1}/timeout_num"] = 0
-                sample_metrics[f"turn_{turn_idx + 1}/bonus_reward"] = 1.5  # 0.5 + 1.0
-                sample_metrics[f"turn_{turn_idx + 1}/aux_usage_bonus"] = 0.5
-                sample_metrics[f"turn_{turn_idx + 1}/anti_wrapper_bonus"] = 1.0
-                sample_metrics[f"turn_{turn_idx + 1}/called_wo_used_deduction"] = 0.0
-                sample_metrics[f"turn_{turn_idx + 1}/early_termination_filled"] = 1
-
-                # Improvement is 0 since both turns have perfect score
-                if turn_idx > 0:
-                    sample_metrics[
-                        f"turn_{turn_idx + 1}/improvement_from_turn_{turn_idx}"
-                    ] = 0.0
-
-                sample_metrics["num_turns"] = turn_idx + 1
-                continue
-
             # Extract completions for this turn
             turn_completions1 = [
                 (
@@ -120,15 +82,7 @@ def mt_humaneval_logger(
                     if key not in ["sample_id", "entry_point"]:
                         sample_metrics[f"turn_{turn_idx + 1}/{key}"] = value
 
-                # Check for early termination
-                if turn_metric["total_reward"] == 4.0:
-                    sample_metrics["early_termination"] = True
-                    sample_metrics["termination_turn"] = turn_idx + 1
-                    sample_metrics["num_turns"] = turn_idx + 1
-                    early_terminated = True
-                    # Don't break - continue to fill remaining turns with max values
-
-            sample_metrics["num_turns"] = turn_idx + 1
+            # sample_metrics["num_turns"] = num_turns  # optional if needed elsewhere
 
         # Calculate turn-to-turn improvements
         if len(turn_rewards) >= 2:
@@ -171,15 +125,7 @@ def aggregate_mt_humaneval_metrics_for_logging(
 
     aggregated = {}
 
-    # Overall metrics
-    overall_keys = ["num_turns", "early_termination"]
-    for key in overall_keys:
-        values = [sample[key] for sample in metrics_list if key in sample]
-        if values:
-            if key == "early_termination":
-                aggregated[f"avg_{key}_rate"] = np.mean([1 if v else 0 for v in values])
-            else:
-                aggregated[f"avg_{key}"] = np.mean(values)
+    # No overall early termination or num_turns aggregation
 
     # Turn-specific metrics
     for turn in range(1, num_turns + 1):
