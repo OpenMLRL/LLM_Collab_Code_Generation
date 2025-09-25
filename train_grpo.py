@@ -491,7 +491,7 @@ def main():
     trainer_kwargs = {
         "agents": [model],
         "num_agents": 1,
-        "reward_funcs": reward_func,
+        "reward_func": reward_func,
         "formatters": formatter,
         "args": grpo_args,
         "train_dataset": train_dataset,
@@ -501,7 +501,7 @@ def main():
     }
 
     if reward_processor is not None:
-        trainer_kwargs["reward_processors"] = reward_processor
+        trainer_kwargs["reward_processor"] = reward_processor
 
     # Multi-turn external transition support for single-agent GRPO
     if (

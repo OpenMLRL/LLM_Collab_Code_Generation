@@ -496,7 +496,7 @@ def main():
     trainer_kwargs = {
         "agents": agents,
         "num_agents": num_agents,
-        "reward_funcs": reward_func,
+        "reward_func": reward_func,
         "formatters": formatters,
         "args": magrpo_args,
         "train_dataset": train_dataset,
@@ -508,7 +508,7 @@ def main():
     }
 
     if reward_processor is not None:
-        trainer_kwargs["reward_processors"] = reward_processor
+        trainer_kwargs["reward_processor"] = reward_processor
 
     if (
         is_multi_turn
