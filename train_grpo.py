@@ -352,6 +352,7 @@ def main():
         # Multi-turn parameters
         num_turns=num_turns,
         discount=grpo_config.get("discount", 0.9),
+        joint_mode=grpo_config.get("joint_mode", "cross"),
     )
 
     formatter = get_formatter(dataset_type)

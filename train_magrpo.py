@@ -401,6 +401,7 @@ def main():
         # Multi-turn parameters (automatically handled based on num_turns)
         num_turns=num_turns,
         discount=magrpo_config.get("discount", 0.9),
+        joint_mode=magrpo_config.get("joint_mode", "cross"),
     )
 
     # Get appropriate formatters and functions based on dataset type, agent count, and training mode
