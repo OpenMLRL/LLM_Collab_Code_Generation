@@ -44,6 +44,7 @@ grpo:
   temperature: 0.8
   top_p: 0.95
   discount: 0.9
+  termination_threshold: -0.1
   reward_shift: -2.1
 
 # wandb

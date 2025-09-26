@@ -353,6 +353,7 @@ def main():
         num_turns=num_turns,
         discount=grpo_config.get("discount", 0.9),
         joint_mode=grpo_config.get("joint_mode", "cross"),
+        termination_threshold=grpo_config.get("termination_threshold", None),
     )
 
     formatter = get_formatter(dataset_type)

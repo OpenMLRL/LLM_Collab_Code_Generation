@@ -61,14 +61,55 @@ python LLM_Collaboration_with_MARL/train_magrpo.py \
 ```
 ## Multi-Turn Settings
 
+### Joint Actions & Early Termination
+
+- Joint actions (magrpo.joint_mode):
+  - `cross` (default): Form joint actions by Cartesian product of each agent's K generations (reuses sequences; no extra generation).
+  - `aligned`: Join index‑aligned generations.
+
+- Early termination (magrpo.termination_threshold / grpo.termination_threshold):
+  - At each node (branch, turn), compute the mean immediate reward across the sibling joint actions at that node.
+  - If the mean exceeds the threshold, that branch stops expanding at this turn; training backpropagates from the truncated subtree. Other branches continue.
+
+Illustrative example (threshold = -0.2, 2 agents, K=2 → 4 joint actions per node):
+
+```
+Turn 1 (root) (a,b,c,d): [-1.5, -1.5, -1.0, -1.0]
+mean rewards = -1.25 ≤ -0.2 → continue expanding all branches
+
+  a (-1.5)
+    ↳ Turn 2 children (e,f,g,h): [-1, -1, -1, -1]
+      mean rewards = -1.0 ≤ -0.2 → continue
+
+  b (-1.5)
+    ↳ Turn 2 children (i,j,k,l): [0.0, 0.0, 0.0, -0.2]
+      mean rewards = -0.05 > -0.2 → TERMINATE branch b here (no further children)
+
+  c (-1.0)
+    ↳ Turn 2 children: [...]
+
+  d (-1.0)
+    ↳ Turn 2 children: [...]
+```
+
+Notes:
+- Termination is per‑branch; other branches continue normally.
+- The same rule applies at deeper turns.
+- For GRPO (single agent), the same threshold logic applies (one agent → one set of siblings per node).
+
 ### 2+Turn Prompt Composition
 
-To save memory usage, 2+ turn prompts **include the previous response without the original first‑turn problem prompt by default**. You can add the original prompt to match the concept of observation-action history in MARL.
+By default, multi-turn prompts include both the original first‑turn problem prompt and the previous response.
+
+- external.original_prompt: true (default)
+- external.previous_response: true (default)
+
+To exclude the original prompt but keep the previous response (shorter context):
 
 ```bash
 python LLM_Collaboration_with_MARL/train_magrpo.py \
   --config LLM_Collaboration_with_MARL/configs/mt_magrpo_he_config.yaml \
-  --override magrpo.external_original_prompt=True magrpo.external_previous_response=True
+  --override external.original_prompt=False external.previous_response=True
 ```
 
 ### External Modes

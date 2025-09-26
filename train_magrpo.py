@@ -402,6 +402,7 @@ def main():
         num_turns=num_turns,
         discount=magrpo_config.get("discount", 0.9),
         joint_mode=magrpo_config.get("joint_mode", "cross"),
+        termination_threshold=magrpo_config.get("termination_threshold", None),
     )
 
     # Get appropriate formatters and functions based on dataset type, agent count, and training mode
