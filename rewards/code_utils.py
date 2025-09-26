@@ -734,3 +734,59 @@ def check_ast_collaboration(combined_code, aux_function_name="aux"):
         return False
 
 
+<<<<<<< HEAD
+=======
+def check_naming_convention(aux_code, main_code, expected_main_name):
+    """
+    Check if functions follow expected naming conventions.
+    
+    Args:
+        aux_code: Code containing the auxiliary function
+        main_code: Code containing the main function  
+        expected_main_name: Expected name for the main function (from signature)
+    
+    Returns:
+        tuple: (is_valid, violations) where is_valid is bool and violations is list of strings
+    """
+    violations = []
+    
+    # Check if aux function is missing but being called
+    if main_code and "aux(" in main_code:
+        # Check if aux function is defined in aux_code
+        aux_defined = False
+        if aux_code:
+            aux_func = extract_specific_function(aux_code, "aux")
+            if aux_func:
+                aux_defined = True
+        
+        if not aux_defined:
+            violations.append("Aux function is called but not defined - should define 'aux' function")
+    
+    # Check aux function naming
+    if aux_code:
+        aux_func = extract_specific_function(aux_code, "aux")
+        if not aux_func:
+            # Look for any function definition that's not the main function
+            aux_pattern = r"def\s+(\w+)\s*\("
+            aux_matches = re.findall(aux_pattern, aux_code)
+            if aux_matches:
+                # Filter out the main function name if it appears
+                aux_candidates = [name for name in aux_matches if name != expected_main_name]
+                if aux_candidates and aux_candidates[0] != "aux":
+                    violations.append(f"Aux function should be named 'aux', found: {aux_candidates[0]}")
+    
+    # Check main function naming
+    if main_code:
+        main_func = extract_specific_function(main_code, expected_main_name)
+        if not main_func:
+            # Look for any function definition
+            main_pattern = r"def\s+(\w+)\s*\("
+            main_matches = re.findall(main_pattern, main_code)
+            if main_matches and main_matches[0] != expected_main_name:
+                violations.append(f"Main function should be named '{expected_main_name}', found: {main_matches[0]}")
+    
+    is_valid = len(violations) == 0
+    return is_valid, violations
+
+
+>>>>>>> 8056b40 (Fixed penalty bug)

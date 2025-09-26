@@ -402,6 +402,22 @@ def execution_reward_aux(
             penalty += 0.2
             print(f"⚠️  Runtime timeout detected: -0.2")
         
+<<<<<<< HEAD
+=======
+        # Check for naming convention violations
+        if main_func:  # Only need main function to check naming conventions
+            # Extract expected main function name from entry point
+            expected_main_name = entry_point
+            is_naming_valid, naming_violations = check_naming_convention(c1, c2, expected_main_name)
+            if not is_naming_valid:
+                penalty += 0.5
+                print(f"⚠️  Naming convention violation: -0.5")
+                for violation in naming_violations:
+                    print(f"   📍 {violation}")
+            else:
+                print("✅ Function naming conventions followed correctly")
+        
+>>>>>>> 8056b40 (Fixed penalty bug)
         reward -= penalty
         if penalty > 0:
             print(f"💰 Total penalties: -{penalty:.1f} (total: {reward:.3f})")
