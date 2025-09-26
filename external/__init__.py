@@ -6,6 +6,10 @@ from . import level_feedback
 from . import level_passed
 from . import passed
 from . import plain
+import builtins
+
+# Verbose toggle for external previews
+VERBOSE = True
 
 # -----------------------------
 # Context resolver API
@@ -59,6 +63,13 @@ def get_external_transition(
     Returns:
         A list/tuple of full prompts for each agent to use in the next turn.
     """
+    # Local print override
+    if not VERBOSE:
+        def print(*args, **kwargs):  # type: ignore
+            return None
+    else:
+        print = builtins.print  # type: ignore
+
     if int(num_agents) not in (1, 2):
         raise ValueError(
             f"External transition supports 1 or 2 agents, got {num_agents}."

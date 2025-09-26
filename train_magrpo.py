@@ -232,9 +232,11 @@ def main():
     num_turns = magrpo_config.get("num_turns", 1)
     is_multi_turn = num_turns > 1
 
-    print(f"Multi-turn training enabled: num_turns={num_turns}") if is_multi_turn else print(
-        f"Single-turn training: num_turns={num_turns}"
-    )
+    output_verbose = config.get("output.verbose", True)
+    if output_verbose:
+        print(f"Multi-turn training enabled: num_turns={num_turns}") if is_multi_turn else print(
+            f"Single-turn training: num_turns={num_turns}"
+        )
 
     slurm_job_id = os.environ.get("SLURM_JOB_ID", "no_job_id")
 
@@ -260,9 +262,10 @@ def main():
         print(f"Error loading dataset: {e}")
         return
 
-    print(f"\nUsing model: {model_name}")
-    print(f"Model type: {model_config.type}")
-    print(f"Max context window: {model_config.max_length} tokens")
+    if output_verbose:
+        print(f"\nUsing model: {model_name}")
+        print(f"Model type: {model_config.type}")
+        print(f"Max context window: {model_config.max_length} tokens")
 
     tokenizer = AutoTokenizer.from_pretrained(
         model_name, **model_config.tokenizer_kwargs
@@ -277,11 +280,13 @@ def main():
 
     # Add special tokens if needed (e.g., FIM tokens for StarCoder)
     if model_config.special_tokens:
-        print("Adding special tokens...")
+        if output_verbose:
+            print("Adding special tokens...")
         tokenizer.add_special_tokens(model_config.special_tokens)
-        print(
-            f"Special tokens added: {model_config.special_tokens.get('additional_special_tokens', [])}"
-        )
+        if output_verbose:
+            print(
+                f"Special tokens added: {model_config.special_tokens.get('additional_special_tokens', [])}"
+            )
 
     temperature = magrpo_config.get("temperature", model_config.temperature)
     top_p = magrpo_config.get("top_p", model_config.top_p)
@@ -394,7 +399,7 @@ def main():
         learning_rate=magrpo_config.get("learning_rate", 1e-5),
         logging_steps=magrpo_config.get("logging_steps", 50),
         save_steps=magrpo_config.get("save_steps", 200),
-        num_generations=magrpo_config.get("num_generations", 3),
+        num_generations=magrpo_config.get("num_generations", 4),
         max_new_tokens=magrpo_config.get("max_new_tokens", 256),
         temperature=temperature,
         top_p=top_p,
@@ -454,6 +459,18 @@ def main():
             "trainer": magrpo_config,
         },
     }
+
+    # Propagate verbosity to reward/external modules
+    try:
+        import rewards.code_rewards as code_rewards
+        code_rewards.VERBOSE = bool(output_verbose)
+    except Exception:
+        pass
+    try:
+        import external as external_mod
+        external_mod.VERBOSE = bool(output_verbose)
+    except Exception:
+        pass
 
     # Get num_agents from magrpo config (where it belongs for MAGRPO training)
     num_agents = magrpo_config.get("num_agents", 2)

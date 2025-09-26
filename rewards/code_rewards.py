@@ -1,6 +1,10 @@
 import re
 import signal
 from typing import List
+import builtins
+
+# Verbose toggle (can be set by training scripts)
+VERBOSE = True
 
 from rewards.code_utils import (
     TimeoutException,
@@ -43,6 +47,13 @@ def execution_reward_aux(
 
     Maximum reward: 4.0 (updated from 3.5)
     """
+    # Local print override based on VERBOSE
+    if not VERBOSE:
+        def print(*args, **kwargs):  # type: ignore
+            return None
+    else:
+        print = builtins.print  # type: ignore
+
     rewards = []
     TEST_TIMEOUT = 10  # Timeout per individual test
 

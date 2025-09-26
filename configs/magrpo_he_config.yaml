@@ -22,6 +22,7 @@ dataset:
 output:
   base_dir: "../../../work/hdd/bepg/sliu30/output_st_magrpo"
   save_final_model: false
+  verbose: false
 
 # external
 external:
@@ -37,9 +38,9 @@ magrpo:
   learning_rate: 2.0e-5
   logging_steps: 50
   save_steps: 200
-  num_generations: 3
+  num_generations: 4
   max_new_tokens: 256
-  joint_mode: cross
+  joint_mode: aligned
   num_agents: 2
   discount: 0.9
   termination_threshold: -0.2
