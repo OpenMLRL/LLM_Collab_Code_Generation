@@ -38,7 +38,7 @@ magrpo:
   learning_rate: 2.0e-5
   logging_steps: 50
   save_steps: 200
-  num_generations: 4
+  num_generations: 3
   max_new_tokens: 256
   temperature: 0.8
   top_p: 0.95

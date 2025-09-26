@@ -345,7 +345,7 @@ def main():
         learning_rate=grpo_config.get("learning_rate", 1e-5),
         logging_steps=grpo_config.get("logging_steps", 50),
         save_steps=grpo_config.get("save_steps", 200),
-        num_generations=grpo_config.get("num_generations", 4),
+        num_generations=grpo_config.get("num_generations", 3),
         max_new_tokens=grpo_config.get("max_new_tokens", 256),
         temperature=temperature,
         top_p=top_p,

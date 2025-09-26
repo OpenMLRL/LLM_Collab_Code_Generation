@@ -394,7 +394,7 @@ def main():
         learning_rate=magrpo_config.get("learning_rate", 1e-5),
         logging_steps=magrpo_config.get("logging_steps", 50),
         save_steps=magrpo_config.get("save_steps", 200),
-        num_generations=magrpo_config.get("num_generations", 4),
+        num_generations=magrpo_config.get("num_generations", 3),
         max_new_tokens=magrpo_config.get("max_new_tokens", 256),
         temperature=temperature,
         top_p=top_p,

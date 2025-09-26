@@ -37,7 +37,7 @@ grpo:
   learning_rate: 1.0e-5
   logging_steps: 50
   save_steps: 200
-  num_generations: 4
+  num_generations: 3
   max_new_tokens: 256
   joint_mode: cross
   temperature: 0.8
