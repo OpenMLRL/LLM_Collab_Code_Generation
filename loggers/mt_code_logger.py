@@ -139,7 +139,6 @@ def aggregate_mt_humaneval_metrics_for_logging(
             "total_tests",
             "passed_rate",
             "timeout_num",
-            "bonus_reward",
             "aux_usage_bonus",
             "anti_wrapper_bonus",
             "called_wo_used_deduction",

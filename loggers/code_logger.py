@@ -61,7 +61,6 @@ def code_reward_logger(
             "total_tests": 0,
             "passed_rate": 0.0,
             "timeout_num": 0,
-            "bonus_reward": 0.0,
             "aux_usage_bonus": 0.0,
             "anti_wrapper_bonus": 0.0,
             "called_wo_used_deduction": 0.0,  # NEW METRIC

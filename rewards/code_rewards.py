@@ -424,8 +424,6 @@ def execution_reward_aux(
         else:
             print("✅ No penalties applied")
 
-        # Clip final reward between 0 and 4.5
-        reward = max(0.0, min(4.5, reward))
         print(f"\n🏆 FINAL REWARD: {reward:.3f} / 4.5")
         rewards.append(reward)
 
