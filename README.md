@@ -30,13 +30,12 @@ python LLM_Collaboration_with_MARL/train_magrpo.py \
 
 ### Joint Action Modes
 
-`magrpo.joint_mode` determine how to combine each agent's K generations into joint actions at each turn. 2 modes are supported: if set 'align' by default, each agent's k-th generation is paired with the other agents' k-th generations to form a joint action; if set 'cross', all combinations of the agents' K generations are used to form joint actions (K^N joint actions for N agents).
+`magrpo.joint_mode` determines how to combine each agent’s G generations into joint actions at each turn. Two modes are supported: `aligned` (default), which pairs the g‑th generation of every agent to form G joint actions per node; and `cross`, which forms the Cartesian product within a node, yielding G^N joint actions per node (N agents). Total leaf joint trajectories after T turns (no early termination): `aligned` → G^T; `cross` → (G^N)^T = G^{N·T}. Aligned is faster in wall‑time (fewer sibling evaluations per node), while cross is more sample‑efficient (better value estimation) without extra VRAM because it reuses the same G generations per agent and only crosses them within the node. We never cross across different nodes/prompts.
 
-Since the number of samples will also grow exponentially with the number of turns, aligned joint will be **more flexible** (\#samples could not be a perfect power) and hence faster to train in wall time. However, using cross joint will be **more sample efficient** (much lower VRAM compare to 'align' when num_generations=K^N), it also performs better since the **value estimation is more accurate**.
 
 ### Number of Turns
 
-`magrpo.num_turns` determines the number of turns (`magrpo.num_turns=2` by default). The number of samples at each turn will grow exponentially with the number of turns: K^TN at turn T if cross joint, K^N if aligned joint. 
+`magrpo.num_turns` determines the number of turns (default: 2). Leaf counts grow with T: `aligned` → G^T; `cross` → G^{N·T}. At each node, the sibling set (competing joint actions under the same prompt/context/turn) has size G for `aligned`, and G^N for `cross`. The policy‑gradient baseline is the mean return over these siblings at that node, i.e., advantage Aᵢ = Returnᵢ − mean_sibling(Return).
 
 ### Early Termination
 
