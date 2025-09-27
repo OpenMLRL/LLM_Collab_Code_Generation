@@ -39,10 +39,7 @@ python LLM_Collaboration_with_MARL/train_magrpo.py \
 
 ### Early Termination
 
-`magrpo.termination_threshold` is used to incentive agents to find high-reward solutions quickly, instead of expanding the full Monte Carlo tree.
-
-At each node (branch, turn), compute the mean immediate **reward across the sibling** joint actions at that node (siblings are the competing samples drawn at the same prompt/
-  context/turn). If the mean exceeds the threshold, that branch stops expanding at this turn; training backpropagates from the truncated subtree. Other branches continue.
+`magrpo.termination_threshold` is used to incentivize agents to find high‑reward solutions quickly, instead of expanding the full Monte Carlo tree. At each node (branch, turn), compute the mean immediate reward across that node’s sibling joint actions; if the mean exceeds the threshold, that branch stops expanding at this turn and the trainer backpropagates from the truncated subtree. Other branches continue.
 
 ### Multi-Turn Prompt
 
