@@ -408,6 +408,9 @@ def main():
         discount=magrpo_config.get("discount", 0.9),
         joint_mode=magrpo_config.get("joint_mode", "cross"),
         termination_threshold=magrpo_config.get("termination_threshold", None),
+        # GRPO-style advantage params
+        normalize_advantage=magrpo_config.get("normalize_advantage", True),
+        epsilon_clip=magrpo_config.get("epsilon_clip", 0.2),
     )
 
     # Get appropriate formatters and functions based on dataset type, agent count, and training mode

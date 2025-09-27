@@ -32,6 +32,9 @@ python LLM_Collaboration_with_MARL/train_magrpo.py \
 
 `magrpo.joint_mode` determines how to combine each agent’s G generations into joint actions at each turn. Two modes are supported: `aligned` (default), which pairs the g‑th generation of every agent to form G joint actions per node; and `cross`, which forms the Cartesian product within a node, yielding G^N joint actions per node (N agents). Total leaf joint trajectories after T turns (no early termination): `aligned` → G^T; `cross` → (G^N)^T = G^{N·T}. Aligned is faster in wall‑time (fewer sibling evaluations per node), while cross is more sample‑efficient (better value estimation) without extra VRAM because it reuses the same G generations per agent and only crosses them within the node. We never cross across different nodes/prompts; this preserves causal state consistency (actions are conditioned on the same prompts), keeps siblings comparable for the baseline/advantage, maintains correct credit assignment (log‑probs matched to rewards from the same state), and remains computationally tractable.
 
+### Advantage Calculation
+
+When `magrpo.normalize_advantage` is true (by default), compute z-scored advantages over sibling returns, A = (R − mean(R)) / (std(R) + 1e-8); else, use a mean baseline without normalization A = R − mean(R). `magrpo.epsilon_clip` clamp the advantage to [-epsilon_clip, +epsilon_clip] after normalization (default as 0.2).
 
 ### Number of Turns
 
