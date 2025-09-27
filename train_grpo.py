@@ -354,7 +354,7 @@ def main():
         # Multi-turn parameters
         num_turns=num_turns,
         discount=grpo_config.get("discount", 0.9),
-        joint_mode=grpo_config.get("joint_mode", "cross"),
+        joint_mode=grpo_config.get("joint_mode", "aligned"),
         termination_threshold=grpo_config.get("termination_threshold", None),
         # GRPO-style advantage params
         normalize_advantage=grpo_config.get("normalize_advantage", True),

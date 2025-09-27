@@ -30,11 +30,17 @@ python LLM_Collaboration_with_MARL/train_magrpo.py \
 
 ### Joint Action Modes
 
-`magrpo.joint_mode` determines how to combine each agent’s G generations into joint actions at each turn. Two modes are supported: `aligned` (default), which pairs the g‑th generation of every agent to form G joint actions per node; and `cross`, which forms the Cartesian product within a node, yielding G^N joint actions per node (N agents). Total leaf joint trajectories after T turns (no early termination): `aligned` → G^T; `cross` → (G^N)^T = G^{N·T}. Aligned is faster in wall‑time (fewer sibling evaluations per node), while cross is more sample‑efficient (better value estimation) without extra VRAM because it reuses the same G generations per agent and only crosses them within the node. We never cross across different nodes/prompts; this preserves causal state consistency (actions are conditioned on the same prompts), keeps siblings comparable for the baseline/advantage, maintains correct credit assignment (log‑probs matched to rewards from the same state), and remains computationally tractable.
+`magrpo.joint_mode` determines how to combine each agent’s G generations into joint actions at each turn. Two modes are supported: `align` (default), which pairs the g‑th generation of every agent to form G joint actions per node; and `cross`, which forms the Cartesian product within a node, yielding G^N joint actions per node (N agents). Total leaf joint trajectories after T turns (no early termination): `align` → G^T; `cross` → (G^N)^T = G^{N·T}. 
+
+Aligned is faster in wall‑time (fewer sibling evaluations per node), while cross is more sample‑efficient (better value estimation) without extra VRAM because it reuses the same G generations per agent and only crosses them within the node. We never cross across different nodes/prompts; this preserves causal state consistency (actions are conditioned on the same prompts), keeps siblings comparable for the baseline/advantage, maintains correct credit assignment (log‑probs matched to rewards from the same state), and remains computationally tractable.
 
 ### Advantage Calculation
 
-When `magrpo.normalize_advantage` is true (by default), compute z-scored advantages over sibling returns, A = (R − mean(R)) / (std(R) + 1e-8); else, use a mean baseline without normalization A = R − mean(R). `magrpo.epsilon_clip` clamp the advantage to [-epsilon_clip, +epsilon_clip] after normalization (default as 0.2).
+`magrpo.normalize_advantage` is true by default, computing z-scored advantages over sibling returns; if set to be false, it uses a mean baseline without normalization. 
+
+`magrpo.epsilon_clip` clamps the advantage to [-epsilon_clip, +epsilon_clip] after normalization (default as 0.2).
+
+We do not apply the importance sampling ratio because the policy changes slowly with LLMs, and the ratio is close to 1.0. This avoids numerical instability from multiplying many small probabilities.
 
 ### Number of Turns
 
