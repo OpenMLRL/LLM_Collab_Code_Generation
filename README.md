@@ -30,7 +30,7 @@ python LLM_Collaboration_with_MARL/train_magrpo.py \
 
 ### Joint Action Modes
 
-`magrpo.joint_mode` determines how to combine each agent’s G generations into joint actions at each turn. Two modes are supported: `aligned` (default), which pairs the g‑th generation of every agent to form G joint actions per node; and `cross`, which forms the Cartesian product within a node, yielding G^N joint actions per node (N agents). Total leaf joint trajectories after T turns (no early termination): `aligned` → G^T; `cross` → (G^N)^T = G^{N·T}. Aligned is faster in wall‑time (fewer sibling evaluations per node), while cross is more sample‑efficient (better value estimation) without extra VRAM because it reuses the same G generations per agent and only crosses them within the node. We never cross across different nodes/prompts.
+`magrpo.joint_mode` determines how to combine each agent’s G generations into joint actions at each turn. Two modes are supported: `aligned` (default), which pairs the g‑th generation of every agent to form G joint actions per node; and `cross`, which forms the Cartesian product within a node, yielding G^N joint actions per node (N agents). Total leaf joint trajectories after T turns (no early termination): `aligned` → G^T; `cross` → (G^N)^T = G^{N·T}. Aligned is faster in wall‑time (fewer sibling evaluations per node), while cross is more sample‑efficient (better value estimation) without extra VRAM because it reuses the same G generations per agent and only crosses them within the node. We never cross across different nodes/prompts; this preserves causal state consistency (actions are conditioned on the same prompts), keeps siblings comparable for the baseline/advantage, maintains correct credit assignment (log‑probs matched to rewards from the same state), and remains computationally tractable.
 
 
 ### Number of Turns
@@ -41,7 +41,7 @@ python LLM_Collaboration_with_MARL/train_magrpo.py \
 
 `magrpo.termination_threshold` is used to incentivize agents to find high‑reward solutions quickly, instead of expanding the full Monte Carlo tree. At each node (branch, turn), compute the mean immediate reward across that node’s sibling joint actions; if the mean exceeds the threshold, that branch stops expanding at this turn and the trainer backpropagates from the truncated subtree. Other branches continue.
 
-### Multi-Turn Prompt
+### 2+Turn Prompt
 
 `external.original_prompt` and `external.previous_response` both default as `true`. 2+ turn prompts include both the original first‑turn problem prompt and the previous response by default to preserve full context; you can shorten the context by setting either to `false` (for example, keep only the previous response to reduce tokens while retaining the most recent interaction).
 
