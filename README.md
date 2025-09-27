@@ -42,7 +42,8 @@ Since the number of samples will also grow exponentially with the number of turn
 
 `magrpo.termination_threshold` is used to incentive agents to find high-reward solutions quickly, instead of expanding the full Monte Carlo tree.
 
-At each node (branch, turn), compute the mean immediate **reward across the sibling** joint actions at that node. If the mean exceeds the threshold, that branch stops expanding at this turn; training backpropagates from the truncated subtree. Other branches continue.
+At each node (branch, turn), compute the mean immediate **reward across the sibling** joint actions at that node (siblings are the competing samples drawn at the same prompt/
+  context/turn). If the mean exceeds the threshold, that branch stops expanding at this turn; training backpropagates from the truncated subtree. Other branches continue.
 
 ### Multi-Turn Prompt
 
