@@ -38,7 +38,7 @@ Aligned is faster in wall‑time (fewer sibling evaluations per node), while cro
 
 `magrpo.normalize_advantage` is true by default, computing z-scored advantages over sibling returns; if set to be false, it uses a mean baseline without normalization. 
 
-`magrpo.epsilon_clip` clamps the advantage to [-epsilon_clip, +epsilon_clip] after normalization (default: 0.5).
+`magrpo.epsilon_clip` clamps the advantage to [-epsilon_clip, +epsilon_clip] after normalization (default: 0.5). 0 or None skips clamping entirely.
 
 We do not apply the importance sampling ratio because the policy changes slowly with LLMs, and the ratio is close to 1.0. This avoids numerical instability from multiplying many small probabilities.
 
