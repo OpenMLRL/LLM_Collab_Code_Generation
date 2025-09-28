@@ -48,7 +48,7 @@ grpo:
   termination_threshold: -0.1
   reward_shift: -2.1
   normalize_advantage: true
-  epsilon_clip: 0.2
+  epsilon_clip: 0.5
 
 # wandb
 wandb:
