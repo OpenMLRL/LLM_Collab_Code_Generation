@@ -56,9 +56,14 @@ We do not apply the importance sampling ratio because the policy changes slowly 
 
 ### External Modes
 
-`external.mode` is set to be 'level_feedback' by default. This gives additional information from external to prompts in the following turns; 'level_feedback' attaches test‑driven diagnostics, while alternatives include 'expert_edits' (an LLM proposes edits), 'level_passed'/'passed' (binary outcomes), and 'plain' (no signals). 
+`external.mode` is set to 'level_feedback' by default. This gives additional information from external to prompts in the following turns; 'level_feedback' attaches test‑driven diagnostics, while alternatives include:
 
-Specific settings for 'level_feedback' is `external.sandbox_slice`, which controls how many eval tests to include in the feedback. By default, sandbox executes only the first assert (sandbox_slice=1). Use all eval tests by setting `external.sandbox_slice` to 0, None, or 'all'. Negative values use the last asserts. `external.sandbox_slice` only affects analysis-based modes ('level_feedback', 'level_passed', 'passed'), and it has no effect on 'expert_edits'.
+- `expert_edits`: an LLM proposes edits; prompts include edit suggestions plus context.
+- `level_passed` / `passed`: binary outcome oriented prompts with minimal context.
+- `plain`: no diagnostics, but still includes previous response (unless disabled) and a "Revise ..." instruction.
+- `bandit`: returns the first‑turn prompts every turn, which enforces `external.original_prompt=true` and `external.previous_response=false` automatically so that turn 1 and later turns receive the same prompt text.
+
+Specific settings for 'level_feedback' is `external.sandbox_slice`, which controls how many eval tests to include in the feedback. By default, sandbox executes only the first assert (sandbox_slice=1). Use all eval tests by setting `external.sandbox_slice` to 0, None, or 'all'. Negative values use the last asserts. `external.sandbox_slice` only affects analysis-based modes ('level_feedback', 'level_passed', 'passed'), and it has no effect on 'expert_edits' or 'bandit'.
 
 Specific settings for 'expert_edits' is `external.expert_edits_model`, which controls which LLM to use for proposing edits. By default, it uses DeepSeek-Coder. You can also change it to Claude-3, GPT-4, once you have keys/tokens in your global environment variables.
 

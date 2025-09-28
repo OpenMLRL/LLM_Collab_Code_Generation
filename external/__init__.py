@@ -6,6 +6,7 @@ from . import level_feedback
 from . import level_passed
 from . import passed
 from . import plain
+from . import bandit
 import builtins
 
 # Verbose toggle for external previews
@@ -246,7 +247,39 @@ def get_external_transition(
         print("=" * 60 + "\n")
         return (aux_prompt, main_prompt) if int(num_agents) > 1 else [main_prompt]
 
-    supported = ["expert_edits", "level_feedback", "level_passed", "passed", "plain"]
+    if mode == "bandit":
+        # Enforce flags: original_prompt=True, previous_response=False
+        original_prompt_flag = True
+        previous_response_flag = False
+        if int(num_agents) == 1:
+            main_comp = agent_completions[0]
+            aux_comp = ""
+        else:
+            aux_comp, main_comp = agent_completions[0], agent_completions[1]
+        ctx = get_context(prompt) or {}
+        entry_point = ctx.get("entry_point", "")
+        test_code = ctx.get("tests_sandbox") or ctx.get("tests_eval", "")
+        aux_prompt, main_prompt = bandit.format_followup_prompts(
+            original_prompt=prompt,
+            aux_completion=aux_comp,
+            main_completion=main_comp,
+            test_code=test_code,
+            entry_point=entry_point,
+            original_prompt_flag=original_prompt_flag,
+            previous_response_flag=previous_response_flag,
+            num_agent=int(num_agents),
+        )
+        print("\n" + "=" * 60)
+        print("EXTERNAL MODE PREVIEW: bandit")
+        print("-" * 60)
+        if int(num_agents) > 1:
+            print("AUX PROMPT:\n" + aux_prompt)
+            print("-" * 60)
+        print("MAIN PROMPT:\n" + main_prompt)
+        print("=" * 60 + "\n")
+        return (aux_prompt, main_prompt) if int(num_agents) > 1 else [main_prompt]
+
+    supported = ["expert_edits", "level_feedback", "level_passed", "passed", "plain", "bandit"]
     raise NotImplementedError(
         f"External transition mode '{mode}' is not implemented yet. Supported: {', '.join(supported)}"
     )
