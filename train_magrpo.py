@@ -405,7 +405,7 @@ def main():
             "num_train_epochs", 10 if not is_multi_turn else 7
         ),
         per_device_train_batch_size=magrpo_config.get("per_device_train_batch_size", 1),
-        learning_rate=magrpo_config.get("learning_rate", 1e-5),
+        learning_rate=magrpo_config.get("learning_rate", 3e-5),
         logging_steps=magrpo_config.get("logging_steps", 50),
         save_steps=magrpo_config.get("save_steps", 200),
         num_generations=magrpo_config.get("num_generations", 4),

@@ -344,7 +344,7 @@ def main():
         output_dir=output_dir,
         num_train_epochs=grpo_config.get("num_train_epochs", 10),
         per_device_train_batch_size=grpo_config.get("per_device_train_batch_size", 1),
-        learning_rate=grpo_config.get("learning_rate", 1e-5),
+        learning_rate=grpo_config.get("learning_rate", 3e-5),
         logging_steps=grpo_config.get("logging_steps", 50),
         save_steps=grpo_config.get("save_steps", 200),
         num_generations=grpo_config.get("num_generations", 4),
