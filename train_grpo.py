@@ -357,8 +357,8 @@ def main():
         joint_mode=grpo_config.get("joint_mode", "aligned"),
         termination_threshold=grpo_config.get("termination_threshold", None),
         # GRPO-style advantage params
-        normalize_advantage=grpo_config.get("normalize_advantage", True),
-        epsilon_clip=grpo_config.get("epsilon_clip", 0.5),
+        normalize_advantage=grpo_config.get("normalize_advantage", False),
+        epsilon_clip=grpo_config.get("epsilon_clip", None),
     )
 
     formatter = get_formatter(dataset_type)
