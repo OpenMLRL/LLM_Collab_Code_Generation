@@ -415,8 +415,11 @@ def main():
         # Multi-turn parameters (automatically handled based on num_turns)
         num_turns=num_turns,
         discount=magrpo_config.get("discount", 0.9),
-        joint_mode=magrpo_config.get("joint_mode", "cross"),
+        joint_mode=magrpo_config.get("joint_mode", "aligned"),
         termination_threshold=magrpo_config.get("termination_threshold", None),
+        # GRPO-style advantage params
+        normalize_advantage=magrpo_config.get("normalize_advantage", False),
+        epsilon_clip=magrpo_config.get("epsilon_clip", None),
     )
 
     # Get appropriate formatters and functions based on dataset type, agent count, and training mode

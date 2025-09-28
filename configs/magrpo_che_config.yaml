@@ -48,6 +48,8 @@ magrpo:
   discount: 0.9
   termination_threshold: -0.2
   reward_shift: -4
+  normalize_advantage: false
+  epsilon_clip: null
 
 # wandb
 wandb:
