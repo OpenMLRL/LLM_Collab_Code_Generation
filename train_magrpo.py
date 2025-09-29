@@ -228,14 +228,31 @@ def main():
         config.get_section("magrpo") if hasattr(config, "get_section") else {}
     )
 
-    # Check if this is multi-turn training
+    # External configuration (mode, sandbox, expert model, context flags)
+    # NOTE: We fetch this early so we can enforce bandit -> num_turns=1 before
+    # any logging/output directory setup that depends on num_turns.
+    external_cfg = (
+        config.get_section("external") if hasattr(config, "get_section") else {}
+    )
+    external_mode = (external_cfg.get("mode", "level_feedback") or "").lower()
+
+    # Check if this is multi-turn training, with override for bandit mode
     num_turns = magrpo_config.get("num_turns", 1)
+    if external_mode == "bandit":
+        # Force single-turn and canonical prompt usage when using bandit mode
+        if num_turns != 1:
+            num_turns = 1
+        # Ensure flags reflect bandit semantics
+        external_cfg["original_prompt"] = True
+        external_cfg["previous_response"] = False
     is_multi_turn = num_turns > 1
 
     output_verbose = config.get("output.verbose", True)
     if output_verbose:
-        print(f"Multi-turn training enabled: num_turns={num_turns}") if is_multi_turn else print(
-            f"Single-turn training: num_turns={num_turns}"
+        print(
+            f"Multi-turn training enabled: num_turns={num_turns}"
+            if is_multi_turn
+            else f"Single-turn training: num_turns={num_turns}"
         )
 
     slurm_job_id = os.environ.get("SLURM_JOB_ID", "no_job_id")
@@ -291,8 +308,7 @@ def main():
     temperature = magrpo_config.get("temperature", model_config.temperature)
     top_p = magrpo_config.get("top_p", model_config.top_p)
 
-    # External configuration (mode, sandbox, expert model, context flags)
-    external_cfg = config.get_section("external") if hasattr(config, "get_section") else {}
+    # External configuration already loaded above as external_cfg
 
     # Register external context resolver using dataset items
     def _normalize_prompt(p: str) -> str:
@@ -433,7 +449,6 @@ def main():
 
     # external_cfg already loaded above
     # Compute tags and add self-evolved when using analysis-based external modes
-    external_mode = external_cfg.get("mode", "level_feedback")
     default_tags = ["magrpo", dataset_type or "code", f"turns_{num_turns}"]
     tags_from_cfg = wandb_section.get("tags", default_tags)
     # Ensure list
