@@ -248,9 +248,6 @@ def get_external_transition(
         return (aux_prompt, main_prompt) if int(num_agents) > 1 else [main_prompt]
 
     if mode == "bandit":
-        # Enforce flags: original_prompt=True, previous_response=False
-        original_prompt_flag = True
-        previous_response_flag = False
         if int(num_agents) == 1:
             main_comp = agent_completions[0]
             aux_comp = ""
