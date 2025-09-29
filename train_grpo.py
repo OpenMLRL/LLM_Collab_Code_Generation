@@ -183,8 +183,20 @@ def main():
     # Read GRPO section early (for multi-turn flags)
     grpo_config = config.get_section("grpo") if hasattr(config, "get_section") else {}
 
-    # Determine single vs multi-turn
+    # External configuration (need early for bandit override)
+    external_cfg = (
+        config.get_section("external") if hasattr(config, "get_section") else {}
+    )
+    _external_mode = (external_cfg.get("mode", "level_feedback") or "").lower()
+
+    # Determine single vs multi-turn; force bandit -> single-turn and flags
     num_turns = grpo_config.get("num_turns", 1)
+    if _external_mode == "bandit":
+        if num_turns != 1:
+            num_turns = 1
+        # Ensure flags reflect bandit semantics consistently
+        external_cfg["original_prompt"] = True
+        external_cfg["previous_response"] = False
     is_multi_turn = num_turns > 1
 
     output_verbose = config.get("output.verbose", True)
@@ -376,7 +388,7 @@ def main():
 
     # external_cfg already loaded above
     # Compute tags and add self-evolved when using analysis-based external modes
-    external_mode = external_cfg.get("mode", "level_feedback")
+    external_mode = _external_mode
     default_tags = ["grpo", dataset_type or "code", f"turns_{num_turns}"]
     tags_from_cfg = wandb_section.get("tags", default_tags)
     tags = list(tags_from_cfg) if isinstance(tags_from_cfg, list) else default_tags
