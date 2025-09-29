@@ -61,7 +61,7 @@ We do not apply the importance sampling ratio because the policy changes slowly 
 - `expert_edits`: an LLM proposes edits; prompts include edit suggestions plus context.
 - `level_passed` / `passed`: binary outcome oriented prompts with minimal context.
 - `plain`: no diagnostics, but still includes previous response (unless disabled) and a "Revise ..." instruction.
-- `bandit`: returns the first‑turn prompts every turn, which enforces `external.original_prompt=true` and `external.previous_response=false` automatically so that turn 1 and later turns receive the same prompt text.
+- `bandit`: returns the first‑turn prompts every turn, which overrides `external.original_prompt=true` and `external.previous_response=false` automatically so that turn 1 and later turns receive the same prompt text.
 
 Specific settings for 'level_feedback' is `external.sandbox_slice`, which controls how many eval tests to include in the feedback. By default, sandbox executes only the first assert (sandbox_slice=1). Use all eval tests by setting `external.sandbox_slice` to 0, None, or 'all'. Negative values use the last asserts. `external.sandbox_slice` only affects analysis-based modes ('level_feedback', 'level_passed', 'passed'), and it has no effect on 'expert_edits' or 'bandit'.
 
