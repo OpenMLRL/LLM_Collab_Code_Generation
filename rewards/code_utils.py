@@ -734,8 +734,6 @@ def check_ast_collaboration(combined_code, aux_function_name="aux"):
         return False
 
 
-<<<<<<< HEAD
-=======
 def check_naming_convention(aux_code, main_code, expected_main_name):
     """
     Check if functions follow expected naming conventions.
@@ -789,4 +787,3 @@ def check_naming_convention(aux_code, main_code, expected_main_name):
     return is_valid, violations
 
 
->>>>>>> 8056b40 (Fixed penalty bug)
