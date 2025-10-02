@@ -135,8 +135,8 @@ def get_logger_and_aggregator(dataset_type: str, is_multi_turn: bool = False):
     return None, None
 
 
-def get_reward_function(dataset_type: str, num_agents: int):
-    """Get a reward function compatible with variable number of agents (single-turn).
+def get_reward_function(dataset_type: str):
+    """Get a reward function for code tasks.
 
     For code tasks, map N-agent completions to the existing aux/main reward by
     using the first agent as aux and the last agent as main.
@@ -174,7 +174,7 @@ def get_reward_function(dataset_type: str, num_agents: int):
                 raise ValueError("batch_items must be provided for reward calculation")
 
             return execution_reward_aux(
-                completion1, completion2, test_cases, entry_points, original_prompts, num_agents
+                completion1, completion2, test_cases, entry_points, original_prompts
             )
 
         return reward_wrapper
@@ -437,7 +437,7 @@ def main():
 
     # Get appropriate formatters and functions based on dataset type, agent count, and training mode
     formatters = get_formatters(dataset_type, config.get("magrpo.num_agents", 2))
-    reward_func = get_reward_function(dataset_type, config.get("magrpo.num_agents", 2))
+    reward_func = get_reward_function(dataset_type)
     eval_logger, eval_aggregator = get_logger_and_aggregator(
         dataset_type, is_multi_turn
     )

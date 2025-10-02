@@ -100,7 +100,7 @@ def execution_reward_single_agent(completions, batch_items=None):
             prompts.append("")
 
     raw_rewards = execution_reward_aux(
-        completion1_list, completion2_list, test_cases, entry_points, prompts, num_agents=1
+        completion1_list, completion2_list, test_cases, entry_points, prompts
     )
     return raw_rewards
 
