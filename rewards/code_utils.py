@@ -661,5 +661,3 @@ class AuxUsageAnalyzer(ast.NodeVisitor):
             formatted_calls.append(f"Line {line}: {reason}")
 
         return formatted_calls
-
-

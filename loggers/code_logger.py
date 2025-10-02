@@ -65,7 +65,7 @@ def code_reward_logger(
             "anti_wrapper_bonus": 0.0,
             # Penalties
             "penalty_deduction": 0.0,
-            "called_wo_used_deduction": 0.0,  # Legacy metric for compatibility
+            "called_wo_used_deduction": 0.0,
             # Overall metrics
             "total_reward": 0.0,
             "gated_total_reward": 0.0,

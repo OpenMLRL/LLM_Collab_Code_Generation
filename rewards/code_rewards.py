@@ -49,7 +49,7 @@ def execution_reward_aux(
     PENALTIES:
     - -0.5 deduction if aux function is called but return value is ignored
 
-    Maximum reward: 4.0 (updated from 3.5)
+    Maximum reward: 4.0
     """
     # Local print override based on VERBOSE
     if not VERBOSE:
@@ -105,7 +105,6 @@ def execution_reward_aux(
         print(repr(aux_func))
         print(f"\n--- EXTRACTED MAIN FUNCTION ---")
         print(repr(main_func))
-
 
         # ================================================================
         # LEVEL 1: FUNCTION DEFINITION REQUIREMENTS
