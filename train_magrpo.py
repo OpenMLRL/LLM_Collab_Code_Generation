@@ -60,6 +60,8 @@ IMPORTANT INSTRUCTIONS:
 - Do NOT include markdown code blocks (```python)
 - Do NOT include any text before or after the function
 - Do NOT include test cases or example usage
+- DO NOT include a comment like # your function code here. Actually code the function.
+- Make sure the function returns a value.
 - Create a helper function named 'aux' that can assist the main function
 - The function should return useful data for solving the problem
 
@@ -95,6 +97,8 @@ IMPORTANT INSTRUCTIONS:
 - Do NOT include any text before or after the function
 - Do NOT include test cases or example usage
 - Do NOT redefine the aux() function
+- DO NOT include a comment like # your function code here. Actually code the function.
+- Make sure the function returns a value.
 - Implement ONLY the '{entry_point}' function as specified
 - You can call aux() to assign value to a variable within your function if helpful
 
