@@ -57,4 +57,4 @@ wandb:
   entity: "ryanamiri05-northeastern-university"
   name: "magrpo_mbpp"
   dir: "output"
-  tags: ["magrpo", "coophumaneval", "multi-agent"]
+  tags: ["magrpo", "mbpp", "multi-agent"]
