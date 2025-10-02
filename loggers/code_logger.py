@@ -59,10 +59,13 @@ def code_reward_logger(
             "total_tests": 0,
             "passed_rate": 0.0,
             "timeout_num": 0,
-            "bonus_reward": 0.0,
+            # Level 4 metrics
+            "level_4_reward": 0.0,
             "aux_usage_bonus": 0.0,
             "anti_wrapper_bonus": 0.0,
-            "called_wo_used_deduction": 0.0,  # NEW METRIC
+            # Penalties
+            "penalty_deduction": 0.0,
+            "called_wo_used_deduction": 0.0,  # Legacy metric for compatibility
             # Overall metrics
             "total_reward": 0.0,
             "gated_total_reward": 0.0,
@@ -190,36 +193,38 @@ def code_reward_logger(
         metrics["level_3_reward"] = metrics["test_reward"]
 
         # ================================================================
-        # LEVEL 3 BONUS: COLLABORATION AND COMPLEXITY CHECKS
+        # LEVEL 4: COLLABORATION BONUSES (only if at least one test passed)
         # ================================================================
 
-        # Only award bonuses if we have aux function and passed tests
+        # Only award Level 4 bonuses if at least one test passed
         if passed_tests > 0 and aux_func:
             # Check if main uses aux
             main_uses_aux = check_aux_function_usage(main_func, "aux")
 
             if main_uses_aux:
                 metrics["aux_usage_bonus"] = 0.5
-                metrics["bonus_reward"] += 0.5
+                metrics["level_4_reward"] += 0.5
 
                 # Check if it's NOT a wrapper (anti-wrapper bonus)
                 is_wrapper = is_wrapper_function(main_func, "aux")
 
                 if not is_wrapper:
                     metrics["anti_wrapper_bonus"] = 1.0
-                    metrics["bonus_reward"] += 1.0
+                    metrics["level_4_reward"] += 1.0
 
-                # Check for aux calls without assignment (deduction)
-                has_ignored_calls, ignored_calls = check_aux_call_without_assignment(
-                    main_func, "aux"
-                )
+        # ================================================================
+        # PENALTIES: DEDUCTIONS FOR BAD PRACTICES
+        # ================================================================
 
-                if has_ignored_calls:
-                    metrics["called_wo_used_deduction"] = 0.5
-                    metrics["bonus_reward"] -= 0.5  # Apply deduction to bonus_reward
+        # Check for aux calls without assignment (deduction)
+        if aux_func and main_func:
+            has_ignored_calls, ignored_calls = check_aux_call_without_assignment(
+                main_func, "aux"
+            )
 
-        # Update level 3 reward to include bonuses (after deduction)
-        metrics["level_3_reward"] += metrics["bonus_reward"]
+            if has_ignored_calls:
+                metrics["penalty_deduction"] = 0.5
+                metrics["called_wo_used_deduction"] = 0.5  # Legacy compatibility
 
         # ================================================================
         # FINAL REWARD CALCULATION
@@ -229,6 +234,8 @@ def code_reward_logger(
             metrics["level_1_reward"]
             + metrics["level_2_reward"]
             + metrics["level_3_reward"]
+            + metrics["level_4_reward"]
+            - metrics["penalty_deduction"]
         )
 
         # Gated reward considers early stopping

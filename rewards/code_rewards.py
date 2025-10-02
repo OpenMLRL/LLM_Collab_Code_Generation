@@ -45,8 +45,12 @@ def execution_reward_aux(
 
     LEVEL 3:
     - +0 to +1.0 reward proportional to correct assertions passed from check(candidate) tests
-    - +0.5 bonus if at least one test passes AND main function uses aux function
+
+    LEVEL 4 (only if at least one test passes in Level 3):
+    - +0.5 bonus if main function uses aux function
     - +1.0 bonus if main function is NOT just a wrapper around aux function
+
+    PENALTIES:
     - -0.5 deduction if aux function is called but return value is ignored
 
     Maximum reward: 4.0 (updated from 3.5)
@@ -316,33 +320,33 @@ def execution_reward_aux(
             signal.alarm(0)
 
         # ================================================================
-        # LEVEL 3 BONUS: AUX FUNCTION USAGE AND ANTI-WRAPPER BONUSES
+        # LEVEL 4: COLLABORATION BONUSES (only if at least one test passed)
         # ================================================================
-        print("\n🎁 LEVEL 3 BONUS: COLLABORATION AND COMPLEXITY CHECKS")
-        print("-" * 55)
+        print("\n🎁 LEVEL 4: COLLABORATION BONUSES")
+        print("-" * 40)
 
-        # Check if main function uses aux function AND at least one test passed
-        # Bonuses are still available even if we hit timeout limit (as long as some tests passed)
-        if (
-            passed_tests > 0 and aux_func
-        ):  # Only check if we have aux function and passed tests
+        level4_reward = 0.0
+
+        # Only award Level 4 bonuses if at least one test passed
+        if passed_tests > 0 and aux_func:
             main_uses_aux = check_aux_function_usage(main_func, "aux")
 
             if main_uses_aux:
-                bonus_reward = 0.5
-                reward += bonus_reward
+                # Bonus 1: Main function uses aux function (+0.5)
+                aux_usage_bonus = 0.5
+                level4_reward += aux_usage_bonus
                 print(
-                    f"✅ Main function uses aux function: +{bonus_reward} (total: {reward})"
+                    f"✅ Main function uses aux function: +{aux_usage_bonus} (Level 4: {level4_reward})"
                 )
 
-                # Additional bonus for non-wrapper behavior
+                # Bonus 2: Main function is NOT a simple wrapper (+1.0)
                 is_wrapper = is_wrapper_function(main_func, "aux")
 
                 if not is_wrapper:
                     anti_wrapper_bonus = 1.0
-                    reward += anti_wrapper_bonus
+                    level4_reward += anti_wrapper_bonus
                     print(
-                        f"✅ Main function is NOT a simple wrapper: +{anti_wrapper_bonus} (total: {reward})"
+                        f"✅ Main function is NOT a simple wrapper: +{anti_wrapper_bonus} (Level 4: {level4_reward})"
                     )
                     print(f"🎉 FULL COLLABORATION BONUS ACHIEVED!")
                 else:
@@ -353,33 +357,48 @@ def execution_reward_aux(
                         "💡 Consider adding more logic to the main function beyond just calling aux()"
                     )
 
-                # Check for aux calls without assignment (deduction)
-                has_ignored_calls, ignored_calls = check_aux_call_without_assignment(
-                    main_func, "aux"
-                )
-
-                if has_ignored_calls:
-                    deduction = 0.5
-                    reward -= deduction
-                    print(
-                        f"⚠️  Aux function called but return value ignored: -{deduction} (total: {reward})"
-                    )
-                    print("💡 Problematic aux calls found:")
-                    for call in ignored_calls:
-                        print(f"   📍 {call}")
-                    print(
-                        "💭 Consider assigning aux() result to a variable or using it in expressions"
-                    )
-                else:
-                    print("✅ All aux function calls properly use return values")
-
             else:
-                print("⚠️  Main function does not use aux function (no bonuses)")
+                print("⚠️  Main function does not use aux function (no Level 4 bonuses)")
         else:
             if passed_tests == 0:
-                print("⚠️  No tests passed - no bonus eligibility")
+                print("⚠️  No tests passed - Level 4 not eligible")
             if not aux_func:
-                print("⚠️  No aux function defined - no bonus eligibility")
+                print("⚠️  No aux function defined - Level 4 not eligible")
+
+        # Add Level 4 reward to total
+        reward += level4_reward
+        print(f"📊 Level 4 total: +{level4_reward:.2f} (total: {reward})")
+
+        # ================================================================
+        # PENALTIES: DEDUCTIONS FOR BAD PRACTICES
+        # ================================================================
+        print("\n⚠️  PENALTIES: BAD PRACTICES")
+        print("-" * 35)
+
+        penalty_deduction = 0.0
+
+        # Check for aux calls without assignment (deduction)
+        if aux_func and main_func:
+            has_ignored_calls, ignored_calls = check_aux_call_without_assignment(
+                main_func, "aux"
+            )
+
+            if has_ignored_calls:
+                penalty_deduction = 0.5
+                reward -= penalty_deduction
+                print(
+                    f"⚠️  Aux function called but return value ignored: -{penalty_deduction} (total: {reward})"
+                )
+                print("💡 Problematic aux calls found:")
+                for call in ignored_calls:
+                    print(f"   📍 {call}")
+                print(
+                    "💭 Consider assigning aux() result to a variable or using it in expressions"
+                )
+            else:
+                print("✅ All aux function calls properly use return values")
+        else:
+            print("ℹ️  No aux function to check for penalties")
 
         # Show impact of early stopping due to timeouts
         if timeout_count >= MAX_TIMEOUTS:
