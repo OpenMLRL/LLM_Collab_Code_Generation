@@ -174,7 +174,7 @@ def get_reward_function(dataset_type: str, num_agents: int):
                 raise ValueError("batch_items must be provided for reward calculation")
 
             return execution_reward_aux(
-                completion1, completion2, test_cases, entry_points, original_prompts
+                completion1, completion2, test_cases, entry_points, original_prompts, num_agents
             )
 
         return reward_wrapper

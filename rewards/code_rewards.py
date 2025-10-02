@@ -29,11 +29,12 @@ def execution_reward_aux(
     test_cases: List[str],
     entry_points: List[str],
     prompts: List[str] = None,  # Add prompts parameter
+    num_agents: int = 2,  # Number of agents for format gate logic
 ) -> List[float]:
     """
     Reward function for aux + main function collaboration on code tasks:
 
-    FORMAT GATE:
+    FORMAT GATE (only when num_agents > 1):
     - Reward = 0 if either completion doesn't contain single valid def ...(): return ... format
 
     LEVEL 1:
@@ -111,25 +112,29 @@ def execution_reward_aux(
         print(repr(main_func))
 
         # ================================================================
-        # STRICT FORMAT GATE - Check both completions
+        # STRICT FORMAT GATE - Check both completions (only when num_agents > 1)
         # ================================================================
-        print("\n🚪 STRICT FORMAT GATE")
-        print("-" * 30)
+        if num_agents > 1:
+            print("\n🚪 STRICT FORMAT GATE")
+            print("-" * 30)
 
-        aux_format_valid = valid_format_gate(c1)
-        main_format_valid = valid_format_gate(c2)
+            aux_format_valid = valid_format_gate(c1)
+            main_format_valid = valid_format_gate(c2)
 
-        print(f"Aux format valid: {aux_format_valid}")
-        print(f"Main format valid: {main_format_valid}")
+            print(f"Aux format valid: {aux_format_valid}")
+            print(f"Main format valid: {main_format_valid}")
 
-        if not aux_format_valid or not main_format_valid:
-            print("❌ FORMAT GATE FAILED: One or both completions don't meet strict format requirements")
-            print("   Requirements: Single valid def ...(): return ... format")
-            print(f"Final reward: 0.0")
-            rewards.append(0.0)
-            continue
+            if not aux_format_valid or not main_format_valid:
+                print("❌ FORMAT GATE FAILED: One or both completions don't meet strict format requirements")
+                print("   Requirements: Single valid def ...(): return ... format")
+                print(f"Final reward: 0.0")
+                rewards.append(0.0)
+                continue
 
-        print("✅ FORMAT GATE PASSED: Both completions meet format requirements")
+            print("✅ FORMAT GATE PASSED: Both completions meet format requirements")
+        else:
+            print("\n🚪 FORMAT GATE SKIPPED (single agent mode)")
+            print("-" * 40)
 
         # ================================================================
         # LEVEL 1: FUNCTION DEFINITION REQUIREMENTS
