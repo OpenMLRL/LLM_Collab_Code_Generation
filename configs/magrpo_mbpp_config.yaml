@@ -54,7 +54,7 @@ magrpo:
 # wandb
 wandb:
   project: "mlrl"
-  entity: "ryanamiri05-northeastern-university"
+  entity: "nu-llpr"
   name: "magrpo_mbpp"
   dir: "output"
   tags: ["magrpo", "mbpp", "multi-agent"]
