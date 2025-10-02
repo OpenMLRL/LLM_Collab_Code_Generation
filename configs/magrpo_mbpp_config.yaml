@@ -55,6 +55,6 @@ magrpo:
 wandb:
   project: "mlrl"
   entity: "ryanamiri05-northeastern-university"
-  name: "magrpo_coophumaneval"
+  name: "magrpo_mbpp"
   dir: "output"
   tags: ["magrpo", "coophumaneval", "multi-agent"]
