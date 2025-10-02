@@ -118,7 +118,15 @@ def execution_reward_aux(
             print("\n🚪 STRICT FORMAT GATE")
             print("-" * 30)
 
-            aux_format_valid = valid_format_gate(c1)
+            # Check if aux original completion is empty - if so, skip aux format check
+            aux_is_empty = not c1 or c1.strip() == ""
+            
+            if aux_is_empty:
+                print("ℹ️  Aux completion is empty - skipping aux format check")
+                aux_format_valid = True  # Skip aux format check when aux is empty
+            else:
+                aux_format_valid = valid_format_gate(c1)
+            
             main_format_valid = valid_format_gate(c2)
 
             print(f"Aux format valid: {aux_format_valid}")
