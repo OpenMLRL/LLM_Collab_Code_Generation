@@ -13,7 +13,7 @@ model:
 
 # dataset
 dataset:
-  name: "ryankamiri/MBPP"
+  name: "OpenMLRL/MBPP"
   type: "mbpp"  # Used to select formatters and reward function
   train_split: "test[15:65]"
   eval_split: "test[:15]"
