@@ -189,6 +189,9 @@ def main():
 
     args = parser.parse_args()
 
+    # ------------------------------------------------------------------
+    # Config: load YAML and apply overrides
+    # ------------------------------------------------------------------
     if args.config:
         config = Config(args.config)
     else:
@@ -201,12 +204,14 @@ def main():
     # Apply command-line overrides
     
 
-    # Load model configuration
+    # ------------------------------------------------------------------
+    # Config: model, dataset, output
+    # ------------------------------------------------------------------
     model_config = config.get_model_config()
     model_name = model_config.name
-    output_base_dir = config.get("output.base_dir")
     dataset_name = config.get("dataset.name")
     dataset_type = config.get("dataset.type")
+    output_base_dir = config.get("output.base_dir")
 
     # Try to infer dataset type from dataset name if not specified
     if dataset_type is None:
@@ -223,15 +228,14 @@ def main():
     train_split = config.get("dataset.train_split")
     eval_split = config.get("dataset.eval_split")
 
-    # Get MAGRPO configuration (works for both single and multi-turn)
+    # ------------------------------------------------------------------
+    # Config: MAGRPO training params and verbosity
+    # ------------------------------------------------------------------
     magrpo_config = (
         config.get_section("magrpo") if hasattr(config, "get_section") else {}
     )
-
-    # Check if this is multi-turn training
     num_turns = magrpo_config.get("num_turns", 1)
     is_multi_turn = num_turns > 1
-
     output_verbose = config.get("output.verbose", True)
     if output_verbose:
         print(f"Multi-turn training enabled: num_turns={num_turns}") if is_multi_turn else print(
@@ -291,7 +295,9 @@ def main():
     temperature = magrpo_config.get("temperature", model_config.temperature)
     top_p = magrpo_config.get("top_p", model_config.top_p)
 
-    # External configuration (mode, sandbox, expert model, context flags)
+    # ------------------------------------------------------------------
+    # Config: External transitions (mode, sandbox, expert model, context flags)
+    # ------------------------------------------------------------------
     external_cfg = config.get_section("external") if hasattr(config, "get_section") else {}
 
     # Register external context resolver using dataset items
@@ -389,6 +395,9 @@ def main():
     external_ctx.set_context_resolver(_resolver)
 
     # Use unified MAGRPOConfig which handles both single-turn and multi-turn
+    # ------------------------------------------------------------------
+    # Build training args
+    # ------------------------------------------------------------------
     magrpo_args = MAGRPOConfig(
         output_dir=output_dir,
         num_agents=magrpo_config.get("num_agents", 2),  # Pass num_agents to the config
@@ -413,13 +422,18 @@ def main():
         epsilon_clip=magrpo_config.get("epsilon_clip", None),
     )
 
-    # Get appropriate formatters and functions based on dataset type, agent count, and training mode
+    # ------------------------------------------------------------------
+    # Formatters, rewards, and logging
+    # ------------------------------------------------------------------
     formatters = get_formatters(dataset_type, config.get("magrpo.num_agents", 2))
     reward_func = get_reward_function(dataset_type, config.get("magrpo.num_agents", 2))
     eval_logger, eval_aggregator = get_logger_and_aggregator(
         dataset_type, is_multi_turn
     )
 
+    # ------------------------------------------------------------------
+    # W&B configuration and tags
+    # ------------------------------------------------------------------
     wandb_section = (
         config.get_section("wandb") if hasattr(config, "get_section") else {}
     )
@@ -506,19 +520,26 @@ def main():
                 prev = reward_processor
                 reward_processor = (lambda p=prev, s=shift_proc: (lambda x: s(p(x))))()
 
+    # ------------------------------------------------------------------
+    # Build trainer kwargs (grouped: model/data, reward/formatting, logging, args)
+    # ------------------------------------------------------------------
     trainer_kwargs = {
+        # Model / data
         "agents": agents,
         "num_agents": num_agents,
-        "reward_func": reward_func,
-        "formatters": formatters,
-        "args": magrpo_args,
+        "tokenizer": tokenizer,
         "train_dataset": train_dataset,
         "eval_dataset": eval_dataset,
-        "tokenizer": tokenizer,
+        # Reward / formatting
+        "reward_func": reward_func,
+        "formatters": formatters,
+        # Logging / eval / config
         "wandb_config": wandb_config,
         "eval_logger": eval_logger,
         "eval_aggregator": eval_aggregator,
         "dataset_type": dataset_type,
+        # Training args
+        "args": magrpo_args,
     }
 
     if reward_processor is not None:

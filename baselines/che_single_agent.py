@@ -730,6 +730,9 @@ def {entry_point}({params_str}):
 
 
 def main():
+    # --------------------------------------------------------------
+    # CLI: parse arguments
+    # --------------------------------------------------------------
     parser = argparse.ArgumentParser(
         description="CoopHumanEval Single Agent Baseline Evaluation"
     )
@@ -759,12 +762,16 @@ def main():
 
     args = parser.parse_args()
 
-    # Initialize baseline evaluator
+    # --------------------------------------------------------------
+    # Initialize evaluator
+    # --------------------------------------------------------------
     evaluator = QwenCoopHumanEvalSingleAgentBaseline(
         model_name=args.model, device=args.device
     )
 
+    # --------------------------------------------------------------
     # Run evaluation
+    # --------------------------------------------------------------
     aggregated_metrics, sample_results = evaluator.evaluate_coophumaneval_baseline(
         num_samples=args.samples,
         num_generations=args.generations,

@@ -12,6 +12,10 @@ from PyPDF2.generic import RectangleObject
 def plot_combined_two_panels():
     """Plot two panels: Single Turn and Multi-Turn Average (Turn1+Turn2)/2 with larger fonts."""
 
+    # ------------------------------------------------------------------
+    # W&B setup and project selection
+    # ------------------------------------------------------------------
+
     # Initialize wandb API
     api = wandb.Api()
 
@@ -31,7 +35,9 @@ def plot_combined_two_panels():
     print(f"Found {len(humaneval_runs)} CoopHumanEval runs")
     print(f"Found {len(mt_expert_runs)} Multi-Turn Expert HumanEval runs")
 
-    # Process single-turn data
+    # ------------------------------------------------------------------
+    # Fetch and clean histories
+    # ------------------------------------------------------------------
     single_turn_data = []
     for run in humaneval_runs:
         try:
@@ -145,7 +151,9 @@ def plot_combined_two_panels():
         df_mt["eval/turn_1/avg_total_reward"] + df_mt["eval/turn_2/avg_total_reward"]
     ) / 2
 
-    # Create uniform x-axis for single-turn
+    # ------------------------------------------------------------------
+    # Create uniform x-axis for single-turn and multi-turn
+    # ------------------------------------------------------------------
     single_run_lengths = df_single.groupby("run_id").size()
     single_min_length = single_run_lengths.min()
 

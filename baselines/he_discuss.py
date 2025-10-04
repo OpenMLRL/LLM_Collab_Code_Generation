@@ -1011,6 +1011,9 @@ def {entry_point}({params_str}):
 
 
 def main():
+    # --------------------------------------------------------------
+    # CLI: parse arguments
+    # --------------------------------------------------------------
     parser = argparse.ArgumentParser(description="HumanEval Two-Round Model Evaluation")
     parser.add_argument(
         "--aux-model", default="Qwen/Qwen2.5-Coder-3B", help="Auxiliary model name"
@@ -1043,14 +1046,18 @@ def main():
 
     args = parser.parse_args()
 
-    # Initialize two-round evaluator
+    # --------------------------------------------------------------
+    # Initialize evaluator
+    # --------------------------------------------------------------
     evaluator = QwenHumanEvalTwoRoundEvaluator(
         aux_model_name=args.aux_model,
         main_model_name=args.main_model,
         device=args.device,
     )
 
+    # --------------------------------------------------------------
     # Run evaluation
+    # --------------------------------------------------------------
     aggregated_metrics, sample_results = evaluator.evaluate_humaneval_two_round(
         num_samples=args.samples,
         num_generations=args.generations,

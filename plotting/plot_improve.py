@@ -10,6 +10,10 @@ import wandb
 def plot_mt_humaneval_reward():
     """Plot Multi-turn HumanEval rewards from WandB runs with 2 curves: Turn 1 and Turn 2."""
 
+    # ------------------------------------------------------------------
+    # W&B setup and project selection
+    # ------------------------------------------------------------------
+
     # Initialize wandb API
     api = wandb.Api()
 
@@ -25,7 +29,9 @@ def plot_mt_humaneval_reward():
 
     print(f"Found {len(mt_humaneval_runs)} Multi-turn HumanEval runs")
 
-    # Collect data from all runs
+    # ------------------------------------------------------------------
+    # Collect and normalize run histories
+    # ------------------------------------------------------------------
     all_data = []
     for run in mt_humaneval_runs:
         try:
@@ -77,7 +83,9 @@ def plot_mt_humaneval_reward():
     min_length = run_lengths.min()
     print(f"Run lengths: min={min_length}, max={run_lengths.max()}")
 
-    # Create uniform x-axis mapping for each run, truncated to minimum length
+    # ------------------------------------------------------------------
+    # Create uniform x-axis per run (truncate to min length for alignment)
+    # ------------------------------------------------------------------
     uniform_data = []
     for run_id in df["run_id"].unique():
         run_data = df[df["run_id"] == run_id].copy()
@@ -113,8 +121,9 @@ def plot_mt_humaneval_reward():
         "turn2_std",
     ]
 
-    # Scale the aggregated means and stds
-    # Assuming total reward range is 0-4 as in the original code
+    # ------------------------------------------------------------------
+    # Scale aggregated means and stds (total reward assumed in [0,4])
+    # ------------------------------------------------------------------
     total_min, total_max = 0, 4.0
 
     # Scale Turn 1
@@ -129,7 +138,9 @@ def plot_mt_humaneval_reward():
     )
     aggregated["turn2_std_scaled"] = aggregated["turn2_std"] / (total_max - total_min)
 
-    # Create plot
+    # ------------------------------------------------------------------
+    # Plot with bounded error bands
+    # ------------------------------------------------------------------
     plt.style.use("default")
     fig, ax = plt.subplots(figsize=(7, 4))
 

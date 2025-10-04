@@ -144,6 +144,9 @@ def main():
 
     args = parser.parse_args()
 
+    # ------------------------------------------------------------------
+    # Config: load YAML and apply overrides
+    # ------------------------------------------------------------------
     if args.config:
         config = Config(args.config)
     else:
@@ -157,14 +160,14 @@ def main():
         overrides = parse_overrides(args.override)
         config.update(overrides)
 
-    
-
-    # Load model configuration
+    # ------------------------------------------------------------------
+    # Config: model, dataset, output
+    # ------------------------------------------------------------------
     model_config = config.get_model_config()
     model_name = model_config.name
-    output_base_dir = config.get("output.base_dir")
     dataset_name = config.get("dataset.name")
     dataset_type = config.get("dataset.type")
+    output_base_dir = config.get("output.base_dir")
 
     # Try to infer dataset type from dataset name if not specified
     if dataset_type is None:
@@ -180,13 +183,12 @@ def main():
     train_split = config.get("dataset.train_split")
     eval_split = config.get("dataset.eval_split")
 
-    # Read GRPO section early (for multi-turn flags)
+    # ------------------------------------------------------------------
+    # Config: GRPO training params and verbosity
+    # ------------------------------------------------------------------
     grpo_config = config.get_section("grpo") if hasattr(config, "get_section") else {}
-
-    # Determine single vs multi-turn
     num_turns = grpo_config.get("num_turns", 1)
     is_multi_turn = num_turns > 1
-
     output_verbose = config.get("output.verbose", True)
     if output_verbose:
         print(f"Multi-turn GRPO enabled: num_turns={num_turns}") if is_multi_turn else print(
@@ -251,7 +253,9 @@ def main():
     temperature = grpo_config.get("temperature", model_config.temperature)
     top_p = grpo_config.get("top_p", model_config.top_p)
 
-    # External configuration (mode, sandbox, expert model, context flags)
+    # ------------------------------------------------------------------
+    # Config: External transitions (mode, sandbox, expert model, context flags)
+    # ------------------------------------------------------------------
     external_cfg = config.get_section("external") if hasattr(config, "get_section") else {}
 
     # Register external context resolver using dataset items (for external modes)
@@ -340,6 +344,9 @@ def main():
 
     external_ctx.set_context_resolver(_resolver)
 
+    # ------------------------------------------------------------------
+    # Build training args
+    # ------------------------------------------------------------------
     grpo_args = MAGRPOConfig(
         output_dir=output_dir,
         num_train_epochs=grpo_config.get("num_train_epochs", 10),
@@ -361,9 +368,15 @@ def main():
         epsilon_clip=grpo_config.get("epsilon_clip", None),
     )
 
+    # ------------------------------------------------------------------
+    # Formatters, rewards, and logging
+    # ------------------------------------------------------------------
     formatter = get_formatter(dataset_type)
     reward_func = get_reward_function(dataset_type)
 
+    # ------------------------------------------------------------------
+    # W&B configuration and tags
+    # ------------------------------------------------------------------
     wandb_section = (
         config.get_section("wandb") if hasattr(config, "get_section") else {}
     )
@@ -444,18 +457,24 @@ def main():
                 prev = reward_processor
                 reward_processor = (lambda p=prev, s=shift_proc: (lambda x: s(p(x))))()
 
-    # Use agents=[model] to keep dtype and loading behavior aligned with MAGRPO
+    # ------------------------------------------------------------------
+    # Build trainer kwargs (grouped: model/data, reward/formatting, logging, args)
+    # ------------------------------------------------------------------
     trainer_kwargs = {
+        # Model / data
         "agents": [model],
         "num_agents": 1,
-        "reward_func": reward_func,
-        "formatters": formatter,
-        "args": grpo_args,
+        "tokenizer": tokenizer,
         "train_dataset": train_dataset,
         "eval_dataset": eval_dataset,
-        "tokenizer": tokenizer,
+        # Reward / formatting
+        "reward_func": reward_func,
+        "formatters": formatter,
+        # Logging / config
         "wandb_config": wandb_config,
         "dataset_type": dataset_type,
+        # Training args
+        "args": grpo_args,
     }
 
     if reward_processor is not None:

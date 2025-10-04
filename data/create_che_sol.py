@@ -137,18 +137,20 @@ def generate_completion(
 
 
 def main():
-    # Load the full dataset
+    # ------------------------------------------------------------------
+    # Load dataset
+    # ------------------------------------------------------------------
     print("Loading CoopHumanEval dataset...")
     dataset_name = "LovelyBuggies/CoopHumanEval"
     dataset = load_dataset(dataset_name, split="test")
 
     print(f"Total examples: {len(dataset)}")
 
-    # Model names
+    # ------------------------------------------------------------------
+    # Load models
+    # ------------------------------------------------------------------
     aux_model_name = "LovelyBuggies/2xQwen2.5-Coder-3B-Griffin-Aux"
     main_model_name = "LovelyBuggies/2xQwen2.5-Coder-3B-Griffin-Main"
-
-    # Load models
     print("Loading models...")
     agent_0, tokenizer_0 = load_agent_from_hf(aux_model_name)  # Aux model
     agent_1, tokenizer_1 = load_agent_from_hf(main_model_name)  # Main model
@@ -157,7 +159,9 @@ def main():
         print("Failed to load models. Exiting.")
         return
 
-    # Process all examples
+    # ------------------------------------------------------------------
+    # Generate solutions for all examples
+    # ------------------------------------------------------------------
     results = []
 
     print("Generating solutions...")
@@ -212,7 +216,9 @@ def main():
             }
             results.append(result)
 
+    # ------------------------------------------------------------------
     # Save results
+    # ------------------------------------------------------------------
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     output_filename = f"coophumaneval_mlrl_solutions_{timestamp}.json"
 
