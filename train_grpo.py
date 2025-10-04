@@ -105,7 +105,7 @@ def execution_reward_single_agent(completions, batch_items=None):
     return raw_rewards
 
 
-## Removed dead factory create_execution_reward_function (unused)
+ 
 
 
 def get_formatter(dataset_type: str):
@@ -278,7 +278,7 @@ def main():
     else:
         sandbox_slice = None if _sandbox_val is None else 0
 
-    import re as _re
+    # re already imported at module level
 
     def _make_sliced_assert_tests(test_code: str, n: int) -> str:
         if not isinstance(test_code, str) or not test_code.strip():
@@ -289,7 +289,7 @@ def main():
         preamble = []
         check_idx = None
         for idx, line in enumerate(lines):
-            if _re.match(r"\s*def\s+check\s*\(candidate\)\s*:\s*", line):
+            if re.match(r"\s*def\s+check\s*\(candidate\)\s*:\s*", line):
                 check_idx = idx
                 break
             preamble.append(line)
@@ -367,7 +367,7 @@ def main():
     wandb_section = (
         config.get_section("wandb") if hasattr(config, "get_section") else {}
     )
-    model_short_name = model_name.split("/")[-1].lower()
+    # Model short name no longer used in W&B naming
     # Use different wandb name for multi-turn
     if is_multi_turn:
         wandb_name = wandb_section.get("name", f"mt_grpo_{dataset_type}")
@@ -399,7 +399,7 @@ def main():
     wandb_config = {
         "project": wandb_section.get("project", "mlrl"),
         "entity": wandb_section.get("entity", "nu-llpr"),
-        "name": f"{wandb_name}_{model_short_name}",
+        "name": f"{wandb_name}",
         "dir": wandb_section.get("dir", "../../../projects/bepg/sliu30"),
         "tags": tags,
         # Provide full sections for the trainer to log cleanly

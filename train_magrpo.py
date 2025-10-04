@@ -10,8 +10,8 @@ import re
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from pathlib import Path
-from typing import Any, Dict, Optional
+ 
+from typing import Any, Dict
 
 from config import Config, add_config_args, parse_overrides
 from datasets import load_dataset
@@ -318,7 +318,7 @@ def main():
     else:
         sandbox_slice = None if _sandbox_val is None else 0
 
-    import re
+    # re already imported at module level
 
     def _make_sliced_assert_tests(test_code: str, n: int) -> str:
         if not isinstance(test_code, str) or not test_code.strip():
@@ -423,7 +423,7 @@ def main():
     wandb_section = (
         config.get_section("wandb") if hasattr(config, "get_section") else {}
     )
-    model_short_name = model_name.split("/")[-1].lower()
+    # Model short name no longer used in W&B naming
 
     # Use different wandb name for multi-turn
     if is_multi_turn:
@@ -450,7 +450,7 @@ def main():
     wandb_config = {
         "project": wandb_section.get("project", "mlrl"),
         "entity": wandb_section.get("entity", "nu-llpr"),
-        "name": f"{wandb_name}_{model_short_name}",
+        "name": f"{wandb_name}",
         "dir": wandb_section.get("dir", "../../../projects/bepg/sliu30"),
         "tags": tags,
         # Provide full sections for the trainer to log cleanly

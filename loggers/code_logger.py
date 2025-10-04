@@ -1,6 +1,6 @@
 import signal
 
-import numpy as np
+ 
 
 from rewards.code_utils import (
     TimeoutException,
