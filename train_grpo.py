@@ -118,6 +118,7 @@ def get_formatter(dataset_type: str):
     formatters_map = {
         "humaneval": complete_function_formatter,
         "coophumaneval": complete_function_formatter,
+        "mbpp": complete_function_formatter,
     }
     return formatters_map.get(dataset_type.lower(), complete_function_formatter)
 
@@ -129,7 +130,7 @@ def get_reward_function(dataset_type: str):
             "dataset.type not specified in config. Please add 'type: humaneval/coophumaneval' to the dataset section."
         )
 
-    if dataset_type.lower() in ["humaneval", "coophumaneval"]:
+    if dataset_type.lower() in ["humaneval", "coophumaneval", "mbpp"]:
         return execution_reward_single_agent
     else:
         raise ValueError(f"Unknown dataset type: {dataset_type}")
@@ -175,6 +176,8 @@ def main():
             dataset_type = "humaneval"
         elif "coophumaneval" in dataset_name.lower() or "coop" in dataset_name.lower():
             dataset_type = "coophumaneval"
+        elif "mbpp" in dataset_name.lower():
+            dataset_type = "mbpp"
         else:
             raise ValueError(
                 f"Could not infer dataset type from dataset name '{dataset_name}'. Please specify 'type' in dataset config."
@@ -484,7 +487,7 @@ def main():
     if (
         is_multi_turn
         and dataset_type
-        and dataset_type.lower() in ["humaneval", "coophumaneval"]
+        and dataset_type.lower() in ["humaneval", "coophumaneval", "mbpp"]
     ):
         expert_model = external_cfg.get("expert_model", "deepseek-coder")
 

@@ -110,7 +110,7 @@ def get_formatters(dataset_type: str, num_agents: int):
 
     For code tasks, use aux formatters for all agents except the last, which uses main.
     """
-    if dataset_type.lower() in ["humaneval", "coophumaneval"] and num_agents == 2:
+    if dataset_type.lower() in ["humaneval", "coophumaneval", "mbpp"] and num_agents == 2:
         return [aux_function_formatter, main_function_formatter]
 
     raise NotImplementedError("Other number of agents have not been implemented yet")
@@ -125,7 +125,7 @@ def get_logger_and_aggregator(dataset_type: str, is_multi_turn: bool = False):
         return None, None
 
     # Use unified multi-turn compatible logger/aggregator for code datasets
-    if dataset_type.lower() in ["humaneval", "coophumaneval"]:
+    if dataset_type.lower() in ["humaneval", "coophumaneval", "mbpp"]:
         return mt_humaneval_logger, aggregate_mt_humaneval_metrics_for_logging
 
     return None, None
@@ -142,7 +142,7 @@ def get_reward_function(dataset_type: str, num_agents: int):
             "dataset.type not specified in config. Please add 'type: humaneval/coophumaneval' to the dataset section."
         )
 
-    if dataset_type.lower() in ["humaneval", "coophumaneval"]:
+    if dataset_type.lower() in ["humaneval", "coophumaneval", "mbpp"]:
 
         def reward_wrapper(*agent_completions, batch_items=None, prompts=None):
             # agent_completions: tuple of lists (one list per agent), each list contains strings per completion
@@ -219,6 +219,8 @@ def main():
             dataset_type = "humaneval"
         elif "coophumaneval" in dataset_name.lower() or "coop" in dataset_name.lower():
             dataset_type = "coophumaneval"
+        elif "mbpp" in dataset_name.lower():
+            dataset_type = "mbpp"
         else:
             raise ValueError(
                 f"Could not infer dataset type from dataset name '{dataset_name}'. Please specify 'type' in dataset config."
@@ -548,7 +550,7 @@ def main():
     if (
         is_multi_turn
         and dataset_type
-        and dataset_type.lower() in ["humaneval", "coophumaneval"]
+        and dataset_type.lower() in ["humaneval", "coophumaneval", "mbpp"]
     ):
         expert_model = external_cfg.get("expert_model", "deepseek-coder")
         # external_mode already loaded above

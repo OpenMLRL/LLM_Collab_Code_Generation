@@ -1,0 +1,1544 @@
+[
+  {
+    "task_id": "MBPP/0",
+    "prompt": "def remove_Occ(s,ch):\n    '''Write a python function to remove first and last occurrence of a given character from the string. Return the modified string.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate(\"hello\",\"l\") == \"heo\"\n    assert candidate(\"abcda\",\"a\") == \"bcd\"\n    assert candidate(\"PHP\",\"P\") == \"H\"",
+    "entry_point": "remove_Occ"
+  },
+  {
+    "task_id": "MBPP/1",
+    "prompt": "def sort_matrix(M):\n    '''Write a function to sort a given matrix in ascending order according to the sum of its rows. Return the sorted list.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate([[1, 2, 3], [2, 4, 5], [1, 1, 1]])==[[1, 1, 1], [1, 2, 3], [2, 4, 5]]\n    assert candidate([[1, 2, 3], [-2, 4, -5], [1, -1, 1]])==[[-2, 4, -5], [1, -1, 1], [1, 2, 3]]\n    assert candidate([[5,8,9],[6,4,3],[2,1,4]])==[[2, 1, 4], [6, 4, 3], [5, 8, 9]]",
+    "entry_point": "sort_matrix"
+  },
+  {
+    "task_id": "MBPP/2",
+    "prompt": "def find_Volume(l,b,h):\n    '''Write a python function to find the volume of a triangular prism. Return the calculated integer value.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate(10,8,6) == 240\n    assert candidate(3,2,2) == 6\n    assert candidate(1,2,1) == 1",
+    "entry_point": "find_Volume"
+  },
+  {
+    "task_id": "MBPP/3",
+    "prompt": "def text_lowercase_underscore(text):\n    '''Write a function to that returns true if the input string contains sequences of lowercase letters joined with an underscore and false otherwise. Return True if the condition is met, False otherwise.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate(\"aab_cbbbc\")==(True)\n    assert candidate(\"aab_Abbbc\")==(False)\n    assert candidate(\"Aaab_abbbc\")==(False)",
+    "entry_point": "text_lowercase_underscore"
+  },
+  {
+    "task_id": "MBPP/4",
+    "prompt": "def square_perimeter(a):\n    '''Write a function that returns the perimeter of a square given its side length as input. Return the calculated integer value.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate(10)==40\n    assert candidate(5)==20\n    assert candidate(4)==16",
+    "entry_point": "square_perimeter"
+  },
+  {
+    "task_id": "MBPP/5",
+    "prompt": "def str_to_list(string):\n    '''Write a function to remove characters from the first string which are present in the second string. Return the modified string.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate(\"probasscurve\", \"pros\") == 'bacuve'\n    assert candidate(\"digitalindia\", \"talent\") == 'digiidi'\n    assert candidate(\"exoticmiles\", \"toxic\") == 'emles'",
+    "entry_point": "str_to_list"
+  },
+  {
+    "task_id": "MBPP/6",
+    "prompt": "def test_duplicate(arraynums):\n    '''Write a function to find whether a given array of integers contains any duplicate element. Return True if the condition is met, False otherwise.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate(([1,2,3,4,5]))==False\n    assert candidate(([1,2,3,4, 4]))==True\n    assert candidate([1,1,2,2,3,3,4,4,5])==True",
+    "entry_point": "test_duplicate"
+  },
+  {
+    "task_id": "MBPP/7",
+    "prompt": "def is_woodall(x):\n    '''Write a function to check if the given number is woodball or not. Return True if the condition is met, False otherwise.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate(383) == True\n    assert candidate(254) == False\n    assert candidate(200) == False",
+    "entry_point": "is_woodall"
+  },
+  {
+    "task_id": "MBPP/8",
+    "prompt": "def rev(num):\n    '''Write a python function to check if a given number is one less than twice its reverse. Return True if the condition is met, False otherwise.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate(70) == False\n    assert candidate(23) == False\n    assert candidate(73) == True",
+    "entry_point": "rev"
+  },
+  {
+    "task_id": "MBPP/9",
+    "prompt": "def find_Max_Num(arr):\n    '''Write a python function to find the largest number that can be formed with the given list of digits. Return the calculated integer value.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate([1,2,3]) == 321\n    assert candidate([4,5,6,1]) == 6541\n    assert candidate([1,2,3,9]) == 9321",
+    "entry_point": "find_Max_Num"
+  },
+  {
+    "task_id": "MBPP/10",
+    "prompt": "def opposite_Signs(x,y):\n    '''Write a python function to check whether the given two integers have opposite sign or not. Return True if the condition is met, False otherwise.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate(1,-2) == True\n    assert candidate(3,2) == False\n    assert candidate(-10,-10) == False\n    assert candidate(-2,2) == True",
+    "entry_point": "opposite_Signs"
+  },
+  {
+    "task_id": "MBPP/11",
+    "prompt": "def is_octagonal(n):\n    '''Write a function to find the nth octagonal number. Return the calculated integer value.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate(5) == 65\n    assert candidate(10) == 280\n    assert candidate(15) == 645",
+    "entry_point": "is_octagonal"
+  },
+  {
+    "task_id": "MBPP/12",
+    "prompt": "def count_Substrings(s):\n    '''Write a python function to count the number of substrings with the sum of digits equal to their length. Return the count as an integer.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate('112112') == 6\n    assert candidate('111') == 6\n    assert candidate('1101112') == 12",
+    "entry_point": "count_Substrings"
+  },
+  {
+    "task_id": "MBPP/13",
+    "prompt": "def smallest_num(xs):\n    '''Write a python function to find smallest number in a list. Return the calculated integer value.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate([10, 20, 1, 45, 99]) == 1\n    assert candidate([1, 2, 3]) == 1\n    assert candidate([45, 46, 50, 60]) == 45",
+    "entry_point": "smallest_num"
+  },
+  {
+    "task_id": "MBPP/14",
+    "prompt": "def max_difference(test_list):\n    '''Write a function to find the maximum difference between available pairs in the given tuple list. Return the calculated integer value.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate([(3, 5), (1, 7), (10, 3), (1, 2)]) == 7\n    assert candidate([(4, 6), (2, 17), (9, 13), (11, 12)]) == 15\n    assert candidate([(12, 35), (21, 27), (13, 23), (41, 22)]) == 23",
+    "entry_point": "max_difference"
+  },
+  {
+    "task_id": "MBPP/15",
+    "prompt": "def subject_marks(subjectmarks):\n    '''Write a function to sort a list of tuples using the second value of each tuple. Return the sorted list.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate([('English', 88), ('Science', 90), ('Maths', 97), ('Social sciences', 82)])==[('Social sciences', 82), ('English', 88), ('Science', 90), ('Maths', 97)]\n    assert candidate([('Telugu',49),('Hindhi',54),('Social',33)])==([('Social',33),('Telugu',49),('Hindhi',54)])\n    assert candidate([('Physics',96),('Chemistry',97),('Biology',45)])==([('Biology',45),('Physics',96),('Chemistry',97)])",
+    "entry_point": "subject_marks"
+  },
+  {
+    "task_id": "MBPP/16",
+    "prompt": "def recursive_list_sum(data_list):\n    '''Write a function to flatten a list and sum all of its elements. Return the sum as an integer.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate(([1, 2, [3,4],[5,6]]))==21\n    assert candidate(([7, 10, [15,14],[19,41]]))==106\n    assert candidate(([10, 20, [30,40],[50,60]]))==210",
+    "entry_point": "recursive_list_sum"
+  },
+  {
+    "task_id": "MBPP/17",
+    "prompt": "def pos_count(list):\n    '''Write a python function to count the number of positive numbers in a list. Return the count as an integer.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate([1,-2,3,-4]) == 2\n    assert candidate([3,4,5,-1]) == 3\n    assert candidate([1,2,3,4]) == 4",
+    "entry_point": "pos_count"
+  },
+  {
+    "task_id": "MBPP/18",
+    "prompt": "def bell_number(n):\n    '''Write a function to find the number of ways to partition a set of Bell numbers. Return the calculated integer value.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate(2)==2\n    assert candidate(10)==115975\n    assert candidate(56)==6775685320645824322581483068371419745979053216268760300",
+    "entry_point": "bell_number"
+  },
+  {
+    "task_id": "MBPP/19",
+    "prompt": "def is_Monotonic(A):\n    '''Write a python function to check whether the given array is monotonic or not. Return True if the condition is met, False otherwise.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate([6, 5, 4, 4]) == True\n    assert candidate([1, 2, 2, 3]) == True\n    assert candidate([1, 3, 2]) == False",
+    "entry_point": "is_Monotonic"
+  },
+  {
+    "task_id": "MBPP/20",
+    "prompt": "def is_sublist(l, s):\n    '''Write a function to check whether a list contains the given sublist or not. Return True if the condition is met, False otherwise.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate([2,4,3,5,7],[3,7])==False\n    assert candidate([2,4,3,5,7],[4,3])==True\n    assert candidate([2,4,3,5,7],[1,6])==False",
+    "entry_point": "is_sublist"
+  },
+  {
+    "task_id": "MBPP/21",
+    "prompt": "def find_equal_tuple(Input):\n    '''Write a function to find whether all the given tuples have equal length or not. Return True if the condition is met, False otherwise.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate([(11, 22, 33), (44, 55, 66)]) == True\n    assert candidate([(1, 2, 3), (4, 5, 6, 7)]) == False\n    assert candidate([(1, 2), (3, 4)]) == True",
+    "entry_point": "find_equal_tuple"
+  },
+  {
+    "task_id": "MBPP/22",
+    "prompt": "def comb_sort(nums):\n    '''Write a function to sort a list of elements. Return the sorted list.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate([5, 15, 37, 25, 79]) == [5, 15, 25, 37, 79]\n    assert candidate([41, 32, 15, 19, 22]) == [15, 19, 22, 32, 41]\n    assert candidate([99, 15, 13, 47]) == [13, 15, 47, 99]",
+    "entry_point": "comb_sort"
+  },
+  {
+    "task_id": "MBPP/23",
+    "prompt": "def dif_Square(n):\n    '''Write a python function to check whether the given number can be represented as the difference of two squares or not. Return True if the condition is met, False otherwise.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate(5) == True\n    assert candidate(10) == False\n    assert candidate(15) == True",
+    "entry_point": "dif_Square"
+  },
+  {
+    "task_id": "MBPP/24",
+    "prompt": "def is_samepatterns(colors, patterns):\n    '''Write a function to check whether it follows the sequence given in the patterns array. Return True if the condition is met, False otherwise.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate([\"red\",\"green\",\"green\"], [\"a\", \"b\", \"b\"])==True\n    assert candidate([\"red\",\"green\",\"greenn\"], [\"a\",\"b\",\"b\"])==False\n    assert candidate([\"red\",\"green\",\"greenn\"], [\"a\",\"b\"])==False",
+    "entry_point": "is_samepatterns"
+  },
+  {
+    "task_id": "MBPP/25",
+    "prompt": "def find_tuples(test_list, K):\n    '''Write a function to find tuples which have all elements divisible by k from the given list of tuples. Return the list of matching tuples.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate([(6, 24, 12), (7, 9, 6), (12, 18, 21)], 6) == [(6, 24, 12)]\n    assert candidate([(5, 25, 30), (4, 2, 3), (7, 8, 9)], 5) == [(5, 25, 30)]\n    assert candidate([(7, 9, 16), (8, 16, 4), (19, 17, 18)], 4) == [(8, 16, 4)]",
+    "entry_point": "find_tuples"
+  },
+  {
+    "task_id": "MBPP/26",
+    "prompt": "def is_Diff(n):\n    '''Write a python function to find whether a number is divisible by 11. Return True if the condition is met, False otherwise.\n    '''\n",
+    "test": "def check(candidate):\n    assert is_Diff (12345) == False\n    assert candidate(1212112) == True\n    assert candidate(1212) == False",
+    "entry_point": "is_Diff"
+  },
+  {
+    "task_id": "MBPP/27",
+    "prompt": "def word_len(s):\n    '''Write a python function to check whether the length of the word is odd or not. Return True if the condition is met, False otherwise.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate(\"Hadoop\") == False\n    assert candidate(\"great\") == True\n    assert candidate(\"structure\") == True",
+    "entry_point": "word_len"
+  },
+  {
+    "task_id": "MBPP/28",
+    "prompt": "def tetrahedral_number(n):\n    '''Write a function to find the nth tetrahedral number. Return the calculated integer value.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate(5) == 35\n    assert candidate(6) == 56\n    assert candidate(7) == 84",
+    "entry_point": "tetrahedral_number"
+  },
+  {
+    "task_id": "MBPP/29",
+    "prompt": "def volume_sphere(r):\n    '''Write a function to find the volume of a sphere. Return the calculated number.\n    '''\n",
+    "test": "def check(candidate):\n    assert math.candidate(candidate(10), 4188.790204786391, rel_tol=0.001)\n    assert math.candidate(candidate(25), 65449.84694978735, rel_tol=0.001)\n    assert math.candidate(candidate(20), 33510.32163829113, rel_tol=0.001)",
+    "entry_point": "volume_sphere"
+  },
+  {
+    "task_id": "MBPP/30",
+    "prompt": "def get_Char(strr):\n    '''Write a python function to find the character made by adding the ASCII value of all the characters of the given string modulo 26. Return the resulting character.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate(\"abc\") == \"f\"\n    assert candidate(\"gfg\") == \"t\"\n    assert candidate(\"ab\") == \"c\"",
+    "entry_point": "get_Char"
+  },
+  {
+    "task_id": "MBPP/31",
+    "prompt": "def sequence(n):\n    '''Write a function to find the nth number in the newman conway sequence. Return the calculated integer value.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate(10) == 6\n    assert candidate(2) == 1\n    assert candidate(3) == 2",
+    "entry_point": "sequence"
+  },
+  {
+    "task_id": "MBPP/32",
+    "prompt": "def surfacearea_sphere(r):\n    '''Write a function to find the surface area of a sphere. Return the calculated number.\n    '''\n",
+    "test": "def check(candidate):\n    assert math.candidate(candidate(10), 1256.6370614359173, rel_tol=0.001)\n    assert math.candidate(candidate(15), 2827.4333882308138, rel_tol=0.001)\n    assert math.candidate(candidate(20), 5026.548245743669, rel_tol=0.001)",
+    "entry_point": "surfacearea_sphere"
+  },
+  {
+    "task_id": "MBPP/33",
+    "prompt": "def centered_hexagonal_number(n):\n    '''Write a function to find nth centered hexagonal number. Return the calculated integer value.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate(10) == 271\n    assert candidate(2) == 7\n    assert candidate(9) == 217",
+    "entry_point": "centered_hexagonal_number"
+  },
+  {
+    "task_id": "MBPP/34",
+    "prompt": "def merge_dictionaries_three(dict1,dict2, dict3):\n    '''Write a function to merge three dictionaries into a single dictionary. Return the merged dictionary.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate({ \"R\": \"Red\", \"B\": \"Black\", \"P\": \"Pink\" }, { \"G\": \"Green\", \"W\": \"White\" },{ \"O\": \"Orange\", \"W\": \"White\", \"B\": \"Black\" })=={'B': 'Black', 'R': 'Red', 'P': 'Pink', 'G': 'Green', 'W': 'White', 'O': 'Orange'}\n    assert candidate({ \"R\": \"Red\", \"B\": \"Black\", \"P\": \"Pink\" }, { \"G\": \"Green\", \"W\": \"White\" },{\"L\":\"lavender\",\"B\":\"Blue\"})=={'W': 'White', 'P': 'Pink', 'B': 'Black', 'R': 'Red', 'G': 'Green', 'L': 'lavender'}\n    assert candidate({ \"R\": \"Red\", \"B\": \"Black\", \"P\": \"Pink\" },{\"L\":\"lavender\",\"B\":\"Blue\"},{ \"G\": \"Green\", \"W\": \"White\" })=={'B': 'Black', 'P': 'Pink', 'R': 'Red', 'G': 'Green', 'L': 'lavender', 'W': 'White'}",
+    "entry_point": "merge_dictionaries_three"
+  },
+  {
+    "task_id": "MBPP/35",
+    "prompt": "def freq_count(list1):\n    '''Write a function to get the frequency of all the elements in a list, returned as a dictionary. Return the frequency dictionary.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate([10,10,10,10,20,20,20,20,40,40,50,50,30])==({10: 4, 20: 4, 40: 2, 50: 2, 30: 1})\n    assert candidate([1,2,3,4,3,2,4,1,3,1,4])==({1:3, 2:2,3:3,4:3})\n    assert candidate([5,6,7,4,9,10,4,5,6,7,9,5])==({10:1,5:3,6:2,7:2,4:2,9:2})",
+    "entry_point": "freq_count"
+  },
+  {
+    "task_id": "MBPP/36",
+    "prompt": "def closest_num(N):\n    '''Write a function to find the closest smaller number than n. Return the calculated integer value.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate(11) == 10\n    assert candidate(7) == 6\n    assert candidate(12) == 11",
+    "entry_point": "closest_num"
+  },
+  {
+    "task_id": "MBPP/37",
+    "prompt": "def len_log(list1):\n    '''Write a python function to find the length of the longest word. Return the count as an integer.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate([\"python\",\"PHP\",\"bigdata\"]) == 7\n    assert candidate([\"a\",\"ab\",\"abc\"]) == 3\n    assert candidate([\"small\",\"big\",\"tall\"]) == 5",
+    "entry_point": "len_log"
+  },
+  {
+    "task_id": "MBPP/38",
+    "prompt": "def find_substring(str1, sub_str):\n    '''Write a function to check if a string is present as a substring in a given list of string values. Return True if the condition is met, False otherwise.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate([\"red\", \"black\", \"white\", \"green\", \"orange\"],\"ack\")==True\n    assert candidate([\"red\", \"black\", \"white\", \"green\", \"orange\"],\"abc\")==False\n    assert candidate([\"red\", \"black\", \"white\", \"green\", \"orange\"],\"ange\")==True",
+    "entry_point": "find_substring"
+  },
+  {
+    "task_id": "MBPP/39",
+    "prompt": "def is_undulating(n):\n    '''Write a function to check whether the given number is undulating or not. Return True if the condition is met, False otherwise.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate(1212121) == True\n    assert candidate(1991) == False\n    assert candidate(121) == True",
+    "entry_point": "is_undulating"
+  },
+  {
+    "task_id": "MBPP/40",
+    "prompt": "def power(a,b):\n    '''Write a function to calculate the value of 'a' to the power 'b'. Return the calculated integer value.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate(3,4) == 81\n    assert candidate(2,3) == 8\n    assert candidate(5,5) == 3125",
+    "entry_point": "power"
+  },
+  {
+    "task_id": "MBPP/41",
+    "prompt": "def index_minimum(test_list):\n    '''Given a list of tuples, write a function that returns the first value of the tuple with the smallest second value. Return the string result.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate([('Rash', 143), ('Manjeet', 200), ('Varsha', 100)]) == 'Varsha'\n    assert candidate([('Yash', 185), ('Dawood', 125), ('Sanya', 175)]) == 'Dawood'\n    assert candidate([('Sai', 345), ('Salman', 145), ('Ayesha', 96)]) == 'Ayesha'",
+    "entry_point": "index_minimum"
+  },
+  {
+    "task_id": "MBPP/42",
+    "prompt": "def Find_Min_Length(lst):\n    '''Write a python function to find the length of the smallest list in a list of lists. Return the count as an integer.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate([[1],[1,2]]) == 1\n    assert candidate([[1,2],[1,2,3],[1,2,3,4]]) == 2\n    assert candidate([[3,3,3],[4,4,4,4]]) == 3",
+    "entry_point": "Find_Min_Length"
+  },
+  {
+    "task_id": "MBPP/43",
+    "prompt": "def divisor(n):\n    '''Write a python function to find the number of divisors of a given integer. Return the count as an integer.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate(15) == 4\n    assert candidate(12) == 6\n    assert candidate(9) == 3",
+    "entry_point": "divisor"
+  },
+  {
+    "task_id": "MBPP/44",
+    "prompt": "def frequency_lists(list1):\n    '''Write a function to find frequency of each element in a flattened list of lists, returned in a dictionary. Return the frequency dictionary.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate([[1, 2, 3, 2], [4, 5, 6, 2], [7, 8, 9, 5]])=={1: 1, 2: 3, 3: 1, 4: 1, 5: 2, 6: 1, 7: 1, 8: 1, 9: 1}\n    assert candidate([[1,2,3,4],[5,6,7,8],[9,10,11,12]])=={1: 1, 2: 1, 3: 1, 4: 1, 5: 1, 6: 1, 7: 1, 8: 1, 9: 1,10:1,11:1,12:1}\n    assert candidate([[20,30,40,17],[18,16,14,13],[10,20,30,40]])=={20:2,30:2,40:2,17: 1,18:1, 16: 1,14: 1,13: 1, 10: 1}",
+    "entry_point": "frequency_lists"
+  },
+  {
+    "task_id": "MBPP/45",
+    "prompt": "def multiply_num(numbers):\n    '''Write a function to multiply all the numbers in a list and divide with the length of the list. Return the calculated number.\n    '''\n",
+    "test": "def check(candidate):\n    assert math.candidate(candidate((8, 2, 3, -1, 7)), -67.2, rel_tol=0.001)\n    assert math.candidate(candidate((-10,-20,-30)), -2000.0, rel_tol=0.001)\n    assert math.candidate(candidate((19,15,18)), 1710.0, rel_tol=0.001)",
+    "entry_point": "multiply_num"
+  },
+  {
+    "task_id": "MBPP/46",
+    "prompt": "def decimal_to_binary(n):\n    '''Write a function to convert the given decimal number to its binary equivalent, represented as a string with no leading zeros. Return the binary string.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate(8) == '1000'\n    assert candidate(18) == '10010'\n    assert candidate(7) == '111'",
+    "entry_point": "decimal_to_binary"
+  },
+  {
+    "task_id": "MBPP/47",
+    "prompt": "def next_smallest_palindrome(num):\n    '''Write a function to find the next smallest palindrome of a specified integer, returned as an integer. Return the calculated integer value.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate(99)==101\n    assert candidate(1221)==1331\n    assert candidate(120)==121",
+    "entry_point": "next_smallest_palindrome"
+  },
+  {
+    "task_id": "MBPP/48",
+    "prompt": "def kth_element(arr, k):\n    '''Write a function to find the kth element in the given array using 1-based indexing. Return the element value.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate([12,3,5,7,19], 2) == 3\n    assert candidate([17,24,8,23], 3) == 8\n    assert candidate([16,21,25,36,4], 4) == 36",
+    "entry_point": "kth_element"
+  },
+  {
+    "task_id": "MBPP/49",
+    "prompt": "def snake_to_camel(word):\n    '''Write a function to convert a snake case string to camel case string. Return the converted string.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate('python_program')=='PythonProgram'\n    assert candidate('python_language')==('PythonLanguage')\n    assert candidate('programming_language')==('ProgrammingLanguage')",
+    "entry_point": "snake_to_camel"
+  },
+  {
+    "task_id": "MBPP/50",
+    "prompt": "def eulerian_num(n, m):\n    '''Write a function to find the Eulerian number a(n, m). Return the calculated integer value.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate(3, 1) == 4\n    assert candidate(4, 1) == 11\n    assert candidate(5, 3) == 26",
+    "entry_point": "eulerian_num"
+  },
+  {
+    "task_id": "MBPP/51",
+    "prompt": "def sort_sublists(input_list):\n    '''Write a function to sort each sublist of strings in a given list of lists. Return the sorted list.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate(([\"green\", \"orange\"], [\"black\", \"white\"], [\"white\", \"black\", \"orange\"]))==[['green', 'orange'], ['black', 'white'], ['black', 'orange', 'white']]\n    assert candidate(([\" red \",\"green\" ],[\"blue \",\" black\"],[\" orange\",\"brown\"]))==[[' red ', 'green'], [' black', 'blue '], [' orange', 'brown']]\n    assert candidate(([\"zilver\",\"gold\"], [\"magnesium\",\"aluminium\"], [\"steel\", \"bronze\"]))==[['gold', 'zilver'],['aluminium', 'magnesium'], ['bronze', 'steel']]",
+    "entry_point": "sort_sublists"
+  },
+  {
+    "task_id": "MBPP/52",
+    "prompt": "def count(lst):\n    '''Write a python function to count true booleans in the given list. Return the count as an integer.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate([True,False,True]) == 2\n    assert candidate([False,False]) == 0\n    assert candidate([True,True,True]) == 3",
+    "entry_point": "count"
+  },
+  {
+    "task_id": "MBPP/53",
+    "prompt": "def add_lists(test_list, test_tup):\n    '''Write a function to append the given list to the given tuples. Return the resulting tuple.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate([5, 6, 7], (9, 10)) == (9, 10, 5, 6, 7)\n    assert candidate([6, 7, 8], (10, 11)) == (10, 11, 6, 7, 8)\n    assert candidate([7, 8, 9], (11, 12)) == (11, 12, 7, 8, 9)",
+    "entry_point": "add_lists"
+  },
+  {
+    "task_id": "MBPP/54",
+    "prompt": "def merge_sorted_list(num1,num2,num3):\n    '''Write a function to merge three lists into a single sorted list. Return the sorted list.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate([25, 24, 15, 4, 5, 29, 110],[19, 20, 11, 56, 25, 233, 154],[24, 26, 54, 48])==[4, 5, 11, 15, 19, 20, 24, 24, 25, 25, 26, 29, 48, 54, 56, 110, 154, 233]\n    assert candidate([1, 3, 5, 6, 8, 9], [2, 5, 7, 11], [1, 4, 7, 8, 12])==[1, 1, 2, 3, 4, 5, 5, 6, 7, 7, 8, 8, 9, 11, 12]\n    assert candidate([18, 14, 10, 9, 8, 7, 9, 3, 2, 4, 1],[25, 35, 22, 85, 14, 65, 75, 25, 58],[12, 74, 9, 50, 61, 41])==[1, 2, 3, 4, 7, 8, 9, 9, 9, 10, 12, 14, 14, 18, 22, 25, 25, 35, 41, 50, 58, 61, 65, 74, 75, 85]",
+    "entry_point": "merge_sorted_list"
+  },
+  {
+    "task_id": "MBPP/55",
+    "prompt": "def odd_Equivalent(s,n):\n    '''Write a python function to find the number of numbers with an odd value when rotating a binary string the given number of times. Return the count as an integer.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate(\"011001\",6) == 3\n    assert candidate(\"11011\",5) == 4\n    assert candidate(\"1010\",4) == 2",
+    "entry_point": "odd_Equivalent"
+  },
+  {
+    "task_id": "MBPP/56",
+    "prompt": "def common_in_nested_lists(nestedlist):\n    '''Write a function to find the common elements in given nested lists. Return the list of common elements.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate(candidate([[12, 18, 23, 25, 45], [7, 12, 18, 24, 28], [1, 5, 8, 12, 15, 16, 18]]))==candidate([18, 12])\n    assert candidate(candidate([[12, 5, 23, 25, 45], [7, 11, 5, 23, 28], [1, 5, 8, 18, 23, 16]]))==candidate([5,23])\n    assert candidate(candidate([[2, 3,4, 1], [4, 5], [6,4, 8],[4, 5], [6, 8,4]]))==candidate([4])",
+    "entry_point": "common_in_nested_lists"
+  },
+  {
+    "task_id": "MBPP/57",
+    "prompt": "def check_integer(text):\n    '''Write a function to check if a string represents an integer or not. Return True if the condition is met, False otherwise.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate(\"python\")==False\n    assert candidate(\"1\")==True\n    assert candidate(\"12345\")==True",
+    "entry_point": "check_integer"
+  },
+  {
+    "task_id": "MBPP/58",
+    "prompt": "def empty_dit(list1):\n    '''Write a function to check whether all dictionaries in a list are empty or not. Return True if the condition is met, False otherwise.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate([{},{},{}])==True\n    assert candidate([{1,2},{},{}])==False\n    assert candidate({})==True",
+    "entry_point": "empty_dit"
+  },
+  {
+    "task_id": "MBPP/59",
+    "prompt": "def tuple_to_int(nums):\n    '''Write a function to convert a given tuple of positive integers into a single integer. Return the calculated integer value.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate((1,2,3))==123\n    assert candidate((4,5,6))==456\n    assert candidate((5,6,7))==567",
+    "entry_point": "tuple_to_int"
+  },
+  {
+    "task_id": "MBPP/60",
+    "prompt": "def list_to_float(test_list):\n    '''Write a function to convert all possible convertible elements in a list of lists to floats. Return the converted list.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate( [(\"3\", \"4\"), (\"1\", \"26.45\"), (\"7.32\", \"8\"), (\"4\", \"8\")] ) == [(3.0, 4.0), (1.0, 26.45), (7.32, 8.0), (4.0, 8.0)]\n    assert candidate( [(\"4\", \"4\"), (\"2\", \"27\"), (\"4.12\", \"9\"), (\"7\", \"11\")] ) == [(4.0, 4.0), (2.0, 27.0), (4.12, 9.0), (7.0, 11.0)]\n    assert candidate( [(\"6\", \"78\"), (\"5\", \"26.45\"), (\"1.33\", \"4\"), (\"82\", \"13\")] ) == [(6.0, 78.0), (5.0, 26.45), (1.33, 4.0), (82.0, 13.0)]",
+    "entry_point": "list_to_float"
+  },
+  {
+    "task_id": "MBPP/61",
+    "prompt": "def string_to_list(string):\n    '''Write a function to convert a string to a list of strings split on the space character. Return the resulting list.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate(\"python programming\")==['python','programming']\n    assert candidate(\"lists tuples strings\")==['lists','tuples','strings']\n    assert candidate(\"write a program\")==['write','a','program']",
+    "entry_point": "string_to_list"
+  },
+  {
+    "task_id": "MBPP/62",
+    "prompt": "def search(arr):\n    '''Write a python function to find the element that appears only once in a sorted array. Return the element value.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate([1,1,2,2,3]) == 3\n    assert candidate([1,1,3,3,4,4,5,5,7,7,8]) == 8\n    assert candidate([1,2,2,3,3,4,4]) == 1",
+    "entry_point": "search"
+  },
+  {
+    "task_id": "MBPP/63",
+    "prompt": "def max_product_tuple(list1):\n    '''Write a function to find the maximum absolute product between numbers in pairs of tuples within a given list. Return the calculated integer value.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate([(2, 7), (2, 6), (1, 8), (4, 9)] )==36\n    assert candidate([(10,20), (15,2), (5,10)] )==200\n    assert candidate([(11,44), (10,15), (20,5), (12, 9)] )==484",
+    "entry_point": "max_product_tuple"
+  },
+  {
+    "task_id": "MBPP/64",
+    "prompt": "def amicable_numbers_sum(limit):\n    '''Write a function to sum all amicable numbers from 1 to a specified number. Return the sum as an integer.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate(999)==504\n    assert candidate(9999)==31626\n    assert candidate(99)==0",
+    "entry_point": "amicable_numbers_sum"
+  },
+  {
+    "task_id": "MBPP/65",
+    "prompt": "def angle_complex(a,b):\n    '''Write a function to get the angle of a complex number. Return the calculated number.\n    '''\n",
+    "test": "def check(candidate):\n    assert math.candidate(candidate(0,1j), 1.5707963267948966, rel_tol=0.001)\n    assert math.candidate(candidate(2,1j), 0.4636476090008061, rel_tol=0.001)\n    assert math.candidate(candidate(0,2j), 1.5707963267948966, rel_tol=0.001)",
+    "entry_point": "angle_complex"
+  },
+  {
+    "task_id": "MBPP/66",
+    "prompt": "def find_length(string):\n    '''Write a function to find the maximum difference between the number of 0s and number of 1s in any sub-string of the given binary string. Return the count as an integer.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate(\"11000010001\") == 6\n    assert candidate(\"10111\") == 1\n    assert candidate(\"11011101100101\") == 2",
+    "entry_point": "find_length"
+  },
+  {
+    "task_id": "MBPP/67",
+    "prompt": "def sum(a,b):\n    '''Write a python function to find the sum of common divisors of two given numbers. Return the sum as an integer.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate(10,15) == 6\n    assert candidate(100,150) == 93\n    assert candidate(4,6) == 3",
+    "entry_point": "sum"
+  },
+  {
+    "task_id": "MBPP/68",
+    "prompt": "def multiply_int(x, y):\n    '''Write a function to multiply two integers. Return the calculated integer value.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate(10,20)==200\n    assert candidate(5,10)==50\n    assert candidate(4,8)==32",
+    "entry_point": "multiply_int"
+  },
+  {
+    "task_id": "MBPP/69",
+    "prompt": "def long_words(n, str):\n    '''Write a function to find words that are longer than n characters from a given list of words. Return the list of found items.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate(3,\"python is a programming language\")==['python','programming','language']\n    assert candidate(2,\"writing a program\")==['writing','program']\n    assert candidate(5,\"sorting list\")==['sorting']",
+    "entry_point": "long_words"
+  },
+  {
+    "task_id": "MBPP/70",
+    "prompt": "def magic_square_test(my_matrix):\n    '''Write a function to calculate whether the matrix is a magic square. Return True if the condition is met, False otherwise.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate([[7, 12, 1, 14], [2, 13, 8, 11], [16, 3, 10, 5], [9, 6, 15, 4]])==True\n    assert candidate([[2, 7, 6], [9, 5, 1], [4, 3, 8]])==True\n    assert candidate([[2, 7, 6], [9, 5, 1], [4, 3, 7]])==False",
+    "entry_point": "magic_square_test"
+  },
+  {
+    "task_id": "MBPP/71",
+    "prompt": "def max_occurrences(nums):\n    '''Write a function to find the item with maximum frequency in a given list. Return the element value.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate([2,3,8,4,7,9,8,2,6,5,1,6,1,2,3,2,4,6,9,1,2])==2\n    assert candidate([2,3,8,4,7,9,8,7,9,15,14,10,12,13,16,18])==8\n    assert candidate([10,20,20,30,40,90,80,50,30,20,50,10])==20",
+    "entry_point": "max_occurrences"
+  },
+  {
+    "task_id": "MBPP/72",
+    "prompt": "def reverse_vowels(str1):\n    '''Write a python function to reverse only the vowels of a given string (where y is not a vowel). Return the modified string.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate(\"Python\") == \"Python\"\n    assert candidate(\"USA\") == \"ASU\"\n    assert candidate(\"ab\") == \"ab\"",
+    "entry_point": "reverse_vowels"
+  },
+  {
+    "task_id": "MBPP/73",
+    "prompt": "def tup_string(tup1):\n    '''Write a function to convert a tuple to a string. Return the resulting string.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate(('e', 'x', 'e', 'r', 'c', 'i', 's', 'e', 's'))==(\"exercises\")\n    assert candidate(('p','y','t','h','o','n'))==(\"python\")\n    assert candidate(('p','r','o','g','r','a','m'))==(\"program\")",
+    "entry_point": "tup_string"
+  },
+  {
+    "task_id": "MBPP/74",
+    "prompt": "def sum_negativenum(nums):\n    '''Write a function to calculate the sum of the negative numbers of a given list of numbers. Return the sum as an integer.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate([2, 4, -6, -9, 11, -12, 14, -5, 17])==-32\n    assert candidate([10,15,-14,13,-18,12,-20])==-52\n    assert candidate([19, -65, 57, 39, 152,-639, 121, 44, 90, -190])==-894",
+    "entry_point": "sum_negativenum"
+  },
+  {
+    "task_id": "MBPP/75",
+    "prompt": "def hexagonal_num(n):\n    '''Write a function to find the nth hexagonal number. Return the calculated integer value.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate(10) == 190\n    assert candidate(5) == 45\n    assert candidate(7) == 91",
+    "entry_point": "hexagonal_num"
+  },
+  {
+    "task_id": "MBPP/76",
+    "prompt": "def zero_count(nums):\n    '''Write a function to find the ratio of zeroes to non-zeroes in an array of integers. Return the calculated number.\n    '''\n",
+    "test": "def check(candidate):\n    assert math.candidate(candidate([0, 1, 2, -1, -5, 6, 0, -3, -2, 3, 4, 6, 8]), 0.181818, rel_tol=0.001)\n    assert math.candidate(candidate([2, 1, 2, -1, -5, 6, 4, -3, -2, 3, 4, 6, 8]), 0.00, rel_tol=0.001)\n    assert math.candidate(candidate([2, 4, -6, -9, 11, -12, 14, -5, 17]), 0.00, rel_tol=0.001)",
+    "entry_point": "zero_count"
+  },
+  {
+    "task_id": "MBPP/77",
+    "prompt": "def is_Sum_Of_Powers_Of_Two(n):\n    '''Write a python function to check whether the given number can be represented as sum of non-zero powers of 2 or not. Return True if the condition is met, False otherwise.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate(10) == True\n    assert candidate(7) == False\n    assert candidate(14) == True",
+    "entry_point": "is_Sum_Of_Powers_Of_Two"
+  },
+  {
+    "task_id": "MBPP/78",
+    "prompt": "def circle_circumference(r):\n    '''Write a function to find the circumference of a circle. Return the calculated number.\n    '''\n",
+    "test": "def check(candidate):\n    assert math.candidate(candidate(10), 62.830000000000005, rel_tol=0.001)\n    assert math.candidate(candidate(5), 31.415000000000003, rel_tol=0.001)\n    assert math.candidate(candidate(4), 25.132, rel_tol=0.001)",
+    "entry_point": "circle_circumference"
+  },
+  {
+    "task_id": "MBPP/79",
+    "prompt": "def extract_singly(test_list):\n    '''Write a function to flatten the list of lists into a single set of numbers. Return the resulting list.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate(candidate([(3, 4, 5), (4, 5, 7), (1, 4)])) == candidate([3, 4, 5, 7, 1])\n    assert candidate(candidate([(1, 2, 3), (4, 2, 3), (7, 8)])) == candidate([1, 2, 3, 4, 7, 8])\n    assert candidate(candidate([(7, 8, 9), (10, 11, 12), (10, 11)])) == candidate([7, 8, 9, 10, 11, 12])",
+    "entry_point": "extract_singly"
+  },
+  {
+    "task_id": "MBPP/80",
+    "prompt": "def pancake_sort(nums):\n    '''Write a function to sort a list of elements. Return the sorted list.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate([15, 79, 25, 38, 69]) == [15, 25, 38, 69, 79]\n    assert candidate([98, 12, 54, 36, 85]) == [12, 36, 54, 85, 98]\n    assert candidate([41, 42, 32, 12, 23]) == [12, 23, 32, 41, 42]",
+    "entry_point": "pancake_sort"
+  },
+  {
+    "task_id": "MBPP/81",
+    "prompt": "def count_samepair(list1,list2,list3):\n    '''Write a function to count number items that are identical in the same position of three given lists. Return the count as an integer.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate([1,2,3,4,5,6,7,8],[2,2,3,1,2,6,7,9],[2,1,3,1,2,6,7,9])==3\n    assert candidate([1,2,3,4,5,6,7,8],[2,2,3,1,2,6,7,8],[2,1,3,1,2,6,7,8])==4\n    assert candidate([1,2,3,4,2,6,7,8],[2,2,3,1,2,6,7,8],[2,1,3,1,2,6,7,8])==5",
+    "entry_point": "count_samepair"
+  },
+  {
+    "task_id": "MBPP/82",
+    "prompt": "def find_lists(Input):\n    '''Write a function to find number of lists present in the given tuple. Return the count as an integer.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate(([1, 2, 3, 4], [5, 6, 7, 8])) == 2\n    assert candidate(([1, 2], [3, 4], [5, 6]))  == 3\n    assert candidate(([9, 8, 7, 6, 5, 4, 3, 2, 1])) == 1",
+    "entry_point": "find_lists"
+  },
+  {
+    "task_id": "MBPP/83",
+    "prompt": "def max_Abs_Diff(arr):\n    '''Write a python function to find the maximum difference between any two elements in a given array. Return the calculated integer value.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate((2,1,5,3)) == 4\n    assert candidate((9,3,2,5,1)) == 8\n    assert candidate((3,2,1)) == 2",
+    "entry_point": "max_Abs_Diff"
+  },
+  {
+    "task_id": "MBPP/84",
+    "prompt": "def find_solution(a, b, n):\n    '''Write a function that returns integers x and y that satisfy ax + by = n as a tuple, or return None if no solution exists. Return the solution tuple or None.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate(2, 3, 7) == (2, 1)\n    assert candidate(4, 2, 7) == None\n    assert candidate(1, 13, 17) == (4, 1)",
+    "entry_point": "find_solution"
+  },
+  {
+    "task_id": "MBPP/85",
+    "prompt": "def remove_elements(list1, list2):\n    '''Write a function to remove all elements from a given list present in another list. Return the modified list.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate([1, 2, 3, 4, 5, 6, 7, 8, 9, 10], [2, 4, 6, 8]) == [1, 3, 5, 7, 9, 10]\n    assert candidate([1, 2, 3, 4, 5, 6, 7, 8, 9, 10], [1, 3, 5, 7]) == [2, 4, 6, 8, 9, 10]\n    assert candidate([1, 2, 3, 4, 5, 6, 7, 8, 9, 10], [5, 7]) == [1, 2, 3, 4, 6, 8, 9, 10]",
+    "entry_point": "remove_elements"
+  },
+  {
+    "task_id": "MBPP/86",
+    "prompt": "def sum_series(n):\n    '''Write a function to calculate the sum (n - 2*i) from i=0 to n // 2, for instance n + (n-2) + (n-4)... (until n-x =< 0). Return the sum as an integer.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate(6) == 12\n    assert candidate(10) == 30\n    assert candidate(9) == 25",
+    "entry_point": "sum_series"
+  },
+  {
+    "task_id": "MBPP/87",
+    "prompt": "def area_polygon(s, l):\n    '''Write a function to calculate the area of a regular polygon given the length and number of its sides. Return the calculated number.\n    '''\n",
+    "test": "def check(candidate):\n    assert math.candidate(candidate(4, 20), 400., rel_tol=0.001)\n    assert math.candidate(candidate(10, 15), 1731.197, rel_tol=0.001)\n    assert math.candidate(candidate(9, 7), 302.909, rel_tol=0.001)",
+    "entry_point": "area_polygon"
+  },
+  {
+    "task_id": "MBPP/88",
+    "prompt": "def div_sum(n):\n    '''Write a function to determine if the sum of the divisors of two integers are the same. Return True if the condition is met, False otherwise.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate(36, 57) == False\n    assert candidate(2, 4) == False\n    assert candidate(23, 47) == True",
+    "entry_point": "div_sum"
+  },
+  {
+    "task_id": "MBPP/89",
+    "prompt": "def count_char_position(str1):\n    '''Write a function to count the number of characters in a string that occur at the same position in the string as in the English alphabet (case insensitive). Return the count as an integer.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate(\"xbcefg\") == 2\n    assert candidate(\"ABcED\") == 3\n    assert candidate(\"AbgdeF\") == 5",
+    "entry_point": "count_char_position"
+  },
+  {
+    "task_id": "MBPP/90",
+    "prompt": "def find_even_pair(A):\n    '''Write a function that counts the number of pairs of integers in a list that xor to an even number. Return the count as an integer.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate([5, 4, 7, 2, 1]) == 4\n    assert candidate([7, 2, 8, 1, 0, 5, 11]) == 9\n    assert candidate([1, 2, 3]) == 1",
+    "entry_point": "find_even_pair"
+  },
+  {
+    "task_id": "MBPP/91",
+    "prompt": "def next_power_of_2(n):\n    '''Write a python function to find the smallest power of 2 greater than or equal to n. Return the calculated integer value.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate(0) == 1\n    assert candidate(5) == 8\n    assert candidate(17) == 32",
+    "entry_point": "next_power_of_2"
+  },
+  {
+    "task_id": "MBPP/92",
+    "prompt": "def frequency(a,x):\n    '''Write a function to count the number of occurrences of a number in a given list. Return the count as an integer.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate([1,2,3], 4) == 0\n    assert candidate([1,2,2,3,3,3,4], 3) == 3\n    assert candidate([0,1,2,3,1,2], 1) == 2",
+    "entry_point": "frequency"
+  },
+  {
+    "task_id": "MBPP/93",
+    "prompt": "def sum_range_list(list1, m, n):\n    '''Write a function to find the sum of numbers in a list within a range specified by two indices. Return the sum as an integer.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate([2,1,5,6,8,3,4,9,10,11,8,12], 8, 10) == 29\n    assert candidate([2,1,5,6,8,3,4,9,10,11,8,12], 5, 7) == 16\n    assert candidate([2,1,5,6,8,3,4,9,10,11,8,12], 7, 10) == 38",
+    "entry_point": "sum_range_list"
+  },
+  {
+    "task_id": "MBPP/94",
+    "prompt": "def perimeter_pentagon(a):\n    '''Write a function to find the perimeter of a regular pentagon from the length of its sides. Return the calculated integer value.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate(5) == 25\n    assert candidate(10) == 50\n    assert candidate(15) == 75",
+    "entry_point": "perimeter_pentagon"
+  },
+  {
+    "task_id": "MBPP/95",
+    "prompt": "def count_occurance(s):\n    '''Write a function to count the number of occurence of the string 'std' in a given string. Return the count as an integer.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate(\"letstdlenstdporstd\") == 3\n    assert candidate(\"truststdsolensporsd\") == 1\n    assert candidate(\"makestdsostdworthit\") == 2\n    assert candidate(\"stds\") == 1\n    assert candidate(\"\") == 0",
+    "entry_point": "count_occurance"
+  },
+  {
+    "task_id": "MBPP/96",
+    "prompt": "def check_type(test_tuple):\n    '''Write a function to check if all the elements in tuple have same data type or not. Return True if the condition is met, False otherwise.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate((5, 6, 7, 3, 5, 6) ) == True\n    assert candidate((1, 2, \"4\") ) == False\n    assert candidate((3, 2, 1, 4, 5) ) == True",
+    "entry_point": "check_type"
+  },
+  {
+    "task_id": "MBPP/97",
+    "prompt": "def is_majority(arr, n, x):\n    '''Write a function that takes in a sorted array, its length (n), and an element and returns whether the element is the majority element in the given sorted array. (The majority element is the element that occurs more than n/2 times.) Return True if the condition is met, False otherwise.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate([1, 2, 3, 3, 3, 3, 10], 7, 3) == True\n    assert candidate([1, 1, 2, 4, 4, 4, 6, 6], 8, 4) == False\n    assert candidate([1, 1, 1, 2, 2], 5, 1) == True\n    assert candidate([1, 1, 2, 2], 5, 1) == False",
+    "entry_point": "is_majority"
+  },
+  {
+    "task_id": "MBPP/98",
+    "prompt": "def count_Set_Bits(n):\n    '''Write a python function to count the number of set bits (binary digits with value 1) in a given number. Return the count as an integer.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate(2) == 1\n    assert candidate(4) == 1\n    assert candidate(6) == 2",
+    "entry_point": "count_Set_Bits"
+  },
+  {
+    "task_id": "MBPP/99",
+    "prompt": "def odd_values_string(str):\n    '''Write a python function to remove the characters which have odd index values of a given string. Return the modified string.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate('abcdef') == 'ace'\n    assert candidate('python') == 'pto'\n    assert candidate('data') == 'dt'\n    assert candidate('lambs') == 'lms'",
+    "entry_point": "odd_values_string"
+  },
+  {
+    "task_id": "MBPP/100",
+    "prompt": "def min_of_three(a,b,c):\n    '''Write a function to find minimum of three numbers. Return the calculated integer value.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate(10,20,0)==0\n    assert candidate(19,15,18)==15\n    assert candidate(-10,-20,-30)==-30",
+    "entry_point": "min_of_three"
+  },
+  {
+    "task_id": "MBPP/101",
+    "prompt": "def all_Bits_Set_In_The_Given_Range(n,l,r):\n    '''Write a python function to check whether all the bits are unset in the given range or not. Return True if the condition is met, False otherwise.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate(4,1,2) == True\n    assert candidate(17,2,4) == True\n    assert candidate(39,4,6) == False",
+    "entry_point": "all_Bits_Set_In_The_Given_Range"
+  },
+  {
+    "task_id": "MBPP/102",
+    "prompt": "def re_arrange_array(arr, n):\n    '''Write a function that takes in an array and an integer n, and re-arranges the first n elements of the given array so that all negative elements appear before positive ones, and where the relative order among negative and positive elements is preserved. Return the re-arranged list.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate([-1, 2, -3, 4, 5, 6, -7, 8, 9], 9) == [-1, -3, -7, 4, 5, 6, 2, 8, 9]\n    assert candidate([12, -14, -26, 13, 15], 5) == [-14, -26, 12, 13, 15]\n    assert candidate([10, 24, 36, -42, -39, -78, 85], 7) == [-42, -39, -78, 10, 24, 36, 85]",
+    "entry_point": "re_arrange_array"
+  },
+  {
+    "task_id": "MBPP/103",
+    "prompt": "def replace_blank(str1,char):\n    '''Write a function that takes in a string and character, replaces blank spaces in the string with the character, and returns the string. Return the modified string.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate(\"hello people\",'@')==(\"hello@people\")\n    assert candidate(\"python program language\",'$')==(\"python$program$language\")\n    assert candidate(\"blank space\",\"-\")==(\"blank-space\")",
+    "entry_point": "replace_blank"
+  },
+  {
+    "task_id": "MBPP/104",
+    "prompt": "def larg_nnum(list1,n):\n    '''Write a function that takes in a list and an integer n and returns a list containing the n largest items from the list. Return the list of largest items.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate(candidate([10, 20, 50, 70, 90, 20, 50, 40, 60, 80, 100],2))==candidate([100,90])\n    assert candidate(candidate([10, 20, 50, 70, 90, 20, 50, 40, 60, 80, 100],5))==candidate([100,90,80,70,60])\n    assert candidate(candidate([10, 20, 50, 70, 90, 20, 50, 40, 60, 80, 100],3))==candidate([100,90,80])",
+    "entry_point": "larg_nnum"
+  },
+  {
+    "task_id": "MBPP/105",
+    "prompt": "def lateralsuface_cylinder(r,h):\n    '''Write a function to find the lateral surface area of a cylinder. Return the calculated number.\n    '''\n",
+    "test": "def check(candidate):\n    assert math.candidate(candidate(10,5), 314.15000000000003, rel_tol=0.001)\n    assert math.candidate(candidate(4,5), 125.66000000000001, rel_tol=0.001)\n    assert math.candidate(candidate(4,10), 251.32000000000002, rel_tol=0.001)",
+    "entry_point": "lateralsuface_cylinder"
+  },
+  {
+    "task_id": "MBPP/106",
+    "prompt": "def volume_cube(l):\n    '''Write a function to find the volume of a cube given its side length. Return the calculated integer value.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate(3)==27\n    assert candidate(2)==8\n    assert candidate(5)==125",
+    "entry_point": "volume_cube"
+  },
+  {
+    "task_id": "MBPP/107",
+    "prompt": "def even_bit_set_number(n):\n    '''Write a python function to set all even bits of a given number. Return the calculated integer value.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate(10) == 10\n    assert candidate(20) == 30\n    assert candidate(30) == 30",
+    "entry_point": "even_bit_set_number"
+  },
+  {
+    "task_id": "MBPP/108",
+    "prompt": "def check_occurences(test_list):\n    '''Write a function that takes in a list of tuples and returns a dictionary mapping each unique tuple to the number of times it occurs in the list. Return the frequency dictionary.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate([(3, 1), (1, 3), (2, 5), (5, 2), (6, 3)] ) == {(1, 3): 2, (2, 5): 2, (3, 6): 1}\n    assert candidate([(4, 2), (2, 4), (3, 6), (6, 3), (7, 4)] ) == {(2, 4): 2, (3, 6): 2, (4, 7): 1}\n    assert candidate([(13, 2), (11, 23), (12, 25), (25, 12), (16, 23)] ) == {(2, 13): 1, (11, 23): 1, (12, 25): 2, (16, 23): 1}",
+    "entry_point": "check_occurences"
+  },
+  {
+    "task_id": "MBPP/109",
+    "prompt": "def number_of_substrings(str):\n    '''Write a python function to count the number of non-empty substrings of a given string. Return the count as an integer.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate(\"abc\") == 6\n    assert candidate(\"abcd\") == 10\n    assert candidate(\"abcde\") == 15",
+    "entry_point": "number_of_substrings"
+  },
+  {
+    "task_id": "MBPP/110",
+    "prompt": "def get_total_number_of_sequences(m,n):\n    '''Write a function that takes in positive integers m and n and finds the number of possible sequences of length n, such that each element is a positive integer and is greater than or equal to twice the previous element but less than or equal to m. Return the count as an integer.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate(10, 4) == 4\n    assert candidate(5, 2) == 6\n    assert candidate(16, 3) == 84",
+    "entry_point": "get_total_number_of_sequences"
+  },
+  {
+    "task_id": "MBPP/111",
+    "prompt": "def replace_list(list1,list2):\n    '''Write a function that takes in two lists and replaces the last element of the first list with the elements of the second list. Return the modified list.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate([1, 3, 5, 7, 9, 10],[2, 4, 6, 8])==[1, 3, 5, 7, 9, 2, 4, 6, 8]\n    assert candidate([1,2,3,4,5],[5,6,7,8])==[1,2,3,4,5,6,7,8]\n    assert candidate([\"red\",\"blue\",\"green\"],[\"yellow\"])==[\"red\",\"blue\",\"yellow\"]",
+    "entry_point": "replace_list"
+  },
+  {
+    "task_id": "MBPP/112",
+    "prompt": "def count_charac(str1):\n    '''Write a function to count the total number of characters in a string. Return the count as an integer.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate(\"python programming\")==18\n    assert candidate(\"language\")==8\n    assert candidate(\"words\")==5",
+    "entry_point": "count_charac"
+  },
+  {
+    "task_id": "MBPP/113",
+    "prompt": "def next_Perfect_Square(N):\n    '''Write a python function to find the next perfect square greater than a given number. Return the calculated integer value.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate(35) == 36\n    assert candidate(6) == 9\n    assert candidate(9) == 16",
+    "entry_point": "next_Perfect_Square"
+  },
+  {
+    "task_id": "MBPP/114",
+    "prompt": "def max_sum(arr):\n    '''Write a function that takes an array and finds the maximum sum of a bitonic subsequence for the given array, where a sequence is bitonic if it is first increasing and then decreasing. Return the calculated integer value.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate([1, 15, 51, 45, 33, 100, 12, 18, 9]) == 194\n    assert candidate([80, 60, 30, 40, 20, 10]) == 210\n    assert candidate([2, 3 ,14, 16, 21, 23, 29, 30]) == 138",
+    "entry_point": "max_sum"
+  },
+  {
+    "task_id": "MBPP/115",
+    "prompt": "def babylonian_squareroot(number):\n    '''Write a function for computing square roots using the babylonian method. Return the calculated number.\n    '''\n",
+    "test": "def check(candidate):\n    assert math.candidate(candidate(10), 3.162277660168379, rel_tol=0.001)\n    assert math.candidate(candidate(2), 1.414213562373095, rel_tol=0.001)\n    assert math.candidate(candidate(9), 3.0, rel_tol=0.001)",
+    "entry_point": "babylonian_squareroot"
+  },
+  {
+    "task_id": "MBPP/116",
+    "prompt": "def lps(str):\n    '''Write a function to find the length of the longest palindromic subsequence in the given string. Return the count as an integer.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate(\"TENS FOR TENS\") == 5\n    assert candidate(\"CARDIO FOR CARDS\") == 7\n    assert candidate(\"PART OF THE JOURNEY IS PART\") == 9",
+    "entry_point": "lps"
+  },
+  {
+    "task_id": "MBPP/117",
+    "prompt": "def harmonic_sum(n):\n    '''Write a function that takes in an integer n and calculates the harmonic sum of n-1. Return the calculated number.\n    '''\n",
+    "test": "def check(candidate):\n    assert math.candidate(candidate(7), 2.5928571428571425, rel_tol=0.001)\n    assert math.candidate(candidate(4), 2.083333333333333, rel_tol=0.001)\n    assert math.candidate(candidate(19), 3.547739657143682, rel_tol=0.001)",
+    "entry_point": "harmonic_sum"
+  },
+  {
+    "task_id": "MBPP/118",
+    "prompt": "def intersection_array(array_nums1,array_nums2):\n    '''Write a function to find the intersection of two arrays. Return the list of common elements.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate([1, 2, 3, 5, 7, 8, 9, 10],[1, 2, 4, 8, 9])==[1, 2, 8, 9]\n    assert candidate([1, 2, 3, 5, 7, 8, 9, 10],[3,5,7,9])==[3,5,7,9]\n    assert candidate([1, 2, 3, 5, 7, 8, 9, 10],[10,20,30,40])==[10]",
+    "entry_point": "intersection_array"
+  },
+  {
+    "task_id": "MBPP/119",
+    "prompt": "def count_X(tup, x):\n    '''Write a python function that takes in a tuple and an element and counts the occcurences of the element in the tuple. Return the count as an integer.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate((10, 8, 5, 2, 10, 15, 10, 8, 5, 8, 8, 2),4) == 0\n    assert candidate((10, 8, 5, 2, 10, 15, 10, 8, 5, 8, 8, 2),10) == 3\n    assert candidate((10, 8, 5, 2, 10, 15, 10, 8, 5, 8, 8, 2),8) == 4",
+    "entry_point": "count_X"
+  },
+  {
+    "task_id": "MBPP/120",
+    "prompt": "def insert_element(list,element):\n    '''Write a function that takes in a list and an element and inserts the element before each element in the list, and returns the resulting list. Return the modified list.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate(['Red', 'Green', 'Black'] ,'c')==['c', 'Red', 'c', 'Green', 'c', 'Black']\n    assert candidate(['python', 'java'] ,'program')==['program', 'python', 'program', 'java']\n    assert candidate(['happy', 'sad'] ,'laugh')==['laugh', 'happy', 'laugh', 'sad']",
+    "entry_point": "insert_element"
+  },
+  {
+    "task_id": "MBPP/121",
+    "prompt": "def convert(numbers):\n    '''Write a python function to convert complex numbers to polar coordinates. Return the resulting tuple.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate(1) == (1.0, 0.0)\n    assert candidate(4) == (4.0,0.0)\n    assert candidate(5) == (5.0,0.0)",
+    "entry_point": "convert"
+  },
+  {
+    "task_id": "MBPP/122",
+    "prompt": "def count_integer(list1):\n    '''Write a python function that returns the number of integer elements in a given list. Return the count as an integer.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate([1,2,'abc',1.2]) == 2\n    assert candidate([1,2,3]) == 3\n    assert candidate([1,1.2,4,5.1]) == 2",
+    "entry_point": "count_integer"
+  },
+  {
+    "task_id": "MBPP/123",
+    "prompt": "def combinations_colors(l, n):\n    '''Write a function that takes in a list and length n, and generates all combinations (with repetition) of the elements of the list and returns a list with a tuple for each combination. Return the list of combinations.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate( [\"Red\",\"Green\",\"Blue\"],1)==[('Red',), ('Green',), ('Blue',)]\n    assert candidate( [\"Red\",\"Green\",\"Blue\"],2)==[('Red', 'Red'), ('Red', 'Green'), ('Red', 'Blue'), ('Green', 'Green'), ('Green', 'Blue'), ('Blue', 'Blue')]\n    assert candidate( [\"Red\",\"Green\",\"Blue\"],3)==[('Red', 'Red', 'Red'), ('Red', 'Red', 'Green'), ('Red', 'Red', 'Blue'), ('Red', 'Green', 'Green'), ('Red', 'Green', 'Blue'), ('Red', 'Blue', 'Blue'), ('Green', 'Green', 'Green'), ('Green', 'Green', 'Blue'), ('Green', 'Blue', 'Blue'), ('Blue', 'Blue', 'Blue')]",
+    "entry_point": "combinations_colors"
+  },
+  {
+    "task_id": "MBPP/124",
+    "prompt": "def count_Primes_nums(n):\n    '''Write a python function that takes in a non-negative number and returns the number of prime numbers less than the given non-negative number. Return the count as an integer.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate(5) == 2\n    assert candidate(10) == 4\n    assert candidate(100) == 25",
+    "entry_point": "count_Primes_nums"
+  },
+  {
+    "task_id": "MBPP/125",
+    "prompt": "def swap_numbers(a,b):\n    '''Write a function that takes in two numbers and returns a tuple with the second number and then the first number. Return the swapped tuple.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate(10,20)==(20,10)\n    assert candidate(15,17)==(17,15)\n    assert candidate(100,200)==(200,100)",
+    "entry_point": "swap_numbers"
+  },
+  {
+    "task_id": "MBPP/126",
+    "prompt": "def maximize_elements(test_tup1, test_tup2):\n    '''Write a function to maximize the given two tuples. Return the maximized tuple.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate(((1, 3), (4, 5), (2, 9), (1, 10)), ((6, 7), (3, 9), (1, 1), (7, 3))) == ((6, 7), (4, 9), (2, 9), (7, 10))\n    assert candidate(((2, 4), (5, 6), (3, 10), (2, 11)), ((7, 8), (4, 10), (2, 2), (8, 4))) == ((7, 8), (5, 10), (3, 10), (8, 11))\n    assert candidate(((3, 5), (6, 7), (4, 11), (3, 12)), ((8, 9), (5, 11), (3, 3), (9, 5))) == ((8, 9), (6, 11), (4, 11), (9, 12))",
+    "entry_point": "maximize_elements"
+  },
+  {
+    "task_id": "MBPP/127",
+    "prompt": "def newman_prime(n):\n    '''Write a function to find the nth newman-shanks-williams prime number. Return the calculated integer value.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate(3) == 7\n    assert candidate(4) == 17\n    assert candidate(5) == 41",
+    "entry_point": "newman_prime"
+  },
+  {
+    "task_id": "MBPP/128",
+    "prompt": "def division_elements(test_tup1, test_tup2):\n    '''Write a function that takes in two tuples and performs mathematical division operation element-wise across the given tuples. Return the resulting tuple.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate((10, 4, 6, 9),(5, 2, 3, 3)) == (2, 2, 2, 3)\n    assert candidate((12, 6, 8, 16),(6, 3, 4, 4)) == (2, 2, 2, 4)\n    assert candidate((20, 14, 36, 18),(5, 7, 6, 9)) == (4, 2, 6, 2)",
+    "entry_point": "division_elements"
+  },
+  {
+    "task_id": "MBPP/129",
+    "prompt": "def split_two_parts(list1, L):\n    '''Write a function that takes in a list and an integer L and splits the given list into two parts where the length of the first part of the list is L, and returns the resulting lists in a tuple. Return the resulting tuple.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate([1,1,2,3,4,4,5,1],3)==([1, 1, 2], [3, 4, 4, 5, 1])\n    assert candidate(['a', 'b', 'c', 'd'],2)==(['a', 'b'], ['c', 'd'])\n    assert candidate(['p', 'y', 't', 'h', 'o', 'n'],4)==(['p', 'y', 't', 'h'], ['o', 'n'])",
+    "entry_point": "split_two_parts"
+  },
+  {
+    "task_id": "MBPP/130",
+    "prompt": "def dog_age(h_age):\n    '''Write a function to calculate a dog's age in dog's years. Return the calculated integer value.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate(12)==61\n    assert candidate(15)==73\n    assert candidate(24)==109",
+    "entry_point": "dog_age"
+  },
+  {
+    "task_id": "MBPP/131",
+    "prompt": "def list_split(S, step):\n    '''Write a function that takes in a list and an integer n and splits a list for every nth element, returning a list of the resulting lists. Return the list of split lists.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate(['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n'],3)==[['a', 'd', 'g', 'j', 'm'], ['b', 'e', 'h', 'k', 'n'], ['c', 'f', 'i', 'l']]\n    assert candidate([1,2,3,4,5,6,7,8,9,10,11,12,13,14],3)==[[1,4,7,10,13], [2,5,8,11,14], [3,6,9,12]]\n    assert candidate(['python','java','C','C++','DBMS','SQL'],2)==[['python', 'C', 'DBMS'], ['java', 'C++', 'SQL']]",
+    "entry_point": "list_split"
+  },
+  {
+    "task_id": "MBPP/132",
+    "prompt": "def lateralsurface_cube(l):\n    '''Write a function to find the lateral surface area of a cube given its side length. Return the calculated integer value.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate(5)==100\n    assert candidate(9)==324\n    assert candidate(10)==400",
+    "entry_point": "lateralsurface_cube"
+  },
+  {
+    "task_id": "MBPP/133",
+    "prompt": "def square_Sum(n):\n    '''Write a python function that takes in an integer n and returns the sum of the squares of the first n odd natural numbers. Return the sum as an integer.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate(2) == 10\n    assert candidate(3) == 35\n    assert candidate(4) == 84",
+    "entry_point": "square_Sum"
+  },
+  {
+    "task_id": "MBPP/134",
+    "prompt": "def find_star_num(n):\n    '''Write a function to find the n'th star number. Return the calculated integer value.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate(3) == 37\n    assert candidate(4) == 73\n    assert candidate(5) == 121",
+    "entry_point": "find_star_num"
+  },
+  {
+    "task_id": "MBPP/135",
+    "prompt": "def ascii_value(k):\n    '''Write a function to find the ascii value of a character. Return the calculated integer value.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate('A')==65\n    assert candidate('R')==82\n    assert candidate('S')==83",
+    "entry_point": "ascii_value"
+  },
+  {
+    "task_id": "MBPP/136",
+    "prompt": "def sum_even_and_even_index(arr):\n    '''Write a python function to find the sum of even numbers at even positions of a list. Return the sum as an integer.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate([5, 6, 12, 1, 18, 8]) == 30\n    assert candidate([3, 20, 17, 9, 2, 10, 18, 13, 6, 18]) == 26\n    assert candidate([5, 6, 12, 1]) == 12",
+    "entry_point": "sum_even_and_even_index"
+  },
+  {
+    "task_id": "MBPP/137",
+    "prompt": "def even_Power_Sum(n):\n    '''Write a python function that takes in an integer n and finds the sum of the first n even natural numbers that are raised to the fifth power. Return the sum as an integer.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate(2) == 1056\n    assert candidate(3) == 8832\n    assert candidate(1) == 32",
+    "entry_point": "even_Power_Sum"
+  },
+  {
+    "task_id": "MBPP/138",
+    "prompt": "def rear_extract(test_list):\n    '''Write a function that takes in a list of tuples and returns a list containing the rear element of each tuple. Return the list of rear elements.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate([(1, 'Rash', 21), (2, 'Varsha', 20), (3, 'Kil', 19)]) == [21, 20, 19]\n    assert candidate([(1, 'Sai', 36), (2, 'Ayesha', 25), (3, 'Salman', 45)]) == [36, 25, 45]\n    assert candidate([(1, 'Sudeep', 14), (2, 'Vandana', 36), (3, 'Dawood', 56)]) == [14, 36, 56]",
+    "entry_point": "rear_extract"
+  },
+  {
+    "task_id": "MBPP/139",
+    "prompt": "def substract_elements(test_tup1, test_tup2):\n    '''Write a function that takes in two tuples and subtracts the elements of the first tuple by the elements of the second tuple with the same index. Return the resulting tuple.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate((10, 4, 5), (2, 5, 18)) == (8, -1, -13)\n    assert candidate((11, 2, 3), (24, 45 ,16)) == (-13, -43, -13)\n    assert candidate((7, 18, 9), (10, 11, 12)) == (-3, 7, -3)",
+    "entry_point": "substract_elements"
+  },
+  {
+    "task_id": "MBPP/140",
+    "prompt": "def even_binomial_Coeff_Sum(n):\n    '''Write a python function that takes in a positive integer n and finds the sum of even index binomial coefficients. Return the sum as an integer.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate(4) == 8\n    assert candidate(6) == 32\n    assert candidate(2) == 2",
+    "entry_point": "even_binomial_Coeff_Sum"
+  },
+  {
+    "task_id": "MBPP/141",
+    "prompt": "def volume_cylinder(r,h):\n    '''Write a function that takes in the radius and height of a cylinder and returns the the volume. Return the calculated number.\n    '''\n",
+    "test": "def check(candidate):\n    assert math.candidate(candidate(10,5), 1570.7500000000002, rel_tol=0.001)\n    assert math.candidate(candidate(4,5), 251.32000000000002, rel_tol=0.001)\n    assert math.candidate(candidate(4,10), 502.64000000000004, rel_tol=0.001)",
+    "entry_point": "volume_cylinder"
+  },
+  {
+    "task_id": "MBPP/142",
+    "prompt": "def dict_filter(dict,n):\n    '''Write a function that takes in a dictionary and integer n and filters the dictionary to only include entries with values greater than or equal to n. Return the filtered dictionary.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate({'Cierra Vega': 175, 'Alden Cantrell': 180, 'Kierra Gentry': 165, 'Pierre Cox': 190},170)=={'Cierra Vega': 175, 'Alden Cantrell': 180, 'Pierre Cox': 190}\n    assert candidate({'Cierra Vega': 175, 'Alden Cantrell': 180, 'Kierra Gentry': 165, 'Pierre Cox': 190},180)=={ 'Alden Cantrell': 180, 'Pierre Cox': 190}\n    assert candidate({'Cierra Vega': 175, 'Alden Cantrell': 180, 'Kierra Gentry': 165, 'Pierre Cox': 190},190)=={ 'Pierre Cox': 190}",
+    "entry_point": "dict_filter"
+  },
+  {
+    "task_id": "MBPP/143",
+    "prompt": "def count_first_elements(test_tup):\n    '''Write a function to find the number of elements that occurs before the tuple element in the given tuple. Return the count as an integer.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate((1, 5, 7, (4, 6), 10) ) == 3\n    assert candidate((2, 9, (5, 7), 11) ) == 2\n    assert candidate((11, 15, 5, 8, (2, 3), 8) ) == 4",
+    "entry_point": "count_first_elements"
+  },
+  {
+    "task_id": "MBPP/144",
+    "prompt": "def is_num_decagonal(n):\n    '''Write a function to find the nth decagonal number. Return the calculated integer value.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate(3) == 27\n    assert candidate(7) == 175\n    assert candidate(10) == 370",
+    "entry_point": "is_num_decagonal"
+  },
+  {
+    "task_id": "MBPP/145",
+    "prompt": "def sequential_search(dlist, item):\n    '''Write a function that takes in an array and element and returns a tuple containing a boolean that indicates if the element is in the array and the index position of the element (or -1 if the element is not found). Return the search result tuple.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate([11,23,58,31,56,77,43,12,65,19],31) == (True, 3)\n    assert candidate([12, 32, 45, 62, 35, 47, 44, 61],61) == (True, 7)\n    assert candidate([9, 10, 17, 19, 22, 39, 48, 56],48) == (True, 6)",
+    "entry_point": "sequential_search"
+  },
+  {
+    "task_id": "MBPP/146",
+    "prompt": "def all_unique(test_list):\n    '''Write a python function to check if the elements of a given list are unique or not. Return True if the condition is met, False otherwise.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate([1,2,3]) == True\n    assert candidate([1,2,1,2]) == False\n    assert candidate([1,2,3,4,5]) == True",
+    "entry_point": "all_unique"
+  },
+  {
+    "task_id": "MBPP/147",
+    "prompt": "def sub_list(nums1,nums2):\n    '''Write a function to subtract two lists element-wise. Return the resulting list.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate([1, 2, 3],[4,5,6])==[-3,-3,-3]\n    assert candidate([1,2],[3,4])==[-2,-2]\n    assert candidate([90,120],[50,70])==[40,50]",
+    "entry_point": "sub_list"
+  },
+  {
+    "task_id": "MBPP/148",
+    "prompt": "def validate(n):\n    '''Write a python function takes in an integer and check whether the frequency of each digit in the integer is less than or equal to the digit itself. Return True if the condition is met, False otherwise.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate(1234) == True\n    assert candidate(51241) == False\n    assert candidate(321) == True",
+    "entry_point": "validate"
+  },
+  {
+    "task_id": "MBPP/149",
+    "prompt": "def check_element(list,element):\n    '''Write a function that takes in a list and element and checks whether all items in the list are equal to the given element. Return True if the condition is met, False otherwise.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate([\"green\", \"orange\", \"black\", \"white\"],'blue')==False\n    assert candidate([1,2,3,4],7)==False\n    assert candidate([\"green\", \"green\", \"green\", \"green\"],'green')==True",
+    "entry_point": "check_element"
+  },
+  {
+    "task_id": "MBPP/150",
+    "prompt": "def text_match_two_three(text):\n    '''Write a function that checks whether a string contains the 'a' character followed by two or three 'b' characters. Return True if the condition is met, False otherwise.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate(\"ac\")==(False)\n    assert candidate(\"dc\")==(False)\n    assert candidate(\"abbbba\")==(True)",
+    "entry_point": "text_match_two_three"
+  },
+  {
+    "task_id": "MBPP/151",
+    "prompt": "def max_sub_array_sum_repeated(a, n, k):\n    '''Write a function to find the largest sum of a contiguous array in the modified array which is formed by repeating the given array k times. Return the calculated integer value.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate([10, 20, -30, -1], 4, 3) == 30\n    assert candidate([-1, 10, 20], 3, 2) == 59\n    assert candidate([-1, -2, -3], 3, 3) == -1",
+    "entry_point": "max_sub_array_sum_repeated"
+  },
+  {
+    "task_id": "MBPP/152",
+    "prompt": "def square_Sum_1(n):\n    '''Write a python function takes in an integer n and returns the sum of squares of first n even natural numbers. Return the sum as an integer.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate(2) == 20\n    assert candidate(3) == 56\n    assert candidate(4) == 120",
+    "entry_point": "square_Sum_1"
+  },
+  {
+    "task_id": "MBPP/153",
+    "prompt": "def max_length(list1):\n    '''Write a function to find the list of maximum length in a list of lists. Return the maximum length and list as a tuple.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate([[0], [1, 3], [5, 7], [9, 11], [13, 15, 17]])==(3, [13, 15, 17])\n    assert candidate([[1], [5, 7], [10, 12, 14,15]])==(4, [10, 12, 14,15])\n    assert candidate([[5], [15,20,25]])==(3, [15,20,25])",
+    "entry_point": "max_length"
+  },
+  {
+    "task_id": "MBPP/154",
+    "prompt": "def count_no_of_ways(n, k):\n    '''Write a function to find out the number of ways of painting the fence such that at most 2 adjacent posts have the same color for the given fence with n posts and k colors. Return the count as an integer.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate(2, 4) == 16\n    assert candidate(3, 2) == 6\n    assert candidate(4, 4) == 228",
+    "entry_point": "count_no_of_ways"
+  },
+  {
+    "task_id": "MBPP/155",
+    "prompt": "def find(n,m):\n    '''Write a python function to find quotient of two numbers (rounded down to the nearest integer). Return the calculated integer value.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate(10,3) == 3\n    assert candidate(4,2) == 2\n    assert candidate(20,5) == 4",
+    "entry_point": "find"
+  },
+  {
+    "task_id": "MBPP/156",
+    "prompt": "def otherside_rightangle(w,h):\n    '''Write a function to find the third side of a right angled triangle. Return the calculated number.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate(7,8)==10.63014581273465\n    assert candidate(3,4)==5\n    assert candidate(7,15)==16.55294535724685",
+    "entry_point": "otherside_rightangle"
+  },
+  {
+    "task_id": "MBPP/157",
+    "prompt": "def max_val(listval):\n    '''Write a function to find the maximum value in a given heterogeneous list. Return the maximum value.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate(['Python', 3, 2, 4, 5, 'version'])==5\n    assert candidate(['Python', 15, 20, 25])==25\n    assert candidate(['Python', 30, 20, 40, 50, 'version'])==50",
+    "entry_point": "max_val"
+  },
+  {
+    "task_id": "MBPP/158",
+    "prompt": "def sum_div(number):\n    '''Write a function to return the sum of all divisors of a number. Return the sum as an integer.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate(8)==7\n    assert candidate(12)==16\n    assert candidate(7)==1",
+    "entry_point": "sum_div"
+  },
+  {
+    "task_id": "MBPP/159",
+    "prompt": "def get_Inv_Count(arr):\n    '''Write a python function to count inversions in an array. Return the count as an integer.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate([1,20,6,4,5]) == 5\n    assert candidate([1,2,1]) == 1\n    assert candidate([1,2,5,6,1]) == 3",
+    "entry_point": "get_Inv_Count"
+  },
+  {
+    "task_id": "MBPP/160",
+    "prompt": "def flatten_list(list1):\n    '''Write a function to flatten a given nested list structure. Return the flattened list.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate([0, 10, [20, 30], 40, 50, [60, 70, 80], [90, 100, 110, 120]])==[0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120]\n    assert candidate([[10, 20], [40], [30, 56, 25], [10, 20], [33], [40]])==[10, 20, 40, 30, 56, 25, 10, 20, 33, 40]\n    assert candidate([[1,2,3], [4,5,6], [10,11,12], [7,8,9]])==[1, 2, 3, 4, 5, 6, 10, 11, 12, 7, 8, 9]",
+    "entry_point": "flatten_list"
+  },
+  {
+    "task_id": "MBPP/161",
+    "prompt": "def max_aggregate(stdata):\n    '''Write a function to calculate the maximum aggregate from the list of tuples. Return the maximum aggregate tuple.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate([('Juan Whelan',90),('Sabah Colley',88),('Peter Nichols',7),('Juan Whelan',122),('Sabah Colley',84)])==('Juan Whelan', 212)\n    assert candidate([('Juan Whelan',50),('Sabah Colley',48),('Peter Nichols',37),('Juan Whelan',22),('Sabah Colley',14)])==('Juan Whelan', 72)\n    assert candidate([('Juan Whelan',10),('Sabah Colley',20),('Peter Nichols',30),('Juan Whelan',40),('Sabah Colley',50)])==('Sabah Colley', 70)",
+    "entry_point": "max_aggregate"
+  },
+  {
+    "task_id": "MBPP/162",
+    "prompt": "def count_binary_seq(n):\n    '''Write a function to find the count of all binary sequences of length 2n such that sum of first n bits is same as sum of last n bits. Return the calculated number.\n    '''\n",
+    "test": "def check(candidate):\n    assert math.candidate(candidate(1), 2.0, rel_tol=0.001)\n    assert math.candidate(candidate(2), 6.0, rel_tol=0.001)\n    assert math.candidate(candidate(3), 20.0, rel_tol=0.001)",
+    "entry_point": "count_binary_seq"
+  },
+  {
+    "task_id": "MBPP/163",
+    "prompt": "def dict_depth(d):\n    '''Write a function to find the depth of a dictionary. Return the count as an integer.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate({'a':1, 'b': {'c': {'d': {}}}})==4\n    assert candidate({'a':1, 'b': {'c':'python'}})==2\n    assert candidate({1: 'Sun', 2: {3: {4:'Mon'}}})==3",
+    "entry_point": "dict_depth"
+  },
+  {
+    "task_id": "MBPP/164",
+    "prompt": "def find_Element(arr,ranges,rotations,index):\n    '''Write a python function to find element at a given index after number of rotations. Return the element value.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate([1,2,3,4,5],[[0,2],[0,3]],2,1) == 3\n    assert candidate([1,2,3,4],[[0,1],[0,2]],1,2) == 3\n    assert candidate([1,2,3,4,5,6],[[0,1],[0,2]],1,1) == 1",
+    "entry_point": "find_Element"
+  },
+  {
+    "task_id": "MBPP/165",
+    "prompt": "def start_withp(words):\n    '''Write a function to return two words from a list of words starting with letter 'p'. Return the tuple of two words.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate([\"Python PHP\", \"Java JavaScript\", \"c c++\"])==('Python', 'PHP')\n    assert candidate([\"Python Programming\",\"Java Programming\"])==('Python','Programming')\n    assert candidate([\"Pqrst Pqr\",\"qrstuv\"])==('Pqrst','Pqr')",
+    "entry_point": "start_withp"
+  },
+  {
+    "task_id": "MBPP/166",
+    "prompt": "def max_sum_increasing_subseq(a, n, index, k):\n    '''Write a function to find the maximum sum of increasing subsequence from prefix until ith index and also including a given kth element which is after i, i.e., k > i . Return the calculated integer value.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate([1, 101, 2, 3, 100, 4, 5 ], 7, 4, 6) == 11\n    assert candidate([1, 101, 2, 3, 100, 4, 5 ], 7, 2, 5) == 7\n    assert candidate([11, 15, 19, 21, 26, 28, 31], 7, 2, 4) == 71",
+    "entry_point": "max_sum_increasing_subseq"
+  },
+  {
+    "task_id": "MBPP/167",
+    "prompt": "def colon_tuplex(tuplex,m,n):\n    '''Write a function to get a colon of a tuple. Return the modified tuple.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate((\"HELLO\", 5, [], True) ,2,50)==(\"HELLO\", 5, [50], True)\n    assert candidate((\"HELLO\", 5, [], True) ,2,100)==((\"HELLO\", 5, [100],True))\n    assert candidate((\"HELLO\", 5, [], True) ,2,500)==(\"HELLO\", 5, [500], True)",
+    "entry_point": "colon_tuplex"
+  },
+  {
+    "task_id": "MBPP/168",
+    "prompt": "def large_product(nums1, nums2, N):\n    '''Write a function to find the specified number of largest products from two given lists, selecting one factor from each list. Return the list of largest products.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate([1, 2, 3, 4, 5, 6],[3, 6, 8, 9, 10, 6],3)==[60, 54, 50]\n    assert candidate([1, 2, 3, 4, 5, 6],[3, 6, 8, 9, 10, 6],4)==[60, 54, 50, 48]\n    assert candidate([1, 2, 3, 4, 5, 6],[3, 6, 8, 9, 10, 6],5)==[60, 54, 50, 48, 45]",
+    "entry_point": "large_product"
+  },
+  {
+    "task_id": "MBPP/169",
+    "prompt": "def maximum(a,b):\n    '''Write a python function to find the maximum of two numbers. Return the calculated integer value.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate(5,10) == 10\n    assert candidate(-1,-2) == -1\n    assert candidate(9,7) == 9",
+    "entry_point": "maximum"
+  },
+  {
+    "task_id": "MBPP/170",
+    "prompt": "def string_to_tuple(str1):\n    '''Write a function to convert a given string to a tuple of characters. Return the resulting tuple.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate(\"python 3.0\")==('p', 'y', 't', 'h', 'o', 'n', '3', '.', '0')\n    assert candidate(\"item1\")==('i', 't', 'e', 'm', '1')\n    assert candidate(\"15.10\")==('1', '5', '.', '1', '0')",
+    "entry_point": "string_to_tuple"
+  },
+  {
+    "task_id": "MBPP/171",
+    "prompt": "def set_left_most_unset_bit(n):\n    '''Write a python function to set the left most unset bit. Return the calculated integer value.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate(10) == 14\n    assert candidate(12) == 14\n    assert candidate(15) == 15",
+    "entry_point": "set_left_most_unset_bit"
+  },
+  {
+    "task_id": "MBPP/172",
+    "prompt": "def volume_cone(r,h):\n    '''Write a function to find the volume of a cone. Return the calculated number.\n    '''\n",
+    "test": "def check(candidate):\n    assert math.candidate(candidate(5,12), 314.15926535897927, rel_tol=0.001)\n    assert math.candidate(candidate(10,15), 1570.7963267948965, rel_tol=0.001)\n    assert math.candidate(candidate(19,17), 6426.651371693521, rel_tol=0.001)",
+    "entry_point": "volume_cone"
+  },
+  {
+    "task_id": "MBPP/173",
+    "prompt": "def highest_Power_of_2(n):\n    '''Write a python function to find the highest power of 2 that is less than or equal to n. Return the calculated integer value.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate(10) == 8\n    assert candidate(19) == 16\n    assert candidate(32) == 32",
+    "entry_point": "highest_Power_of_2"
+  },
+  {
+    "task_id": "MBPP/174",
+    "prompt": "def find_lucas(n):\n    '''Write a function to find the n'th lucas number. Return the calculated integer value.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate(9) == 76\n    assert candidate(4) == 7\n    assert candidate(3) == 4",
+    "entry_point": "find_lucas"
+  },
+  {
+    "task_id": "MBPP/175",
+    "prompt": "def add_string(list_, string):\n    '''Write a function to apply a given format string to all of the elements in a list. Return the modified list.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate([1,2,3,4],'temp{0}')==['temp1', 'temp2', 'temp3', 'temp4']\n    assert candidate(['a','b','c','d'], 'python{0}')==[ 'pythona', 'pythonb', 'pythonc', 'pythond']\n    assert candidate([5,6,7,8],'string{0}')==['string5', 'string6', 'string7', 'string8']",
+    "entry_point": "add_string"
+  },
+  {
+    "task_id": "MBPP/176",
+    "prompt": "def convert_list_dictionary(l1, l2, l3):\n    '''Write a function to convert more than one list to nested dictionary. Return the list of nested dictionaries.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate([\"S001\", \"S002\", \"S003\", \"S004\"],[\"Adina Park\", \"Leyton Marsh\", \"Duncan Boyle\", \"Saim Richards\"] ,[85, 98, 89, 92])==[{'S001': {'Adina Park': 85}}, {'S002': {'Leyton Marsh': 98}}, {'S003': {'Duncan Boyle': 89}}, {'S004': {'Saim Richards': 92}}]\n    assert candidate([\"abc\",\"def\",\"ghi\",\"jkl\"],[\"python\",\"program\",\"language\",\"programs\"],[100,200,300,400])==[{'abc':{'python':100}},{'def':{'program':200}},{'ghi':{'language':300}},{'jkl':{'programs':400}}]\n    assert candidate([\"A1\",\"A2\",\"A3\",\"A4\"],[\"java\",\"C\",\"C++\",\"DBMS\"],[10,20,30,40])==[{'A1':{'java':10}},{'A2':{'C':20}},{'A3':{'C++':30}},{'A4':{'DBMS':40}}]",
+    "entry_point": "convert_list_dictionary"
+  },
+  {
+    "task_id": "MBPP/177",
+    "prompt": "def get_max_sum(n):\n    '''Write a function to find the maximum sum possible by using the given equation f(n) = max( (f(n/2) + f(n/3) + f(n/4) + f(n/5)), n). Return the calculated integer value.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate(60) == 106\n    assert candidate(10) == 12\n    assert candidate(2) == 2",
+    "entry_point": "get_max_sum"
+  },
+  {
+    "task_id": "MBPP/178",
+    "prompt": "def max_length_list(input_list):\n    '''Write a function to find the list with maximum length. Return the maximum length and list as a tuple.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate([[0], [1, 3], [5, 7], [9, 11], [13, 15, 17]])==(3, [13, 15, 17])\n    assert candidate([[1,2,3,4,5],[1,2,3,4],[1,2,3],[1,2],[1]])==(5,[1,2,3,4,5])\n    assert candidate([[3,4,5],[6,7,8,9],[10,11,12]])==(4,[6,7,8,9])",
+    "entry_point": "max_length_list"
+  },
+  {
+    "task_id": "MBPP/179",
+    "prompt": "def check_distinct(test_tup):\n    '''Write a function to check if given tuple contains no duplicates. Return True if the condition is met, False otherwise.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate((1, 4, 5, 6, 1, 4)) == False\n    assert candidate((1, 4, 5, 6)) == True\n    assert candidate((2, 3, 4, 5, 6)) == True",
+    "entry_point": "check_distinct"
+  },
+  {
+    "task_id": "MBPP/180",
+    "prompt": "def first_non_repeating_character(str1):\n    '''Write a python function to find the first non-repeated character in a given string. Return the first non-repeated character or None.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate(\"abcabc\") == None\n    assert candidate(\"abc\") == \"a\"\n    assert candidate(\"ababc\") == \"c\"",
+    "entry_point": "first_non_repeating_character"
+  },
+  {
+    "task_id": "MBPP/181",
+    "prompt": "def check_char(string):\n    '''Write a function to check whether the given string starts and ends with the same character or not. Return Valid or Invalid.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate(\"abba\") == \"Valid\"\n    assert candidate(\"a\") == \"Valid\"\n    assert candidate(\"abcd\") == \"Invalid\"",
+    "entry_point": "check_char"
+  },
+  {
+    "task_id": "MBPP/182",
+    "prompt": "def median_numbers(a,b,c):\n    '''Write a function to find the median of three numbers. Return the calculated number.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate(25,55,65)==55.0\n    assert candidate(20,10,30)==20.0\n    assert candidate(15,45,75)==45.0",
+    "entry_point": "median_numbers"
+  },
+  {
+    "task_id": "MBPP/183",
+    "prompt": "def sum_of_digits(nums):\n    '''Write a function to compute the sum of digits of each number of a given list. Return the sum as an integer.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate([10,2,56])==14\n    assert candidate([[10,20,4,5,'b',70,'a']])==19\n    assert candidate([10,20,-4,5,-70])==19",
+    "entry_point": "sum_of_digits"
+  },
+  {
+    "task_id": "MBPP/184",
+    "prompt": "def bitwise_xor(test_tup1, test_tup2):\n    '''Write a function to perform the mathematical bitwise xor operation across the given tuples. Return the resulting tuple.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate((10, 4, 6, 9), (5, 2, 3, 3)) == (15, 6, 5, 10)\n    assert candidate((11, 5, 7, 10), (6, 3, 4, 4)) == (13, 6, 3, 14)\n    assert candidate((12, 6, 8, 11), (7, 4, 5, 6)) == (11, 2, 13, 13)",
+    "entry_point": "bitwise_xor"
+  },
+  {
+    "task_id": "MBPP/185",
+    "prompt": "def extract_freq(test_list):\n    '''Write a function to extract the number of unique tuples in the given list. Return the count as an integer.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate([(3, 4), (1, 2), (4, 3), (5, 6)] ) == 3\n    assert candidate([(4, 15), (2, 3), (5, 4), (6, 7)] ) == 4\n    assert candidate([(5, 16), (2, 3), (6, 5), (6, 9)] ) == 4",
+    "entry_point": "extract_freq"
+  },
+  {
+    "task_id": "MBPP/186",
+    "prompt": "def add_nested_tuples(test_tup1, test_tup2):\n    '''Write a function to perform index wise addition of tuple elements in the given two nested tuples. Return the resulting tuple.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate(((1, 3), (4, 5), (2, 9), (1, 10)), ((6, 7), (3, 9), (1, 1), (7, 3))) == ((7, 10), (7, 14), (3, 10), (8, 13))\n    assert candidate(((2, 4), (5, 6), (3, 10), (2, 11)), ((7, 8), (4, 10), (2, 2), (8, 4))) == ((9, 12), (9, 16), (5, 12), (10, 15))\n    assert candidate(((3, 5), (6, 7), (4, 11), (3, 12)), ((8, 9), (5, 11), (3, 3), (9, 5))) == ((11, 14), (11, 18), (7, 14), (12, 17))",
+    "entry_point": "add_nested_tuples"
+  },
+  {
+    "task_id": "MBPP/187",
+    "prompt": "def minimum(a,b):\n    '''Write a python function to find the minimum of two numbers. Return the calculated integer value.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate(1,2) == 1\n    assert candidate(-5,-4) == -5\n    assert candidate(0,0) == 0",
+    "entry_point": "minimum"
+  },
+  {
+    "task_id": "MBPP/188",
+    "prompt": "def check_tuplex(tuplex,tuple1):\n    '''Write a function to check whether an element exists within a tuple. Return True if the condition is met, False otherwise.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate((\"w\", 3, \"r\", \"e\", \"s\", \"o\", \"u\", \"r\", \"c\", \"e\"),'r')==True\n    assert candidate((\"w\", 3, \"r\", \"e\", \"s\", \"o\", \"u\", \"r\", \"c\", \"e\"),'5')==False\n    assert candidate((\"w\", 3, \"r\", \"e\", \"s\", \"o\", \"u\", \"r\", \"c\",\"e\"),3)==True",
+    "entry_point": "check_tuplex"
+  },
+  {
+    "task_id": "MBPP/189",
+    "prompt": "def find_Parity(x):\n    '''Write a python function to find whether the parity of a given number is odd. Return True if the condition is met, False otherwise.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate(12) == False\n    assert candidate(7) == True\n    assert candidate(10) == False",
+    "entry_point": "find_Parity"
+  },
+  {
+    "task_id": "MBPP/190",
+    "prompt": "def rearrange_bigger(n):\n    '''Write a function to create the next bigger number by rearranging the digits of a given number. Return the rearranged number or False.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate(12)==21\n    assert candidate(10)==False\n    assert candidate(102)==120",
+    "entry_point": "rearrange_bigger"
+  },
+  {
+    "task_id": "MBPP/191",
+    "prompt": "def k_smallest_pairs(nums1, nums2, k):\n    '''Write a function to find k number of smallest pairs which consist of one element from the first array and one element from the second array. Return the list of smallest pairs.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate([1,3,7],[2,4,6],2)==[[1, 2], [1, 4]]\n    assert candidate([1,3,7],[2,4,6],1)==[[1, 2]]\n    assert candidate([1,3,7],[2,4,6],7)==[[1, 2], [1, 4], [3, 2], [1, 6], [3, 4], [3, 6], [7, 2]]",
+    "entry_point": "k_smallest_pairs"
+  },
+  {
+    "task_id": "MBPP/192",
+    "prompt": "def min_product_tuple(list1):\n    '''Write a function to find the minimum product from the pairs of tuples within a given list. Return the calculated integer value.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate([(2, 7), (2, 6), (1, 8), (4, 9)] )==8\n    assert candidate([(10,20), (15,2), (5,10)] )==30\n    assert candidate([(11,44), (10,15), (20,5), (12, 9)] )==100",
+    "entry_point": "min_product_tuple"
+  },
+  {
+    "task_id": "MBPP/193",
+    "prompt": "def min_val(listval):\n    '''Write a function to find the minimum value in a given heterogeneous list. Return the minimum value.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate(['Python', 3, 2, 4, 5, 'version'])==2\n    assert candidate(['Python', 15, 20, 25])==15\n    assert candidate(['Python', 30, 20, 40, 50, 'version'])==20",
+    "entry_point": "min_val"
+  },
+  {
+    "task_id": "MBPP/194",
+    "prompt": "def snake_to_camel_1(word):\n    '''Write a function to convert the given snake case string to camel case string. Return the converted string.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate('android_tv') == 'AndroidTv'\n    assert candidate('google_pixel') == 'GooglePixel'\n    assert candidate('apple_watch') == 'AppleWatch'",
+    "entry_point": "snake_to_camel_1"
+  },
+  {
+    "task_id": "MBPP/195",
+    "prompt": "def remove_odd(l):\n    '''Write a python function to remove odd numbers from a given list. Return the modified list.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate([1,2,3]) == [2]\n    assert candidate([2,4,6]) == [2,4,6]\n    assert candidate([10,20,3]) == [10,20]",
+    "entry_point": "remove_odd"
+  },
+  {
+    "task_id": "MBPP/196",
+    "prompt": "def extract_nth_element(list1, n):\n    '''Write a function to extract the nth element from a given list of tuples. Return the list of nth elements.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate([('Greyson Fulton', 98, 99), ('Brady Kent', 97, 96), ('Wyatt Knott', 91, 94), ('Beau Turnbull', 94, 98)] ,0)==['Greyson Fulton', 'Brady Kent', 'Wyatt Knott', 'Beau Turnbull']\n    assert candidate([('Greyson Fulton', 98, 99), ('Brady Kent', 97, 96), ('Wyatt Knott', 91, 94), ('Beau Turnbull', 94, 98)] ,2)==[99, 96, 94, 98]\n    assert candidate([('Greyson Fulton', 98, 99), ('Brady Kent', 97, 96), ('Wyatt Knott', 91, 94), ('Beau Turnbull', 94, 98)],1)==[98, 97, 91, 94]",
+    "entry_point": "extract_nth_element"
+  },
+  {
+    "task_id": "MBPP/197",
+    "prompt": "def overlapping(list1,list2):\n    '''Write a python function to check whether any value in a sequence exists in a sequence or not. Return True if the condition is met, False otherwise.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate([1,2,3,4,5],[6,7,8,9]) == False\n    assert candidate([1,2,3],[4,5,6]) == False\n    assert candidate([1,4,5],[1,4,5]) == True",
+    "entry_point": "overlapping"
+  },
+  {
+    "task_id": "MBPP/198",
+    "prompt": "def max_Product(arr):\n    '''Write a python function to find a pair with highest product from a given array of integers. Return the pair as a tuple.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate([1,2,3,4,7,0,8,4]) == (7,8)\n    assert candidate([0,-1,-2,-4,5,0,-6]) == (-4,-6)\n    assert candidate([1,2,3]) == (2,3)",
+    "entry_point": "max_Product"
+  },
+  {
+    "task_id": "MBPP/199",
+    "prompt": "def group_tuples(Input):\n    '''Write a function to find common first element in given list of tuple. Return the grouped list of tuples.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate([('x', 'y'), ('x', 'z'), ('w', 't')]) == [('x', 'y', 'z'), ('w', 't')]\n    assert candidate([('a', 'b'), ('a', 'c'), ('d', 'e')]) == [('a', 'b', 'c'), ('d', 'e')]\n    assert candidate([('f', 'g'), ('f', 'g'), ('h', 'i')]) == [('f', 'g', 'g'), ('h', 'i')]",
+    "entry_point": "group_tuples"
+  },
+  {
+    "task_id": "MBPP/200",
+    "prompt": "def Find_Max(lst):\n    '''Write a python function to find the element of a list having maximum length. Return the element with maximum length.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate([['A'],['A','B'],['A','B','C']]) == ['A','B','C']\n    assert candidate([[1],[1,2],[1,2,3]]) == [1,2,3]\n    assert candidate([[1,1],[1,2,3],[1,5,6,1]]) == [1,5,6,1]",
+    "entry_point": "Find_Max"
+  },
+  {
+    "task_id": "MBPP/201",
+    "prompt": "def round_and_sum(list1):\n    '''Write a function to round every number of a given list of numbers and print the total sum multiplied by the length of the list. Return the sum as an integer.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate([22.4, 4.0, -16.22, -9.10, 11.00, -12.22, 14.20, -5.20, 17.50])==243\n    assert candidate([5,2,9,24.3,29])==345\n    assert candidate([25.0,56.7,89.2])==513",
+    "entry_point": "round_and_sum"
+  },
+  {
+    "task_id": "MBPP/202",
+    "prompt": "def cube_Sum(n):\n    '''Write a python function to find the cube sum of first n even natural numbers. Return the sum as an integer.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate(2) == 72\n    assert candidate(3) == 288\n    assert candidate(4) == 800",
+    "entry_point": "cube_Sum"
+  },
+  {
+    "task_id": "MBPP/203",
+    "prompt": "def concatenate_tuple(test_tup):\n    '''Write a function to concatenate each element of tuple by the delimiter. Return the resulting string.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate((\"ID\", \"is\", 4, \"UTS\") ) == 'ID-is-4-UTS'\n    assert candidate((\"QWE\", \"is\", 4, \"RTY\") ) == 'QWE-is-4-RTY'\n    assert candidate((\"ZEN\", \"is\", 4, \"OP\") ) == 'ZEN-is-4-OP'",
+    "entry_point": "concatenate_tuple"
+  },
+  {
+    "task_id": "MBPP/204",
+    "prompt": "def find_Average_Of_Cube(n):\n    '''Write a python function to find the average of cubes of first n natural numbers. Return the calculated number.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate(2) == 4.5\n    assert candidate(3) == 12\n    assert candidate(1) == 1",
+    "entry_point": "find_Average_Of_Cube"
+  },
+  {
+    "task_id": "MBPP/205",
+    "prompt": "def extract_rear(test_tuple):\n    '''Write a function to extract only the rear index element of each string in the given tuple. Return the list of rear elements.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate(('Mers', 'for', 'Vers') ) == ['s', 'r', 's']\n    assert candidate(('Avenge', 'for', 'People') ) == ['e', 'r', 'e']\n    assert candidate(('Gotta', 'get', 'go') ) == ['a', 't', 'o']",
+    "entry_point": "extract_rear"
+  },
+  {
+    "task_id": "MBPP/206",
+    "prompt": "def count_element_in_list(list1, x):\n    '''Write a function to count the number of sublists containing a particular element. Return the count as an integer.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate([[1, 3], [5, 7], [1, 11], [1, 15, 7]],1)==3\n    assert candidate([['A', 'B'], ['A', 'C'], ['A', 'D', 'E'], ['B', 'C', 'D']],'A')==3\n    assert candidate([['A', 'B'], ['A', 'C'], ['A', 'D', 'E'], ['B', 'C', 'D']],'E')==1",
+    "entry_point": "count_element_in_list"
+  },
+  {
+    "task_id": "MBPP/207",
+    "prompt": "def filter_oddnumbers(nums):\n    '''Write a function to filter odd numbers. Return the list of odd numbers.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])==[1,3,5,7,9]\n    assert candidate([10,20,45,67,84,93])==[45,67,93]\n    assert candidate([5,7,9,8,6,4,3])==[5,7,9,3]",
+    "entry_point": "filter_oddnumbers"
+  },
+  {
+    "task_id": "MBPP/208",
+    "prompt": "def change_date_format(dt):\n    '''Write a function to convert a date of yyyy-mm-dd format to dd-mm-yyyy format. Return the converted string.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate(\"2026-01-02\") == '02-01-2026'\n    assert candidate(\"2020-11-13\") == '13-11-2020'\n    assert candidate(\"2021-04-26\") == '26-04-2021'",
+    "entry_point": "change_date_format"
+  },
+  {
+    "task_id": "MBPP/209",
+    "prompt": "def shell_sort(my_list):\n    '''Write a function to sort the given array by using shell sort. Return the sorted list.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate([12, 23, 4, 5, 3, 2, 12, 81, 56, 95]) == [2, 3, 4, 5, 12, 12, 23, 56, 81, 95]\n    assert candidate([24, 22, 39, 34, 87, 73, 68]) == [22, 24, 34, 39, 68, 73, 87]\n    assert candidate([32, 30, 16, 96, 82, 83, 74]) == [16, 30, 32, 74, 82, 83, 96]",
+    "entry_point": "shell_sort"
+  },
+  {
+    "task_id": "MBPP/210",
+    "prompt": "def and_tuples(test_tup1, test_tup2):\n    '''Write a function to extract the elementwise and tuples from the given two tuples. Return the resulting tuple.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate((10, 4, 6, 9), (5, 2, 3, 3)) == (0, 0, 2, 1)\n    assert candidate((1, 2, 3, 4), (5, 6, 7, 8)) == (1, 2, 3, 0)\n    assert candidate((8, 9, 11, 12), (7, 13, 14, 17)) == (0, 9, 10, 0)",
+    "entry_point": "and_tuples"
+  },
+  {
+    "task_id": "MBPP/211",
+    "prompt": "def parabola_directrix(a, b, c):\n    '''Write a function to find the directrix of a parabola. Return the calculated integer value.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate(5,3,2)==-198\n    assert candidate(9,8,4)==-2336\n    assert candidate(2,4,6)==-130",
+    "entry_point": "parabola_directrix"
+  },
+  {
+    "task_id": "MBPP/212",
+    "prompt": "def common_element(list1, list2):\n    '''Write a function that takes two lists and returns true if they have at least one common element. Return True if the condition is met, None otherwise.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate([1,2,3,4,5], [5,6,7,8,9])==True\n    assert candidate([1,2,3,4,5], [6,7,8,9])==None\n    assert candidate(['a','b','c'], ['d','b','e'])==True",
+    "entry_point": "common_element"
+  },
+  {
+    "task_id": "MBPP/213",
+    "prompt": "def median_trapezium(base1,base2,height):\n    '''Write a function to find the median length of a trapezium. Return the calculated integer value.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate(15,25,35)==20\n    assert candidate(10,20,30)==15\n    assert candidate(6,9,4)==7.5",
+    "entry_point": "median_trapezium"
+  },
+  {
+    "task_id": "MBPP/214",
+    "prompt": "def check_greater(arr, number):\n    '''Write a function to check whether the entered number is greater than the elements of the given array. Return True if the condition is met, False otherwise.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate([1, 2, 3, 4, 5], 4) == False\n    assert candidate([2, 3, 4, 5, 6], 8) == True\n    assert candidate([9, 7, 4, 8, 6, 1], 11) == True",
+    "entry_point": "check_greater"
+  },
+  {
+    "task_id": "MBPP/215",
+    "prompt": "def text_match_one(text):\n    '''Write a function that matches a string that has an a followed by one or more b's. Return True if the condition is met, False otherwise.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate(\"ac\")==False\n    assert candidate(\"dc\")==False\n    assert candidate(\"abba\")==True",
+    "entry_point": "text_match_one"
+  },
+  {
+    "task_id": "MBPP/216",
+    "prompt": "def last_Digit(n):\n    '''Write a python function to find the last digit of a given number. Return the calculated integer value.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate(123) == 3\n    assert candidate(25) == 5\n    assert candidate(30) == 0",
+    "entry_point": "last_Digit"
+  },
+  {
+    "task_id": "MBPP/217",
+    "prompt": "def neg_nos(list1):\n    '''Write a python function to return the negative numbers in a list. Return the list of negative numbers.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate([-1,4,5,-6]) == [-1,-6]\n    assert candidate([-1,-2,3,4]) == [-1,-2]\n    assert candidate([-7,-6,8,9]) == [-7,-6]",
+    "entry_point": "neg_nos"
+  },
+  {
+    "task_id": "MBPP/218",
+    "prompt": "def remove_odd_1(str1):\n    '''Write a function to remove odd characters in a string. Return the modified string.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate(\"python\")==(\"yhn\")\n    assert candidate(\"program\")==(\"rga\")\n    assert candidate(\"language\")==(\"agae\")",
+    "entry_point": "remove_odd_1"
+  },
+  {
+    "task_id": "MBPP/219",
+    "prompt": "def count_bidirectional(test_list):\n    '''Write a function to count bidirectional tuple pairs. Return the count as an integer.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate([(5, 6), (1, 2), (6, 5), (9, 1), (6, 5), (2, 1)] ) == 3\n    assert candidate([(5, 6), (1, 3), (6, 5), (9, 1), (6, 5), (2, 1)] ) == 2\n    assert candidate([(5, 6), (1, 2), (6, 5), (9, 2), (6, 5), (2, 1)] ) == 4",
+    "entry_point": "count_bidirectional"
+  },
+  {
+    "task_id": "MBPP/220",
+    "prompt": "def multiple_to_single(L):\n    '''Write a function to join a list of multiple integers into a single integer. Return the calculated integer value.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate([11, 33, 50])==113350\n    assert candidate([-1,2,3,4,5,6])==-123456\n    assert candidate([10,15,20,25])==10152025",
+    "entry_point": "multiple_to_single"
+  },
+  {
+    "task_id": "MBPP/221",
+    "prompt": "def find_adverb_position(text):\n    '''Write a function to find the first adverb and their positions in a given sentence. Return the position tuple.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate(\"clearly!! we can see the sky\")==(0, 7, 'clearly')\n    assert candidate(\"seriously!! there are many roses\")==(0, 9, 'seriously')\n    assert candidate(\"unfortunately!! sita is going to home\")==(0, 13, 'unfortunately')",
+    "entry_point": "find_adverb_position"
+  },
+  {
+    "task_id": "MBPP/222",
+    "prompt": "def surfacearea_cube(l):\n    '''Write a function to find the surface area of a cube of a given size. Return the calculated integer value.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate(5)==150\n    assert candidate(3)==54\n    assert candidate(10)==600",
+    "entry_point": "surfacearea_cube"
+  },
+  {
+    "task_id": "MBPP/223",
+    "prompt": "def positive_count(nums):\n    '''Write a function to find the ration of positive numbers in an array of integers. Return the calculated number.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate([0, 1, 2, -1, -5, 6, 0, -3, -2, 3, 4, 6, 8])==0.54\n    assert candidate([2, 1, 2, -1, -5, 6, 4, -3, -2, 3, 4, 6, 8])==0.69\n    assert candidate([2, 4, -6, -9, 11, -12, 14, -5, 17])==0.56",
+    "entry_point": "positive_count"
+  },
+  {
+    "task_id": "MBPP/224",
+    "prompt": "def largest_neg(list1):\n    '''Write a python function to find the largest negative number from the given list. Return the largest negative number.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate([1,2,3,-4,-6]) == -6\n    assert candidate([1,2,3,-8,-9]) == -9\n    assert candidate([1,2,3,4,-1]) == -1",
+    "entry_point": "largest_neg"
+  },
+  {
+    "task_id": "MBPP/225",
+    "prompt": "def trim_tuple(test_list, K):\n    '''Write a function to trim each tuple by k in the given tuple list. Return the string representation of the trimmed tuples.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate([(5, 3, 2, 1, 4), (3, 4, 9, 2, 1),(9, 1, 2, 3, 5), (4, 8, 2, 1, 7)], 2) == '[(2,), (9,), (2,), (2,)]'\n    assert candidate([(5, 3, 2, 1, 4), (3, 4, 9, 2, 1), (9, 1, 2, 3, 5), (4, 8, 2, 1, 7)], 1) == '[(3, 2, 1), (4, 9, 2), (1, 2, 3), (8, 2, 1)]'\n    assert candidate([(7, 8, 4, 9), (11, 8, 12, 4),(4, 1, 7, 8), (3, 6, 9, 7)], 1) == '[(8, 4), (8, 12), (1, 7), (6, 9)]'",
+    "entry_point": "trim_tuple"
+  },
+  {
+    "task_id": "MBPP/226",
+    "prompt": "def index_multiplication(test_tup1, test_tup2):\n    '''Write a function to perform index wise multiplication of tuple elements in the given two tuples. Return the resulting tuple.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate(((1, 3), (4, 5), (2, 9), (1, 10)),((6, 7), (3, 9), (1, 1), (7, 3)) ) == ((6, 21), (12, 45), (2, 9), (7, 30))\n    assert candidate(((2, 4), (5, 6), (3, 10), (2, 11)),((7, 8), (4, 10), (2, 2), (8, 4)) ) == ((14, 32), (20, 60), (6, 20), (16, 44))\n    assert candidate(((3, 5), (6, 7), (4, 11), (3, 12)),((8, 9), (5, 11), (3, 3), (9, 5)) ) == ((24, 45), (30, 77), (12, 33), (27, 60))",
+    "entry_point": "index_multiplication"
+  },
+  {
+    "task_id": "MBPP/227",
+    "prompt": "def count_Occurrence(tup, lst):\n    '''Write a python function to count the occurence of all elements of list in a tuple. Return the count as an integer.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate(('a', 'a', 'c', 'b', 'd'),['a', 'b'] ) == 3\n    assert candidate((1, 2, 3, 1, 4, 6, 7, 1, 4),[1, 4, 7]) == 6\n    assert candidate((1,2,3,4,5,6),[1,2]) == 2",
+    "entry_point": "count_Occurrence"
+  },
+  {
+    "task_id": "MBPP/228",
+    "prompt": "def cube_nums(nums):\n    '''Write a function to find cubes of individual elements in a list. Return the list of cubes.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])==[1, 8, 27, 64, 125, 216, 343, 512, 729, 1000]\n    assert candidate([10,20,30])==([1000, 8000, 27000])\n    assert candidate([12,15])==([1728, 3375])",
+    "entry_point": "cube_nums"
+  },
+  {
+    "task_id": "MBPP/229",
+    "prompt": "def cal_sum(n):\n    '''Write a function to calculate the sum of perrin numbers. Return the sum as an integer.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate(9) == 49\n    assert candidate(10) == 66\n    assert candidate(11) == 88",
+    "entry_point": "cal_sum"
+  },
+  {
+    "task_id": "MBPP/230",
+    "prompt": "def extract_string(str, l):\n    '''Write a function to extract specified size of strings from a given list of string values. Return the list of extracted strings.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate(['Python', 'list', 'exercises', 'practice', 'solution'] ,8)==['practice', 'solution']\n    assert candidate(['Python', 'list', 'exercises', 'practice', 'solution'] ,6)==['Python']\n    assert candidate(['Python', 'list', 'exercises', 'practice', 'solution'] ,9)==['exercises']",
+    "entry_point": "extract_string"
+  },
+  {
+    "task_id": "MBPP/231",
+    "prompt": "def remove_whitespaces(text1):\n    '''Write a function to remove all whitespaces from the given string. Return the modified string.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate(' Google    Flutter ') == 'GoogleFlutter'\n    assert candidate(' Google    Dart ') == 'GoogleDart'\n    assert candidate(' iOS    Swift ') == 'iOSSwift'",
+    "entry_point": "remove_whitespaces"
+  },
+  {
+    "task_id": "MBPP/232",
+    "prompt": "def loss_amount(actual_cost,sale_amount):\n    '''Write a function that gives loss amount on a sale if the given amount has loss else return 0. Return the loss amount as an integer.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate(1500,1200)==0\n    assert candidate(100,200)==100\n    assert candidate(2000,5000)==3000",
+    "entry_point": "loss_amount"
+  },
+  {
+    "task_id": "MBPP/233",
+    "prompt": "def sumofFactors(n):\n    '''Write a python function to find the sum of even factors of a number. Return the sum as an integer.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate(18) == 26\n    assert candidate(30) == 48\n    assert candidate(6) == 8",
+    "entry_point": "sumofFactors"
+  },
+  {
+    "task_id": "MBPP/234",
+    "prompt": "def text_match_wordz(text):\n    '''Write a function that matches a word containing 'z'. Return True if the condition is met, False otherwise.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate(\"pythonz.\")==True\n    assert candidate(\"xyz.\")==True\n    assert candidate(\"  lang  .\")==False",
+    "entry_point": "text_match_wordz"
+  },
+  {
+    "task_id": "MBPP/235",
+    "prompt": "def check_monthnumb_number(monthnum2):\n    '''Write a function to check whether the given month number contains 31 days or not. Return True if the condition is met, False otherwise.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate(5)==True\n    assert candidate(2)==False\n    assert candidate(6)==False",
+    "entry_point": "check_monthnumb_number"
+  },
+  {
+    "task_id": "MBPP/236",
+    "prompt": "def reverse_string_list(stringlist):\n    '''Write a function to reverse each string in a given list of string values. Return the list of reversed strings.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate(['Red', 'Green', 'Blue', 'White', 'Black'])==['deR', 'neerG', 'eulB', 'etihW', 'kcalB']\n    assert candidate(['john','amal','joel','george'])==['nhoj','lama','leoj','egroeg']\n    assert candidate(['jack','john','mary'])==['kcaj','nhoj','yram']",
+    "entry_point": "reverse_string_list"
+  },
+  {
+    "task_id": "MBPP/237",
+    "prompt": "def Find_Min(lst):\n    '''Write a python function to find the sublist having minimum length. Return the sublist with minimum length.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate([[1],[1,2],[1,2,3]]) == [1]\n    assert candidate([[1,1],[1,1,1],[1,2,7,8]]) == [1,1]\n    assert candidate([['x'],['x','y'],['x','y','z']]) == ['x']",
+    "entry_point": "Find_Min"
+  },
+  {
+    "task_id": "MBPP/238",
+    "prompt": "def rectangle_area(l,b):\n    '''Write a function to find the area of a rectangle. Return the calculated integer value.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate(10,20)==200\n    assert candidate(10,5)==50\n    assert candidate(4,2)==8",
+    "entry_point": "rectangle_area"
+  },
+  {
+    "task_id": "MBPP/239",
+    "prompt": "def remove_uppercase(str1):\n    '''Write a function to remove uppercase substrings from a given string. Return the modified string.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate('cAstyoUrFavoRitETVshoWs') == 'cstyoravoitshos'\n    assert candidate('wAtchTheinTernEtrAdIo') == 'wtchheinerntrdo'\n    assert candidate('VoicESeaRchAndreComMendaTionS') == 'oiceachndreomendaion'",
+    "entry_point": "remove_uppercase"
+  },
+  {
+    "task_id": "MBPP/240",
+    "prompt": "def Extract(lst):\n    '''Write a python function to get the first element of each sublist. Return the list of first elements.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate([[1, 2], [3, 4, 5], [6, 7, 8, 9]]) == [1, 3, 6]\n    assert candidate([[1,2,3],[4, 5]]) == [1,4]\n    assert candidate([[9,8,1],[1,2]]) == [9,1]",
+    "entry_point": "Extract"
+  },
+  {
+    "task_id": "MBPP/241",
+    "prompt": "def upper_ctr(str):\n    '''Write a python function to count the upper case characters in a given string. Return the count as an integer.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate('PYthon') == 1\n    assert candidate('BigData') == 1\n    assert candidate('program') == 0",
+    "entry_point": "upper_ctr"
+  },
+  {
+    "task_id": "MBPP/242",
+    "prompt": "def combinations_list(list1):\n    '''Write a function to find all possible combinations of the elements of a given list. Return the list of all combinations.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate(['orange', 'red', 'green', 'blue'])==[[], ['orange'], ['red'], ['red', 'orange'], ['green'], ['green', 'orange'], ['green', 'red'], ['green', 'red', 'orange'], ['blue'], ['blue', 'orange'], ['blue', 'red'], ['blue', 'red', 'orange'], ['blue', 'green'], ['blue', 'green', 'orange'], ['blue', 'green', 'red'], ['blue', 'green', 'red', 'orange']]\n    assert candidate(['red', 'green', 'blue', 'white', 'black', 'orange'])==[[], ['red'], ['green'], ['green', 'red'], ['blue'], ['blue', 'red'], ['blue', 'green'], ['blue', 'green', 'red'], ['white'], ['white', 'red'], ['white', 'green'], ['white', 'green', 'red'], ['white', 'blue'], ['white', 'blue', 'red'], ['white', 'blue', 'green'], ['white', 'blue', 'green', 'red'], ['black'], ['black', 'red'], ['black', 'green'], ['black', 'green', 'red'], ['black', 'blue'], ['black', 'blue', 'red'], ['black', 'blue', 'green'], ['black', 'blue', 'green', 'red'], ['black', 'white'], ['black', 'white', 'red'], ['black', 'white', 'green'], ['black', 'white', 'green', 'red'], ['black', 'white', 'blue'], ['black', 'white', 'blue', 'red'], ['black', 'white', 'blue', 'green'], ['black', 'white', 'blue', 'green', 'red'], ['orange'], ['orange', 'red'], ['orange', 'green'], ['orange', 'green', 'red'], ['orange', 'blue'], ['orange', 'blue', 'red'], ['orange', 'blue', 'green'], ['orange', 'blue', 'green', 'red'], ['orange', 'white'], ['orange', 'white', 'red'], ['orange', 'white', 'green'], ['orange', 'white', 'green', 'red'], ['orange', 'white', 'blue'], ['orange', 'white', 'blue', 'red'], ['orange', 'white', 'blue', 'green'], ['orange', 'white', 'blue', 'green', 'red'], ['orange', 'black'], ['orange', 'black', 'red'], ['orange', 'black', 'green'], ['orange', 'black', 'green', 'red'], ['orange', 'black', 'blue'], ['orange', 'black', 'blue', 'red'], ['orange', 'black', 'blue', 'green'], ['orange', 'black', 'blue', 'green', 'red'], ['orange', 'black', 'white'], ['orange', 'black', 'white', 'red'], ['orange', 'black', 'white', 'green'], ['orange', 'black', 'white', 'green', 'red'], ['orange', 'black', 'white', 'blue'], ['orange', 'black', 'white', 'blue', 'red'], ['orange', 'black', 'white', 'blue', 'green'], ['orange', 'black', 'white', 'blue', 'green', 'red']]\n    assert candidate(['red', 'green', 'black', 'orange'])==[[], ['red'], ['green'], ['green', 'red'], ['black'], ['black', 'red'], ['black', 'green'], ['black', 'green', 'red'], ['orange'], ['orange', 'red'], ['orange', 'green'], ['orange', 'green', 'red'], ['orange', 'black'], ['orange', 'black', 'red'], ['orange', 'black', 'green'], ['orange', 'black', 'green', 'red']]",
+    "entry_point": "combinations_list"
+  },
+  {
+    "task_id": "MBPP/243",
+    "prompt": "def max_subarray_product(arr):\n    '''Write a function to find the maximum product subarray of the given array. Return the calculated integer value.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate([1, -2, -3, 0, 7, -8, -2]) == 112\n    assert candidate([6, -3, -10, 0, 2]) == 180\n    assert candidate([-2, -40, 0, -2, -3]) == 80",
+    "entry_point": "max_subarray_product"
+  },
+  {
+    "task_id": "MBPP/244",
+    "prompt": "def check_value(dict, n):\n    '''Write a function to check if all values are same in a dictionary. Return True if the condition is met, False otherwise.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate({'Cierra Vega': 12, 'Alden Cantrell': 12, 'Kierra Gentry': 12, 'Pierre Cox': 12},10)==False\n    assert candidate({'Cierra Vega': 12, 'Alden Cantrell': 12, 'Kierra Gentry': 12, 'Pierre Cox': 12},12)==True\n    assert candidate({'Cierra Vega': 12, 'Alden Cantrell': 12, 'Kierra Gentry': 12, 'Pierre Cox': 12},5)==False",
+    "entry_point": "check_value"
+  },
+  {
+    "task_id": "MBPP/245",
+    "prompt": "def drop_empty(dict1):\n    '''Write a function to drop empty items from a given dictionary. Return the filtered dictionary.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate({'c1': 'Red', 'c2': 'Green', 'c3':None})=={'c1': 'Red', 'c2': 'Green'}\n    assert candidate({'c1': 'Red', 'c2': None, 'c3':None})=={'c1': 'Red'}\n    assert candidate({'c1': None, 'c2': 'Green', 'c3':None})=={ 'c2': 'Green'}",
+    "entry_point": "drop_empty"
+  },
+  {
+    "task_id": "MBPP/246",
+    "prompt": "def max_product(arr):\n    '''Write a function to find the maximum product formed by multiplying numbers of an increasing subsequence of that array. Return the calculated integer value.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate([3, 100, 4, 5, 150, 6]) == 3000\n    assert candidate([4, 42, 55, 68, 80]) == 50265600\n    assert candidate([10, 22, 9, 33, 21, 50, 41, 60]) == 2460",
+    "entry_point": "max_product"
+  },
+  {
+    "task_id": "MBPP/247",
+    "prompt": "def add_pairwise(test_tup):\n    '''Write a function to find the pairwise addition of the neighboring elements of the given tuple. Return the resulting tuple.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate((1, 5, 7, 8, 10)) == (6, 12, 15, 18)\n    assert candidate((2, 6, 8, 9, 11)) == (8, 14, 17, 20)\n    assert candidate((3, 7, 9, 10, 12)) == (10, 16, 19, 22)",
+    "entry_point": "add_pairwise"
+  },
+  {
+    "task_id": "MBPP/248",
+    "prompt": "def find_remainder(arr, n):\n    '''Write a python function to find the product of the array multiplication modulo n. Return the calculated integer value.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate([ 100, 10, 5, 25, 35, 14 ],11) ==9\n    assert candidate([1,1,1],1) == 0\n    assert candidate([1,2,1],2) == 0",
+    "entry_point": "find_remainder"
+  },
+  {
+    "task_id": "MBPP/249",
+    "prompt": "def check_Consecutive(l):\n    '''Write a python function to check whether the given list contains consecutive numbers or not. Return True if the condition is met, False otherwise.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate([1,2,3,4,5]) == True\n    assert candidate([1,2,3,5,6]) == False\n    assert candidate([1,2,1]) == False",
+    "entry_point": "check_Consecutive"
+  },
+  {
+    "task_id": "MBPP/250",
+    "prompt": "def tuple_intersection(test_list1, test_list2):\n    '''Write a function to find the tuple intersection of elements in the given tuple list irrespective of their order. Return the set of intersecting tuples.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate([(3, 4), (5, 6), (9, 10), (4, 5)] , [(5, 4), (3, 4), (6, 5), (9, 11)]) == {(4, 5), (3, 4), (5, 6)}\n    assert candidate([(4, 1), (7, 4), (11, 13), (17, 14)] , [(1, 4), (7, 4), (16, 12), (10, 13)]) == {(4, 7), (1, 4)}\n    assert candidate([(2, 1), (3, 2), (1, 3), (1, 4)] , [(11, 2), (2, 3), (6, 2), (1, 3)]) == {(1, 3), (2, 3)}",
+    "entry_point": "tuple_intersection"
+  },
+  {
+    "task_id": "MBPP/251",
+    "prompt": "def replace_char(str1,ch,newch):\n    '''Write a function to replace characters in a string. Return the modified string.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate(\"polygon\",'y','l')==(\"pollgon\")\n    assert candidate(\"character\",'c','a')==(\"aharaater\")\n    assert candidate(\"python\",'l','a')==(\"python\")",
+    "entry_point": "replace_char"
+  },
+  {
+    "task_id": "MBPP/252",
+    "prompt": "def sort_counter(dict1):\n    '''Write a function to sort a dictionary by value. Return the sorted list of tuples.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate({'Math':81, 'Physics':83, 'Chemistry':87})==[('Chemistry', 87), ('Physics', 83), ('Math', 81)]\n    assert candidate({'Math':400, 'Physics':300, 'Chemistry':250})==[('Math', 400), ('Physics', 300), ('Chemistry', 250)]\n    assert candidate({'Math':900, 'Physics':1000, 'Chemistry':1250})==[('Chemistry', 1250), ('Physics', 1000), ('Math', 900)]",
+    "entry_point": "sort_counter"
+  },
+  {
+    "task_id": "MBPP/253",
+    "prompt": "def big_sum(nums):\n    '''Write a python function to find the sum of the largest and smallest value in a given array. Return the sum as an integer.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate([1,2,3]) == 4\n    assert candidate([-1,2,3,4]) == 3\n    assert candidate([2,3,6]) == 8",
+    "entry_point": "big_sum"
+  },
+  {
+    "task_id": "MBPP/254",
+    "prompt": "def is_lower(string):\n    '''Write a python function to convert the given string to lower case. Return the converted string.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate(\"InValid\") == \"invalid\"\n    assert candidate(\"TruE\") == \"true\"\n    assert candidate(\"SenTenCE\") == \"sentence\"",
+    "entry_point": "is_lower"
+  },
+  {
+    "task_id": "MBPP/255",
+    "prompt": "def remove_lowercase(str1):\n    '''Write a function to remove lowercase substrings from a given string. Return the modified string.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate(\"PYTHon\")==('PYTH')\n    assert candidate(\"FInD\")==('FID')\n    assert candidate(\"STRinG\")==('STRG')",
+    "entry_point": "remove_lowercase"
+  },
+  {
+    "task_id": "MBPP/256",
+    "prompt": "def first_Digit(n):\n    '''Write a python function to find the first digit of a given number. Return the calculated integer value.\n    '''\n",
+    "test": "def check(candidate):\n    assert candidate(123) == 1\n    assert candidate(456) == 4\n    assert candidate(12) == 1",
+    "entry_point": "first_Digit"
+  }
+]
