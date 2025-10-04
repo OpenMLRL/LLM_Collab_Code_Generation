@@ -419,7 +419,7 @@ def main():
         discount=magrpo_config.get("discount", 0.9),
         joint_mode=magrpo_config.get("joint_mode", "aligned"),
         termination_threshold=magrpo_config.get("termination_threshold", None),
-        epsilon_clip=magrpo_config.get("epsilon_clip", 10),
+        epsilon_clip=magrpo_config.get("epsilon_clip", None),
     )
 
     # ------------------------------------------------------------------
