@@ -418,8 +418,8 @@ def main():
         joint_mode=magrpo_config.get("joint_mode", "aligned"),
         termination_threshold=magrpo_config.get("termination_threshold", None),
         # GRPO-style advantage params
-        normalize_advantage=magrpo_config.get("normalize_advantage", False),
-        epsilon_clip=magrpo_config.get("epsilon_clip", None),
+        normalize_advantage=magrpo_config.get("normalize_advantage", True),
+        epsilon_clip=magrpo_config.get("epsilon_clip", 10),
     )
 
     # ------------------------------------------------------------------
