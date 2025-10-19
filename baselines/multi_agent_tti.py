@@ -157,8 +157,8 @@ class Agent:
         self.device = device
         self.tokenizer = AutoTokenizer.from_pretrained(model_name)
         self.model = AutoModelForCausalLM.from_pretrained(model_name)
-        if self.device == "cpu":
-            self.model = self.model.to(self.device)
+        # Ensure model is on the requested device (cpu/cuda)
+        self.model = self.model.to(self.device)
         if self.tokenizer.pad_token is None:
             self.tokenizer.pad_token = self.tokenizer.eos_token
         self.model.eval()
@@ -258,7 +258,7 @@ def main():
     parser.add_argument("--samples", type=int, default=31, help="Number of samples to evaluate (used when --hf-split is not set)")
     parser.add_argument("--hf-split", type=str, default=None, help="HuggingFace split expression, e.g., test[:16]")
     parser.add_argument("--generations", type=int, default=1, help="Generations per sample")
-    parser.add_argument("--k-values", nargs="+", type=int, default=[1, 5, 10], help="k values for pass@k")
+    parser.add_argument("--k-values", nargs="+", type=int, default=[1, 3, 5, 10], help="k values for pass@k")
 
     args = parser.parse_args()
 

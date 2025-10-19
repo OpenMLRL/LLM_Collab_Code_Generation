@@ -160,14 +160,15 @@ class SingleAgentRunner:
         print(f"Loading model {model_name} on {self.device}...")
         self.tokenizer = AutoTokenizer.from_pretrained(model_name)
         self.model = AutoModelForCausalLM.from_pretrained(model_name)
-        if self.device == "cpu":
-            self.model = self.model.to(self.device)
+        # Ensure model is on the requested device (cpu/cuda)
+        self.model = self.model.to(self.device)
         self.model.eval()
         if self.tokenizer.pad_token is None:
             self.tokenizer.pad_token = self.tokenizer.eos_token
 
     def generate(self, prompt: str, max_new_tokens: int = 256, temperature: float = 0.7, top_p: float = 0.9):
         import time
+        import torch
         inputs = self.tokenizer(prompt, return_tensors="pt", truncation=True, max_length=2048)
         inputs = {k: v.to(self.device) for k, v in inputs.items()}
         input_tokens = inputs["input_ids"].shape[1]
@@ -270,7 +271,7 @@ def main():
     parser.add_argument("--samples", type=int, default=31, help="Number of samples to evaluate (used when --hf-split is not set)")
     parser.add_argument("--hf-split", type=str, default=None, help="HuggingFace split expression (e.g., test[:16], test[133:]) overrides default split and --samples")
     parser.add_argument("--generations", type=int, default=1, help="Number of completions per sample")
-    parser.add_argument("--k-values", nargs="+", type=int, default=[1, 5, 10], help="k values for pass@k")
+    parser.add_argument("--k-values", nargs="+", type=int, default=[1, 3, 5, 10], help="k values for pass@k")
     parser.add_argument("--num-turns", type=int, default=1, help="Number of turns (1 or 2)")
 
     # External mode args (only used when num_turns=2)
