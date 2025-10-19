@@ -27,10 +27,9 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from typing import Any, Dict, List, Optional
 
-# Heavy deps are imported lazily only when not using --mock
+# Heavy deps are imported lazily at runtime
 
 # Local modules
-from util.mock_runtime import build_mock_dataset, MockLM
 
 
 def extract_function_params_from_prompt(prompt_text: str) -> List[str]:
@@ -140,7 +139,7 @@ def setup_external_context(
     def _resolver(p: str) -> Optional[Dict[str, Any]]:
         return context_map.get(_normalize_prompt(p))
 
-    # Lazy import to avoid heavy deps in mock mode
+    # Lazy import to avoid heavy imports at module import time
     import external as external_ctx  # type: ignore
     external_ctx.set_context_resolver(_resolver)
 
@@ -149,7 +148,7 @@ class SingleAgentRunner:
     """Lightweight single-agent generator using HF Transformers."""
 
     def __init__(self, model_name: str, device: str = "auto"):
-        # Local imports to avoid requiring deps in mock mode
+        # Lazy imports to avoid loading heavy deps at import time
         import torch
         from transformers import AutoModelForCausalLM, AutoTokenizer
 
@@ -189,20 +188,6 @@ class SingleAgentRunner:
         return text, input_tokens, output_tokens, elapsed
 
 
-class MockRunner:
-    """Mock model runner for offline sandbox runs."""
-
-    def __init__(self):
-        self.lm = MockLM()
-
-    def generate(self, prompt: str, max_new_tokens: int = 256, temperature: float = 0.7, top_p: float = 0.9):
-        import time
-        t0 = time.time()
-        text = self.lm.generate(prompt)
-        elapsed = time.time() - t0
-        input_tokens = len(prompt.split())
-        output_tokens = len(text.split())
-        return text, input_tokens, output_tokens, elapsed
 
 
 def _run_single_tests(main_func_code: str, prompt: str, test_code: str, entry_point: str) -> Dict[str, Any]:
@@ -295,7 +280,6 @@ def main():
     parser.add_argument("--no-original-prompt", action="store_true", help="Do not include original prompt in turn-2 context")
     parser.add_argument("--no-previous-response", action="store_true", help="Do not include previous response in turn-2 context")
     parser.add_argument("--verbose", action="store_true", help="Verbose logging for reward/external modules")
-    parser.add_argument("--mock", action="store_true", help="Run with mock dataset and model (no network)")
 
     args = parser.parse_args()
 
@@ -305,26 +289,22 @@ def main():
     elif args.dataset == "coophumaneval":
         ds_name, split = "nuprl/coop_humaneval", (args.hf_split or "test")
     else:  # mbpp
-        ds_name, split = "mbpp", (args.hf_split or "test")
+        ds_name, split = "OpenMLRL/MBPP", (args.hf_split or "test")
 
-    if args.mock:
-        test_samples = build_mock_dataset(name=args.dataset, count=args.samples)
-        print(f"[MOCK] Evaluating {len(test_samples)} samples (offline)")
+    try:
+        from datasets import load_dataset
+        test_data = load_dataset(ds_name, split=split)
+    except Exception as e:
+        print(f"Failed to load dataset {ds_name}:{split}: {e}")
+        return
+    if args.hf_split:
+        test_samples = test_data
+        print(f"Evaluating {len(test_samples)} samples from {ds_name}:{split}")
     else:
-        try:
-            from datasets import load_dataset
-            test_data = load_dataset(ds_name, split=split)
-        except Exception as e:
-            print(f"Failed to load dataset {ds_name}:{split}: {e}")
-            return
-        if args.hf_split:
-            test_samples = test_data
-            print(f"Evaluating {len(test_samples)} samples from {ds_name}:{split}")
-        else:
-            total = len(test_data)
-            start_idx = max(0, total - args.samples)
-            test_samples = test_data.select(range(start_idx, total))
-            print(f"Evaluating {len(test_samples)} samples from {ds_name}:{split} (indices {start_idx}-{total-1})")
+        total = len(test_data)
+        start_idx = max(0, total - args.samples)
+        test_samples = test_data.select(range(start_idx, total))
+        print(f"Evaluating {len(test_samples)} samples from {ds_name}:{split} (indices {start_idx}-{total-1})")
 
     # External verbosity toggles
     try:
@@ -355,13 +335,11 @@ def main():
     else:
         sandbox_slice = int(args.sandbox_slice)
 
-    if is_multi_turn and not args.mock:
-        # Register context for real external transition modes
-        # (skip in mock mode to avoid heavy imports)
+    if is_multi_turn:
         setup_external_context(test_samples, sandbox_slice)
 
     # Load model
-    runner = MockRunner() if args.mock else SingleAgentRunner(model_name=args.model, device=args.device)
+    runner = SingleAgentRunner(model_name=args.model, device=args.device)
 
     # Iterate samples: generate multiple completions per sample and evaluate
     import numpy as np
@@ -393,22 +371,16 @@ def main():
 
             # Turn 2 (optional)
             if is_multi_turn:
-                if args.mock:
-                    # Minimal mock transition: ask to revise based on previous response
-                    next_prompts = [
-                        f"Revise your previous response to fix potential issues.\n\nOriginal Problem:\n{example['prompt']}\n\nPrevious Response:\n{t1_text}\n"
-                    ]
-                else:
-                    from external import get_external_transition  # lazy import
-                    next_prompts = get_external_transition(
-                        prompt=example["prompt"],
-                        agent_completions=[t1_text],
-                        num_agents=1,
-                        mode=args.external_mode,
-                        expert_model=args.expert_model,
-                        original_prompt=not args.no_original_prompt,
-                        previous_response=not args.no_previous_response,
-                    )
+                from external import get_external_transition  # lazy import
+                next_prompts = get_external_transition(
+                    prompt=example["prompt"],
+                    agent_completions=[t1_text],
+                    num_agents=1,
+                    mode=args.external_mode,
+                    expert_model=args.expert_model,
+                    original_prompt=not args.no_original_prompt,
+                    previous_response=not args.no_previous_response,
+                )
                 turn2_prompt = next_prompts[0] if isinstance(next_prompts, (list, tuple)) else str(next_prompts)
                 t2_text, t2_in, t2_out, t2_time = runner.generate(turn2_prompt)
                 out_text = t2_text
@@ -436,12 +408,8 @@ def main():
     # Print concise summary
     print("\n" + "=" * 60)
     print("Single-agent baseline (concise)")
-    if args.mock:
-        print("[MOCK] Model: mock-lm")
-        print(f"[MOCK] Dataset: {args.dataset}")
-    else:
-        print(f"Model: {args.model}")
-        print(f"Dataset: {ds_name}:{split}")
+    print(f"Model: {args.model}")
+    print(f"Dataset: {ds_name}:{split}")
     print(f"Turns: {args.num_turns}")
     if is_multi_turn:
         print(f"External: mode={args.external_mode}, sandbox_slice={args.sandbox_slice}")

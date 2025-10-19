@@ -10,8 +10,6 @@ from typing import Any, Dict, List, Optional
 import os, sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from util.mock_runtime import build_mock_dataset, MockLM
-from util.mock_runtime import build_mock_dataset, MockLM
 
 
 def _extract_params(prompt: str) -> List[str]:
@@ -187,18 +185,6 @@ class Agent:
         text = self.tokenizer.decode(generated_tokens, skip_special_tokens=True).strip()
         return text, input_tokens, output_tokens, elapsed
 
-class MockAgent:
-    def __init__(self):
-        self.lm = MockLM()
-
-    def generate(self, prompt: str, max_new_tokens: int = 256, temperature: float = 0.8, top_p: float = 0.95):
-        import time
-        t0 = time.time()
-        text = self.lm.generate(prompt)
-        elapsed = time.time() - t0
-        input_tokens = len(prompt.split())
-        output_tokens = len(text.split())
-        return text, input_tokens, output_tokens, elapsed
 
 
 def _run_aux_main_tests(aux_code: str, main_code: str, prompt: str, test_code: str, entry_point: str) -> Dict[str, Any]:
@@ -263,7 +249,7 @@ def _run_aux_main_tests(aux_code: str, main_code: str, prompt: str, test_code: s
 
 def main():
     parser = argparse.ArgumentParser(description="Multi-agent TTI baselines (concise): pass@k, timing, tokens, avg pass rate")
-    parser.add_argument("--dataset", default="humaneval", choices=["humaneval", "coophumaneval"], help="Benchmark dataset")
+    parser.add_argument("--dataset", default="humaneval", choices=["humaneval", "coophumaneval", "mbpp"], help="Benchmark dataset")
     parser.add_argument("--mode", required=True, choices=["naive_concat", "sequential_pipeline", "one_round_discussion"], help="Interaction mode")
     parser.add_argument("--model", help="Use the same model for both agents")
     parser.add_argument("--aux-model", help="Auxiliary agent model name")
@@ -273,7 +259,6 @@ def main():
     parser.add_argument("--hf-split", type=str, default=None, help="HuggingFace split expression, e.g., test[:16]")
     parser.add_argument("--generations", type=int, default=1, help="Generations per sample")
     parser.add_argument("--k-values", nargs="+", type=int, default=[1, 5, 10], help="k values for pass@k")
-    parser.add_argument("--mock", action="store_true", help="Run with mock dataset and model (no network)")
 
     args = parser.parse_args()
 
@@ -285,27 +270,26 @@ def main():
     # Dataset
     if args.dataset == "humaneval":
         ds_name, split = "openai/openai_humaneval", (args.hf_split or "test[133:]")
-    else:
+    elif args.dataset == "coophumaneval":
         ds_name, split = "nuprl/coop_humaneval", (args.hf_split or "test")
+    else:  # mbpp
+        ds_name, split = "OpenMLRL/MBPP", (args.hf_split or "test")
 
-    if args.mock:
-        test_samples = build_mock_dataset(name=args.dataset, count=args.samples)
+    try:
+        from datasets import load_dataset
+        test_data = load_dataset(ds_name, split=split)
+    except Exception as e:
+        print(f"Failed to load dataset {ds_name}:{split}: {e}")
+        return
+    if args.hf_split:
+        test_samples = test_data
     else:
-        try:
-            from datasets import load_dataset
-            test_data = load_dataset(ds_name, split=split)
-        except Exception as e:
-            print(f"Failed to load dataset {ds_name}:{split}: {e}")
-            return
-        if args.hf_split:
-            test_samples = test_data
-        else:
-            total = len(test_data)
-            start_idx = max(0, total - args.samples)
-            test_samples = test_data.select(range(start_idx, total))
+        total = len(test_data)
+        start_idx = max(0, total - args.samples)
+        test_samples = test_data.select(range(start_idx, total))
 
-    aux_agent = MockAgent() if args.mock else Agent(aux_model, args.device)
-    main_agent = MockAgent() if args.mock else Agent(main_model, args.device)
+    aux_agent = Agent(aux_model, args.device)
+    main_agent = Agent(main_model, args.device)
 
     import numpy as np
     all_times: List[float] = []
@@ -375,14 +359,9 @@ def main():
 
     print("\n" + "=" * 60)
     print("Multi-agent TTI baseline (concise)")
-    if args.mock:
-        print(f"[MOCK] Dataset: {args.dataset}")
-        print("[MOCK] Aux model: mock-lm")
-        print("[MOCK] Main model: mock-lm")
-    else:
-        print(f"Dataset: {ds_name}:{split}")
-        print(f"Aux model: {aux_model}")
-        print(f"Main model: {main_model}")
+    print(f"Dataset: {ds_name}:{split}")
+    print(f"Aux model: {aux_model}")
+    print(f"Main model: {main_model}")
     print(f"Mode: {args.mode}")
     print(f"Samples: {len(test_samples)} | Generations per sample: {args.generations}")
     print("Metrics:")
