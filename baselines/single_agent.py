@@ -26,6 +26,9 @@ import re
 import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from typing import Any, Dict, List, Optional
+import json
+import time as _time
+import fcntl
 
 # Heavy deps are imported lazily at runtime
 
@@ -265,7 +268,7 @@ def _run_single_tests(main_func_code: str, prompt: str, test_code: str, entry_po
 
 def main():
     parser = argparse.ArgumentParser(description="Single-agent baselines (concise): pass@k, timing, tokens, avg pass rate")
-    parser.add_argument("--dataset", default="humaneval", choices=["humaneval", "coophumaneval", "mbpp"], help="Dataset type")
+    parser.add_argument("--dataset", default="humaneval", help="Dataset type or HF repo name (e.g., humaneval | coophumaneval | OpenMLRL/CoopHumanEval)")
     parser.add_argument("--model", required=True, help="HF model name for the single agent")
     parser.add_argument("--device", default="auto", choices=["auto", "cuda", "cpu"], help="Device selection")
     parser.add_argument("--samples", type=int, default=31, help="Number of samples to evaluate (used when --hf-split is not set)")
@@ -273,6 +276,7 @@ def main():
     parser.add_argument("--generations", type=int, default=1, help="Number of completions per sample")
     parser.add_argument("--k-values", nargs="+", type=int, default=[1, 3, 5, 10], help="k values for pass@k")
     parser.add_argument("--num-turns", type=int, default=1, help="Number of turns (1 or 2)")
+    parser.add_argument("--result-json", type=str, default=None, help="Append a JSON line summary to this file")
 
     # External mode args (only used when num_turns=2)
     parser.add_argument("--external-mode", default="level_feedback", choices=["expert_edits", "level_feedback", "level_passed", "passed", "plain"], help="External transition mode for turn 2")
@@ -284,13 +288,25 @@ def main():
 
     args = parser.parse_args()
 
-    # Load dataset split
-    if args.dataset == "humaneval":
+    # Load dataset split (supports tokens or direct HF repo names)
+    ds_arg = (args.dataset or "").strip()
+    if ds_arg.lower() == "humaneval":
         ds_name, split = "openai/openai_humaneval", (args.hf_split or "test[133:]")
-    elif args.dataset == "coophumaneval":
-        ds_name, split = "nuprl/coop_humaneval", (args.hf_split or "test")
-    else:  # mbpp
+    elif ds_arg.lower() == "coophumaneval":
+        ds_name, split = "OpenMLRL/CoopHumanEval", (args.hf_split or "test")
+    elif ds_arg.lower() == "mbpp":
         ds_name, split = "OpenMLRL/MBPP", (args.hf_split or "test")
+    else:
+        # Treat as full HF repo path
+        ds_name = ds_arg
+        if args.hf_split:
+            split = args.hf_split
+        else:
+            lname = ds_name.lower()
+            if ("humaneval" in lname) and ("coop" not in lname):
+                split = "test[133:]"
+            else:
+                split = "test"
 
     try:
         from datasets import load_dataset
@@ -420,6 +436,39 @@ def main():
     print(f"  avg_response_time={avg_resp_time:.2f}s")
     print(f"  total_output_tokens={total_output_tokens}")
     print(f"  avg_pass_rate={avg_pass_rate:.3f}")
+
+    # Optionally append JSONL summary (safe append with file lock)
+    if args.result_json:
+        summary: Dict[str, Any] = {
+            "script": "single_agent",
+            "dataset_input": args.dataset,
+            "dataset": f"{ds_name}:{split}",
+            "model": args.model,
+            "num_turns": args.num_turns,
+            "external_mode": args.external_mode if (args.num_turns > 1) else None,
+            "sandbox_slice": args.sandbox_slice if (args.num_turns > 1) else None,
+            "samples": len(test_samples),
+            "generations": args.generations,
+            "k_values": args.k_values,
+            "metrics": pass_at_k_summary,
+            "avg_response_time": avg_resp_time,
+            "total_output_tokens": total_output_tokens,
+            "avg_pass_rate": avg_pass_rate,
+            "slurm_job_id": os.environ.get("SLURM_JOB_ID"),
+            "timestamp": _time.time(),
+        }
+        # Remove None fields
+        summary = {k: v for k, v in summary.items() if v is not None}
+        try:
+            os.makedirs(os.path.dirname(args.result_json), exist_ok=True) if os.path.dirname(args.result_json) else None
+            with open(args.result_json, "a") as f:
+                fcntl.flock(f, fcntl.LOCK_EX)
+                f.write(json.dumps(summary) + "\n")
+                f.flush()
+                os.fsync(f.fileno())
+                fcntl.flock(f, fcntl.LOCK_UN)
+        except Exception as e:
+            print(f"Failed to write summary JSONL to {args.result_json}: {e}")
 
 
 if __name__ == "__main__":
