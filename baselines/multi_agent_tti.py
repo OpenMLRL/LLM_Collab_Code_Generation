@@ -23,6 +23,7 @@ def _extract_params(prompt: str) -> List[str]:
 
 
 def fmt_aux(prompt: str) -> str:
+    params = ", ".join(_extract_params(prompt))
     return f"""Create a helper function for this coding problem.
 
 Problem:
@@ -38,7 +39,7 @@ IMPORTANT INSTRUCTIONS:
 
 Your output should follow this format:
 
-def aux(...):
+def aux({params}):
     # your function code here
     return result
 """
@@ -100,6 +101,7 @@ def {entry_point}({params}):
 
 
 def fmt_aux_round2(prompt: str, main_code: str) -> str:
+    params = ", ".join(_extract_params(prompt))
     return f"""Improve your helper function based on how it's being used by the main function.
 
 Problem:
@@ -118,7 +120,7 @@ IMPORTANT INSTRUCTIONS:
 
 Your output should follow this format:
 
-def aux(...):
+def aux({params}):
     # your improved function code here
     return result
 """
@@ -206,8 +208,9 @@ def _run_aux_main_tests(aux_code: str, main_code: str, prompt: str, test_code: s
     metrics = {"passed_tests": 0, "total_tests": 0, "timeouts": 0, "is_correct": False}
     imports = extract_imports_from_prompt(prompt)
     aux_clean = cleanup_code(aux_code)
+    aux_func = extract_specific_function(aux_clean or aux_code, "aux")
     main_func = extract_specific_function(cleanup_code(main_code) or main_code, entry_point)
-    combined = concatenate_functions(aux_clean, main_func, imports)
+    combined = concatenate_functions(aux_func, main_func, imports)
 
     ok, _ = check_syntax(combined, "Combined code")
     if not ok:
@@ -263,6 +266,8 @@ def main():
     parser.add_argument("--generations", type=int, default=1, help="Generations per sample")
     parser.add_argument("--k-values", nargs="+", type=int, default=[1, 3, 5, 10], help="k values for pass@k")
     parser.add_argument("--result-json", type=str, default=None, help="Append a JSON line summary to this file")
+    parser.add_argument("--temperature", type=float, default=0.7, help="Sampling temperature")
+    parser.add_argument("--top-p", dest="top_p", type=float, default=0.9, help="Top-p nucleus sampling")
 
     args = parser.parse_args()
 
@@ -332,7 +337,7 @@ def main():
         for g in range(args.generations):
             # Round 1
             aux_p1 = fmt_aux(prompt)
-            aux_out_1, a1_in, a1_out, a1_time = aux_agent.generate(aux_p1)
+            aux_out_1, a1_in, a1_out, a1_time = aux_agent.generate(aux_p1, temperature=args.temperature, top_p=args.top_p)
 
             if args.mode == "naive_concat":
                 main_p1 = fmt_main_naive(prompt, entry_point)
@@ -343,7 +348,7 @@ def main():
                     # discussion: round1 main doesn't see aux code (match existing he_discuss round1)
                     main_p1 = fmt_main_naive(prompt, entry_point)
 
-            main_out_1, m1_in, m1_out, m1_time = main_agent.generate(main_p1)
+            main_out_1, m1_in, m1_out, m1_time = main_agent.generate(main_p1, temperature=args.temperature, top_p=args.top_p)
             gen_time = a1_time + m1_time
             total_output_tokens += (a1_out + m1_out)
 
@@ -352,8 +357,8 @@ def main():
                 # Round 2 exchange
                 aux_p2 = fmt_aux_round2(prompt, main_out_1)
                 main_p2 = fmt_main_round2(prompt, entry_point, aux_out_1)
-                aux_final, a2_in, a2_out, a2_time = aux_agent.generate(aux_p2)
-                main_final, m2_in, m2_out, m2_time = main_agent.generate(main_p2)
+                aux_final, a2_in, a2_out, a2_time = aux_agent.generate(aux_p2, temperature=args.temperature, top_p=args.top_p)
+                main_final, m2_in, m2_out, m2_time = main_agent.generate(main_p2, temperature=args.temperature, top_p=args.top_p)
                 gen_time += (a2_time + m2_time)
                 total_output_tokens += (a2_out + m2_out)
 

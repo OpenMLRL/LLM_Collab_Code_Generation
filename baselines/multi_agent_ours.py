@@ -38,7 +38,9 @@ def extract_function_params_from_prompt(prompt_text: str) -> List[str]:
     return []
 
 
-def aux_round1_formatter(prompt: str) -> str:
+def aux_round1_formatter(prompt: str, entry_point: str) -> str:
+    params = extract_function_params_from_prompt(prompt)
+    params_str = ", ".join(params)
     return (
         f"""Create a helper function for this coding problem.
 
@@ -51,11 +53,12 @@ IMPORTANT INSTRUCTIONS:
 - Do NOT include any text before or after the function
 - Do NOT include test cases or example usage
 - Create a helper function named 'aux' that can assist the main function
+- The aux function MUST use the same parameters as the main function: ({params_str})
 - The function should return useful data for solving the problem
 
 Your output should follow this format:
 
-def aux(...):
+def aux({params_str}):
     # your function code here
     return result
 """
@@ -201,8 +204,10 @@ def _run_aux_main_tests(aux_code: str, main_code: str, prompt: str, test_code: s
     metrics = {"passed_tests": 0, "total_tests": 0, "timeouts": 0, "is_correct": False}
     imports = extract_imports_from_prompt(prompt)
     aux_clean = cleanup_code(aux_code)
+    # Extract only the 'aux' function to avoid stray text/symbols
+    aux_func = extract_specific_function(aux_clean or aux_code, "aux")
     main_func = extract_specific_function(cleanup_code(main_code) or main_code, entry_point)
-    combined = concatenate_functions(aux_clean, main_func, imports)
+    combined = concatenate_functions(aux_func, main_func, imports)
 
     ok, _ = check_syntax(combined, "Combined code")
     if not ok:
@@ -258,6 +263,8 @@ def main():
     parser.add_argument("--k-values", nargs="+", type=int, default=[1, 3, 5, 10], help="k values for pass@k")
     parser.add_argument("--num-turns", type=int, default=1, help="Number of turns (1 or 2)")
     parser.add_argument("--result-json", type=str, default=None, help="Append a JSON line summary to this file")
+    parser.add_argument("--temperature", type=float, default=0.2, help="Sampling temperature")
+    parser.add_argument("--top-p", dest="top_p", type=float, default=0.9, help="Top-p nucleus sampling")
 
     # External options (turn-2 only)
     parser.add_argument("--external-mode", default="level_feedback", choices=["expert_edits", "level_feedback", "level_passed", "passed", "plain"], help="External transition mode")
@@ -364,10 +371,10 @@ def main():
 
         for g in range(args.generations):
             # Turn 1
-            aux_prompt_1 = aux_round1_formatter(prompt)
+            aux_prompt_1 = aux_round1_formatter(prompt, entry_point)
             main_prompt_1 = main_round1_formatter(prompt, entry_point)
-            aux_out_1, a1_in, a1_out, a1_time = aux_agent.generate(aux_prompt_1)
-            main_out_1, m1_in, m1_out, m1_time = main_agent.generate(main_prompt_1)
+            aux_out_1, a1_in, a1_out, a1_time = aux_agent.generate(aux_prompt_1, temperature=args.temperature, top_p=args.top_p)
+            main_out_1, m1_in, m1_out, m1_time = main_agent.generate(main_prompt_1, temperature=args.temperature, top_p=args.top_p)
             gen_time = a1_time + m1_time
             total_output_tokens += (a1_out + m1_out)
 
@@ -387,8 +394,8 @@ def main():
                     aux_prompt_2, main_prompt_2 = next_prompts
                 else:
                     aux_prompt_2, main_prompt_2 = aux_prompt_1, (next_prompts[0] if isinstance(next_prompts, (list, tuple)) else str(next_prompts))
-                aux_final, a2_in, a2_out, a2_time = aux_agent.generate(aux_prompt_2)
-                main_final, m2_in, m2_out, m2_time = main_agent.generate(main_prompt_2)
+                aux_final, a2_in, a2_out, a2_time = aux_agent.generate(aux_prompt_2, temperature=args.temperature, top_p=args.top_p)
+                main_final, m2_in, m2_out, m2_time = main_agent.generate(main_prompt_2, temperature=args.temperature, top_p=args.top_p)
                 gen_time += (a2_time + m2_time)
                 total_output_tokens += (a2_out + m2_out)
 
