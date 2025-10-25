@@ -204,10 +204,11 @@ def _run_aux_main_tests(aux_code: str, main_code: str, prompt: str, test_code: s
     metrics = {"passed_tests": 0, "total_tests": 0, "timeouts": 0, "is_correct": False}
     imports = extract_imports_from_prompt(prompt)
     aux_clean = cleanup_code(aux_code)
-    # Extract only the 'aux' function to avoid stray text/symbols
+    # Prefer the specifically-named 'aux' function; if absent (e.g., expert edits rename helper),
+    # fall back to including the entire cleaned aux completion to preserve the helper definition.
     aux_func = extract_specific_function(aux_clean or aux_code, "aux")
     main_func = extract_specific_function(cleanup_code(main_code) or main_code, entry_point)
-    combined = concatenate_functions(aux_func, main_func, imports)
+    combined = concatenate_functions(aux_func or aux_clean, main_func, imports)
 
     ok, _ = check_syntax(combined, "Combined code")
     if not ok:
@@ -284,12 +285,14 @@ def main():
 
     # Dataset (supports tokens or direct HF repo names)
     ds_arg = (args.dataset or "").strip()
+    # Default splits aligned with configs (use eval splits)
+    # HE:  test[:32]; CHE: test[:16]; MBPP: test[:15]
     if ds_arg.lower() == "humaneval":
-        ds_name, split = "openai/openai_humaneval", (args.hf_split or "test[133:]")
+        ds_name, split = "openai/openai_humaneval", (args.hf_split or "test[:32]")
     elif ds_arg.lower() == "coophumaneval":
-        ds_name, split = "OpenMLRL/CoopHumanEval", (args.hf_split or "test")
+        ds_name, split = "OpenMLRL/CoopHumanEval", (args.hf_split or "test[:16]")
     elif ds_arg.lower() == "mbpp":
-        ds_name, split = "OpenMLRL/MBPP", (args.hf_split or "test")
+        ds_name, split = "OpenMLRL/MBPP", (args.hf_split or "test[:15]")
     else:
         ds_name = ds_arg
         if args.hf_split:
@@ -297,7 +300,11 @@ def main():
         else:
             lname = ds_name.lower()
             if ("humaneval" in lname) and ("coop" not in lname):
-                split = "test[133:]"
+                split = "test[:32]"  # HE eval split
+            elif ("coop" in lname) or ("coophumaneval" in lname):
+                split = "test[:16]"  # CHE eval split
+            elif ("mbpp" in lname):
+                split = "test[:15]"  # MBPP eval split
             else:
                 split = "test"
     try:

@@ -290,12 +290,14 @@ def main():
 
     # Load dataset split (supports tokens or direct HF repo names)
     ds_arg = (args.dataset or "").strip()
+    # Default splits aligned with configs: use eval splits by default
+    # HE:  test[:32]; CHE: test[:16]; MBPP: test[:15]
     if ds_arg.lower() == "humaneval":
-        ds_name, split = "openai/openai_humaneval", (args.hf_split or "test[133:]")
+        ds_name, split = "openai/openai_humaneval", (args.hf_split or "test[:32]")
     elif ds_arg.lower() == "coophumaneval":
-        ds_name, split = "OpenMLRL/CoopHumanEval", (args.hf_split or "test")
+        ds_name, split = "OpenMLRL/CoopHumanEval", (args.hf_split or "test[:16]")
     elif ds_arg.lower() == "mbpp":
-        ds_name, split = "OpenMLRL/MBPP", (args.hf_split or "test")
+        ds_name, split = "OpenMLRL/MBPP", (args.hf_split or "test[:15]")
     else:
         # Treat as full HF repo path
         ds_name = ds_arg
@@ -303,8 +305,13 @@ def main():
             split = args.hf_split
         else:
             lname = ds_name.lower()
+            # Heuristics for known datasets when a direct HF repo path is provided
             if ("humaneval" in lname) and ("coop" not in lname):
-                split = "test[133:]"
+                split = "test[:32]"  # HE eval split
+            elif ("coop" in lname) or ("coophumaneval" in lname):
+                split = "test[:16]"  # CHE eval split
+            elif ("mbpp" in lname):
+                split = "test[:15]"  # MBPP eval split
             else:
                 split = "test"
 
