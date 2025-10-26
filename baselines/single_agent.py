@@ -21,13 +21,13 @@ from rewards.code_utils import (
 )
 
 # Reuse the exact training prompt for single-agent
-from LLM_Collab_Code_Generation.train_grpo import (
+from train_grpo import (
     complete_function_formatter as sa_formatter,
 )
 
 # External prompt composition for 2-turn single-agent baselines
-import LLM_Collab_Code_Generation.external as external_ctx
-from LLM_Collab_Code_Generation.external import get_external_transition
+import external as external_ctx
+from external import get_external_transition
 
 
 def _normalize_prompt(p: str) -> str:
@@ -422,4 +422,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

@@ -15,20 +15,20 @@ from rewards.code_utils import (
     extract_specific_function,
 )
 
-from LLM_Collab_Code_Generation.train_magrpo import (
+from train_magrpo import (
     aux_function_formatter as aux_formatter,
     main_function_formatter as main_formatter,
 )
 
-from LLM_Collab_Code_Generation.baselines.multi_agent_tti import (
+from baselines.multi_agent_tti import (
     load_model_and_tokenizer,
     generate,
     evaluate_dual_completion,
     compute_pass_at_k,
 )
 
-import LLM_Collab_Code_Generation.external as external_ctx
-from LLM_Collab_Code_Generation.external import get_external_transition
+import external as external_ctx
+from external import get_external_transition
 
 
 def _normalize_prompt(p: str) -> str:
@@ -237,4 +237,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

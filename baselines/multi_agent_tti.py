@@ -24,7 +24,7 @@ from rewards.code_utils import (
 )
 
 # Reuse training-consistent first-turn prompts for aux/main
-from LLM_Collab_Code_Generation.train_magrpo import (
+from train_magrpo import (
     aux_function_formatter as aux_formatter,
     main_function_formatter as main_formatter,
 )
@@ -422,4 +422,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
