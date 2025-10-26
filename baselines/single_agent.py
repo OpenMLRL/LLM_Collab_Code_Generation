@@ -161,8 +161,17 @@ class SingleAgentRunner:
         self.device = device
 
         print(f"Loading model {model_name} on {self.device}...")
-        self.tokenizer = AutoTokenizer.from_pretrained(model_name)
-        self.model = AutoModelForCausalLM.from_pretrained(model_name)
+        self.tokenizer = AutoTokenizer.from_pretrained(model_name, trust_remote_code=True)
+        try:
+            dtype = torch.bfloat16 if torch.cuda.is_available() else None
+            self.model = AutoModelForCausalLM.from_pretrained(
+                model_name, trust_remote_code=True, torch_dtype=dtype
+            )
+        except Exception:
+            # Fallback without dtype if env doesn't support bf16
+            self.model = AutoModelForCausalLM.from_pretrained(
+                model_name, trust_remote_code=True
+            )
         # Ensure model is on the requested device (cpu/cuda)
         self.model = self.model.to(self.device)
         self.model.eval()
@@ -196,6 +205,7 @@ class SingleAgentRunner:
 
 def _run_single_tests(main_func_code: str, prompt: str, test_code: str, entry_point: str) -> Dict[str, Any]:
     """Execute tests for a single-agent completion and return pass metrics."""
+    import os as _os
     from rewards.code_utils import (
         extract_imports_from_prompt,
         extract_specific_function,
@@ -206,6 +216,7 @@ def _run_single_tests(main_func_code: str, prompt: str, test_code: str, entry_po
         timeout_handler,
     )
     import signal
+    _debug_enabled = str(_os.environ.get("EVAL_DEBUG", "")).lower() in ("1", "true", "yes")
 
     metrics = {
         "passed_tests": 0,
@@ -215,6 +226,8 @@ def _run_single_tests(main_func_code: str, prompt: str, test_code: str, entry_po
     }
 
     if not main_func_code:
+        if _debug_enabled:
+            print("[SA-DEBUG] Empty model output; skip sample.")
         return metrics
 
     imports = extract_imports_from_prompt(prompt)
@@ -222,12 +235,16 @@ def _run_single_tests(main_func_code: str, prompt: str, test_code: str, entry_po
     func_only = extract_specific_function(cleaned or main_func_code, entry_point) or cleaned
     combined = (imports + "\n\n" + func_only) if imports else func_only
 
-    ok, _ = check_syntax(combined, "Combined code")
+    ok, syntax_msg = check_syntax(combined, "Combined code")
     if not ok:
+        if _debug_enabled:
+            print("[SA-DEBUG] Syntax error in combined code:", syntax_msg)
         return metrics
 
     tests = extract_test_cases(test_code, entry_point)
     if not tests:
+        if _debug_enabled:
+            print("[SA-DEBUG] No tests extracted for entry_point=", entry_point)
         return metrics
     metrics["total_tests"] = len(tests)
 
@@ -235,10 +252,21 @@ def _run_single_tests(main_func_code: str, prompt: str, test_code: str, entry_po
     MAX_TIMEOUTS = 3
     passed = 0
     timeouts = 0
+    if _debug_enabled:
+        print("\n[SA-DEBUG] Entry point:", entry_point)
+        print("[SA-DEBUG] Raw model output (first 400 chars):\n", (main_func_code or "")[:400])
+        print("[SA-DEBUG] Imports extracted from prompt:\n", imports)
+        print("[SA-DEBUG] Combined code (first 600 chars):\n", combined[:600])
+        print("[SA-DEBUG] Extracted", len(tests), "test cases:")
+        for ti, tline in enumerate(tests, 1):
+            print(f"  [T{ti}] {tline}")
+
     try:
         env = {}
         exec(combined, env)
         if entry_point not in env:
+            if _debug_enabled:
+                print("[SA-DEBUG] Entry point not found in exec env.")
             return metrics
         for t in tests:
             if timeouts >= MAX_TIMEOUTS:
@@ -249,16 +277,28 @@ def _run_single_tests(main_func_code: str, prompt: str, test_code: str, entry_po
                 exec(t, env)
                 passed += 1
                 signal.alarm(0)
+                if _debug_enabled:
+                    print("  [PASS]", t)
             except TimeoutException:
                 signal.alarm(0)
                 timeouts += 1
+                if _debug_enabled:
+                    print("  [TIMEOUT]", t)
             except Exception:
                 signal.alarm(0)
                 # failed test
+                if _debug_enabled:
+                    import traceback as _tb
+                    _exc = _tb.format_exc().strip()
+                    print("  [FAIL]", t)
+                    print(_exc)
                 continue
     except Exception:
         # loading failed
-        pass
+        if _debug_enabled:
+            import traceback as _tb
+            print("[SA-DEBUG] Exception while loading/executing code:")
+            print(_tb.format_exc())
 
     metrics["passed_tests"] = passed
     metrics["timeouts"] = timeouts
@@ -347,6 +387,7 @@ def main():
 
     # Prepare external context if 2-turns
     is_multi_turn = args.num_turns > 1
+    _dbg = str(os.environ.get("EVAL_DEBUG", "")).lower() in ("1", "true", "yes")
     sandbox_slice: Optional[int]
     if isinstance(args.sandbox_slice, str):
         val = args.sandbox_slice.strip().lower()
@@ -388,7 +429,11 @@ def main():
         for g in range(args.generations):
             # Turn 1
             turn1_prompt = formatter(example)
+            if _dbg:
+                print("\n[SA-DEBUG] ---- TURN 1 PROMPT (head) ----\n", turn1_prompt[:600])
             t1_text, t1_in, t1_out, t1_time = runner.generate(turn1_prompt)
+            if _dbg:
+                print("[SA-DEBUG] ---- TURN 1 OUTPUT (head) ----\n", t1_text[:600])
             out_text = t1_text
             gen_time = t1_time
             total_output_tokens += t1_out
@@ -406,10 +451,53 @@ def main():
                     previous_response=not args.no_previous_response,
                 )
                 turn2_prompt = next_prompts[0] if isinstance(next_prompts, (list, tuple)) else str(next_prompts)
-                t2_text, t2_in, t2_out, t2_time = runner.generate(turn2_prompt)
-                out_text = t2_text
-                gen_time += t2_time
-                total_output_tokens += t2_out
+                if _dbg:
+                    print("[SA-DEBUG] ---- TURN 2 PROMPT (head) ----\n", str(turn2_prompt)[:800])
+
+                # Heuristic: if expert_edits says no change needed, skip Turn 2 and keep Turn 1
+                skip_t2 = False
+                if args.external_mode == "expert_edits":
+                    ptxt = (turn2_prompt or "").lower()
+                    if "perfect! no changes needed" in ptxt or "perfect!" in ptxt:
+                        skip_t2 = True
+                        if _dbg:
+                            print("[SA-DEBUG] Turn 2 skipped due to expert saying 'Perfect!'. Using Turn 1 output.")
+
+                if not skip_t2:
+                    t2_text, t2_in, t2_out, t2_time = runner.generate(turn2_prompt)
+                    if _dbg:
+                        print("[SA-DEBUG] ---- TURN 2 OUTPUT (head) ----\n", t2_text[:800])
+
+                    # Validate Turn 2: must contain a proper entry function and compile
+                    try:
+                        from rewards.code_utils import (
+                            cleanup_code,
+                            extract_specific_function,
+                            check_syntax,
+                            extract_imports_from_prompt,
+                        )
+                        imports = extract_imports_from_prompt(example.get("prompt", ""))
+                        cleaned = cleanup_code(t2_text)
+                        func_only = extract_specific_function(cleaned or t2_text, example.get("entry_point", ""))
+                        valid = False
+                        if func_only:
+                            combined = (imports + "\n\n" + func_only) if imports else func_only
+                            ok, _msg = check_syntax(combined, "Combined code")
+                            valid = bool(ok)
+                        if valid:
+                            out_text = t2_text
+                            gen_time += t2_time
+                            total_output_tokens += t2_out
+                        else:
+                            out_text = t1_text
+                            if _dbg:
+                                print("[SA-DEBUG] Turn 2 output invalid (missing entry function or syntax error). Falling back to Turn 1 output.")
+                    except Exception:
+                        out_text = t1_text
+                        if _dbg:
+                            print("[SA-DEBUG] Validation exception; falling back to Turn 1 output.")
+                else:
+                    out_text = t1_text
 
             # Evaluate
             m = _run_single_tests(out_text, example.get("prompt", ""), example.get("test", ""), example.get("entry_point", ""))

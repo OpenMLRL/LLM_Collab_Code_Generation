@@ -10,7 +10,7 @@ from rewards.code_utils import (
     extract_imports_from_prompt,
     extract_specific_function,
 )
-from .common import build_first_turn_prompts
+from .common import build_first_turn_prompts, build_single_agent_main_prompt
 
 
 def _extract_last_json_from_response(response_text: str) -> dict:
@@ -74,6 +74,21 @@ Provide only JSON in the following format: {{ "aux": <string with edits or repla
 Here is the current combined code to consider:
 {combined_code}
 """
+
+    # --- Print previous-turn base model outputs for debugging/traceability ---
+    try:
+        print("\n" + "=" * 60)
+        print("BASE MODEL COMPLETIONS (PREVIOUS TURN)")
+        if int(num_agents) == 2:
+            print("\n--- AUX COMPLETION ---")
+            print(aux_completion or "<empty>")
+        print("\n--- MAIN COMPLETION ---")
+        print(main_completion or "<empty>")
+        print("\n--- COMBINED CODE (imports + aux + main) ---")
+        print(combined_code)
+        print("=" * 60 + "\n")
+    except Exception:
+        pass
 
     last_error = None
     for _ in range(max_retries):
@@ -187,9 +202,7 @@ def format_followup_prompts(
         )
 
         if original_prompt_flag:
-            _aux_base, main_base = build_first_turn_prompts(
-                original_prompt, target_entry
-            )
+            main_base = build_single_agent_main_prompt(original_prompt, target_entry)
             main_lines.extend([main_base, ""])  # context then blank line
 
         if previous_response_flag:

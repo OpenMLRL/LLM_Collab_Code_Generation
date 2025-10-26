@@ -1,7 +1,7 @@
 from typing import Tuple
 
 from .level_feedback import analyze_code
-from .common import build_first_turn_prompts
+from .common import build_first_turn_prompts, build_single_agent_main_prompt
 
 
 def format_followup_prompts(
@@ -42,9 +42,7 @@ def format_followup_prompts(
     if int(num_agent) == 1:
         main_lines = []
         if original_prompt_flag:
-            _aux_base, main_base = build_first_turn_prompts(
-                original_prompt, entry_point
-            )
+            main_base = build_single_agent_main_prompt(original_prompt, entry_point)
             main_lines.extend([main_base, ""])  # context then blank line
         if previous_response_flag:
             main_lines.extend(

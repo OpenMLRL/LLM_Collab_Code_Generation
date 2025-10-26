@@ -39,8 +39,7 @@ def extract_function_params_from_prompt(prompt_text: str) -> List[str]:
 
 
 def aux_round1_formatter(prompt: str, entry_point: str) -> str:
-    params = extract_function_params_from_prompt(prompt)
-    params_str = ", ".join(params)
+    # Match training formatter (train_magrpo.py: aux_function_formatter)
     return (
         f"""Create a helper function for this coding problem.
 
@@ -53,19 +52,17 @@ IMPORTANT INSTRUCTIONS:
 - Do NOT include any text before or after the function
 - Do NOT include test cases or example usage
 - Create a helper function named 'aux' that can assist the main function
-- The aux function MUST use the same parameters as the main function: ({params_str})
 - The function should return useful data for solving the problem
 
 Your output should follow this format:
 
-def aux({params_str}):
-    # your function code here
-    return result
+def aux(...):\n # your function code here\nreturn result\n
 """
     )
 
 
 def main_round1_formatter(prompt: str, entry_point: str) -> str:
+    # Match training formatter (train_magrpo.py: main_function_formatter)
     params = extract_function_params_from_prompt(prompt)
     params_str = ", ".join(params)
     return (
@@ -74,7 +71,7 @@ def main_round1_formatter(prompt: str, entry_point: str) -> str:
 Problem:
 {prompt}
 
-You have access to a helper function: aux({params_str})
+You have access to a helper function: aux(...)
 
 IMPORTANT INSTRUCTIONS:
 - Output ONLY the function code, no explanations or examples
@@ -83,13 +80,11 @@ IMPORTANT INSTRUCTIONS:
 - Do NOT include test cases or example usage
 - Do NOT redefine the aux() function
 - Implement ONLY the '{entry_point}' function as specified
-- You can call aux() to assign value to a variable within your function
+- You can call aux() to assign value to a variable within your function if helpful
 
 Your output should follow this format:
 
-def {entry_point}({params_str}):
-    # your function code here
-    return result
+def {entry_point}({params_str}):\n # your function code here\nreturn result\n
 """
     )
 
@@ -157,8 +152,16 @@ class Agent:
         if device == "auto":
             device = "cuda" if torch.cuda.is_available() else "cpu"
         self.device = device
-        self.tokenizer = AutoTokenizer.from_pretrained(model_name)
-        self.model = AutoModelForCausalLM.from_pretrained(model_name)
+        self.tokenizer = AutoTokenizer.from_pretrained(model_name, trust_remote_code=True)
+        try:
+            dtype = torch.bfloat16 if torch.cuda.is_available() else None
+            self.model = AutoModelForCausalLM.from_pretrained(
+                model_name, trust_remote_code=True, torch_dtype=dtype
+            )
+        except Exception:
+            self.model = AutoModelForCausalLM.from_pretrained(
+                model_name, trust_remote_code=True
+            )
         # Ensure model is on the requested device (cpu/cuda)
         self.model = self.model.to(self.device)
         if self.tokenizer.pad_token is None:
@@ -204,11 +207,24 @@ def _run_aux_main_tests(aux_code: str, main_code: str, prompt: str, test_code: s
     metrics = {"passed_tests": 0, "total_tests": 0, "timeouts": 0, "is_correct": False}
     imports = extract_imports_from_prompt(prompt)
     aux_clean = cleanup_code(aux_code)
-    # Prefer the specifically-named 'aux' function; if absent (e.g., expert edits rename helper),
-    # fall back to including the entire cleaned aux completion to preserve the helper definition.
+    # Keep parity with training: extract only the function named 'aux' and the exact entry_point
     aux_func = extract_specific_function(aux_clean or aux_code, "aux")
     main_func = extract_specific_function(cleanup_code(main_code) or main_code, entry_point)
-    combined = concatenate_functions(aux_func or aux_clean, main_func, imports)
+    combined = concatenate_functions(aux_func, main_func, imports)
+
+    # Optional debug to help diagnose zero scores; enable with EVAL_DEBUG=1
+    try:
+        import os as _os
+        if str(_os.environ.get("EVAL_DEBUG", "")).lower() in ("1", "true", "yes"):
+            if not aux_func:
+                print("[DEBUG] aux_func is empty after extraction; showing aux_clean head:")
+                print((aux_clean or aux_code)[:300])
+            if not main_func:
+                print(f"[DEBUG] main_func '{entry_point}' is empty after extraction; showing main_clean head:")
+                _mc = cleanup_code(main_code) or main_code
+                print((_mc)[:300])
+    except Exception:
+        pass
 
     ok, _ = check_syntax(combined, "Combined code")
     if not ok:
@@ -264,8 +280,9 @@ def main():
     parser.add_argument("--k-values", nargs="+", type=int, default=[1, 3, 5, 10], help="k values for pass@k")
     parser.add_argument("--num-turns", type=int, default=1, help="Number of turns (1 or 2)")
     parser.add_argument("--result-json", type=str, default=None, help="Append a JSON line summary to this file")
-    parser.add_argument("--temperature", type=float, default=0.2, help="Sampling temperature")
-    parser.add_argument("--top-p", dest="top_p", type=float, default=0.9, help="Top-p nucleus sampling")
+    # Match training defaults for MAGRPO (configs: temperature~0.8, top_p~0.95)
+    parser.add_argument("--temperature", type=float, default=0.8, help="Sampling temperature")
+    parser.add_argument("--top-p", dest="top_p", type=float, default=0.95, help="Top-p nucleus sampling")
 
     # External options (turn-2 only)
     parser.add_argument("--external-mode", default="level_feedback", choices=["expert_edits", "level_feedback", "level_passed", "passed", "plain"], help="External transition mode")

@@ -160,8 +160,16 @@ class Agent:
         if device == "auto":
             device = "cuda" if torch.cuda.is_available() else "cpu"
         self.device = device
-        self.tokenizer = AutoTokenizer.from_pretrained(model_name)
-        self.model = AutoModelForCausalLM.from_pretrained(model_name)
+        self.tokenizer = AutoTokenizer.from_pretrained(model_name, trust_remote_code=True)
+        try:
+            dtype = torch.bfloat16 if torch.cuda.is_available() else None
+            self.model = AutoModelForCausalLM.from_pretrained(
+                model_name, trust_remote_code=True, torch_dtype=dtype
+            )
+        except Exception:
+            self.model = AutoModelForCausalLM.from_pretrained(
+                model_name, trust_remote_code=True
+            )
         # Ensure model is on the requested device (cpu/cuda)
         self.model = self.model.to(self.device)
         if self.tokenizer.pad_token is None:
@@ -208,11 +216,24 @@ def _run_aux_main_tests(aux_code: str, main_code: str, prompt: str, test_code: s
     metrics = {"passed_tests": 0, "total_tests": 0, "timeouts": 0, "is_correct": False}
     imports = extract_imports_from_prompt(prompt)
     aux_clean = cleanup_code(aux_code)
-    # Prefer the explicitly-named 'aux' helper; if not present, include the entire cleaned
-    # aux completion to keep whatever helper the main function calls (e.g., renamed helper).
+    # Keep parity with training: extract only 'aux' and the exact entry_point
     aux_func = extract_specific_function(aux_clean or aux_code, "aux")
     main_func = extract_specific_function(cleanup_code(main_code) or main_code, entry_point)
-    combined = concatenate_functions(aux_func or aux_clean, main_func, imports)
+    combined = concatenate_functions(aux_func, main_func, imports)
+
+    # Optional debug; enable with EVAL_DEBUG=1
+    try:
+        import os as _os
+        if str(_os.environ.get("EVAL_DEBUG", "")).lower() in ("1", "true", "yes"):
+            if not aux_func:
+                print("[DEBUG] aux_func is empty after extraction; showing aux_clean head:")
+                print((aux_clean or aux_code)[:300])
+            if not main_func:
+                print(f"[DEBUG] main_func '{entry_point}' is empty after extraction; showing main_clean head:")
+                _mc = cleanup_code(main_code) or main_code
+                print((_mc)[:300])
+    except Exception:
+        pass
 
     ok, _ = check_syntax(combined, "Combined code")
     if not ok:

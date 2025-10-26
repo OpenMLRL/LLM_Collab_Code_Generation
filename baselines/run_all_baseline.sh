@@ -20,7 +20,7 @@ PROJECT_DIR_REL="LLM_Collab_Code_Generation"
 
 # Evaluation controls (unified here)
 SAMPLES=${SAMPLES:-20}
-GENERATIONS=${GENERATIONS:-3}
+GENERATIONS=${GENERATIONS:-15}
 
 # Where to write aggregated results (JSON Lines). Can be overridden via env.
 RESULTS_JSON=${RESULTS_JSON:-"${BASE_DIR}/baseline_results.jsonl"}

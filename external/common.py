@@ -50,3 +50,37 @@ def build_first_turn_prompts(original_prompt: str, entry_point: str) -> Tuple[st
     )
 
     return aux_fmt, main_fmt
+
+
+def build_single_agent_main_prompt(original_prompt: str, entry_point: str) -> str:
+    """
+    Build the canonical single-agent main prompt (no aux mention), used for
+    follow-up turns as context when evaluating single-agent 2-turn baselines.
+
+    Mirrors the style of train_grpo.py's single-agent formatter: only the main
+    function is requested; no helper function is referenced.
+    """
+    params_str = "..."
+    base = (
+        "Original problem and instructions:\n\n"
+        "Solve this coding problem by implementing the required function.\n\n"
+        f"Problem:\n{original_prompt}\n\n"
+        "IMPORTANT INSTRUCTIONS:\n"
+        "- Output ONLY the function code, no explanations or examples\n"
+        "- Do NOT include markdown code blocks (```python)\n"
+        "- Do NOT include any text before or after the function\n"
+        "- Do NOT include test cases or example usage\n"
+        + (
+            f"- Implement ONLY the '{entry_point}' function as specified\n"
+            if entry_point
+            else "- Implement ONLY the required function as specified\n"
+        )
+        + "- Make sure your solution is complete and handles all cases\n\n"
+        + "Your output should follow this format:\n\n"
+        + (
+            f"def {entry_point}({params_str}):\n # your function code here\nreturn result\n"
+            if entry_point
+            else "def <entry_point>(...):\n # your function code here\nreturn result\n"
+        )
+    )
+    return base
