@@ -487,23 +487,31 @@ def main():
         and dataset_type.lower() in ["humaneval", "coophumaneval", "mbpp"]
     ):
         expert_model = external_cfg.get("expert_model", "deepseek-coder")
+        previous_prompts_flag = bool(external_cfg.get("previous_prompts", False))
+        previous_responses_flag = bool(external_cfg.get("previous_responses", True))
+        memoryless_flag = bool(external_cfg.get("memoryless", True))
 
         def external_transition_wrapper(
-            prompt, agent_completions, num_agents
+            prompt,
+            agent_completions,
+            num_agents,
+            prompt_history_per_agent=None,
+            response_history_per_agent=None,
         ):
             # Single-agent: pass prior main completion; aux is empty internally
             main_best = agent_completions[0] if agent_completions else ""
 
-            original_prompt_flag = external_cfg.get("original_prompt", True)
-            previous_response_flag = external_cfg.get("previous_response", True)
             prompts = get_external_transition(
                 prompt=prompt,
                 agent_completions=[main_best],
                 num_agents=1,
                 expert_model=expert_model,
                 mode=external_mode,
-                original_prompt=original_prompt_flag,
-                previous_response=previous_response_flag,
+                previous_prompts=previous_prompts_flag,
+                previous_responses=previous_responses_flag,
+                memoryless=memoryless_flag,
+                prompt_history_per_agent=prompt_history_per_agent,
+                response_history_per_agent=response_history_per_agent,
             )
 
             # Ensure list of one string is returned

@@ -46,9 +46,9 @@ Advantages are used to optimize the agents policies, which use a mean baseline w
 
 `magrpo.termination_threshold` is used to incentivize agents to find high‑reward solutions quickly instead of expanding the full Monte Carlo tree. At each node (branch, turn), we compute the mean immediate reward across that node’s sibling joint actions; if the mean exceeds the threshold, that branch stops expanding at this turn and the trainer backpropagates from the truncated subtree. Other branches continue.
 
-### New Prompts
+### History Controls
 
-`external.original_prompt` and `external.previous_response` both default as true. 2+ turn prompts include both the original first‑turn problem prompt and the previous response by default to preserve full context; you can shorten the context by setting either to false (for example, keep only the previous response to reduce tokens while retaining the most recent interaction).
+`external.previous_prompts` and `external.previous_responses` control whether 2+ turn prompts include prior prompts and prior responses respectively. When paired with `external.memoryless=false`, the trainer passes full per‑turn history for the branch (all previous prompts/responses) to the external mode, which renders a compact history block. When `external.memoryless=true` (default), modes follow the minimal style (first‑turn prompt and/or last response only) similar to earlier behavior.
 
 ### External Modes
 

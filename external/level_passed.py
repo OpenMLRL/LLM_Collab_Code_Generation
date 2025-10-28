@@ -1,4 +1,4 @@
-from typing import Tuple
+from typing import Tuple, List, Optional
 
 from .level_feedback import analyze_code
 from .common import build_first_turn_prompts
@@ -10,9 +10,13 @@ def format_followup_prompts(
     main_completion: str,
     test_code: str,
     entry_point: str,
-    original_prompt_flag: bool = False,
-    previous_response_flag: bool = True,
+    *,
+    previous_prompts: bool = False,
+    previous_responses: bool = True,
+    memoryless: bool = True,
     num_agent: int = 2,
+    prompt_history_per_agent: Optional[List[List[str]]] = None,
+    response_history_per_agent: Optional[List[List[str]]] = None,
 ) -> Tuple[str, str]:
     """
     Produce concise level_passed prompts for each agent using previous code + signals.
@@ -40,6 +44,12 @@ def format_followup_prompts(
     else:
         test_sig = f"Passed {r['tests_passed']}/{r['tests_total']} tests"
 
+    # Normalize histories
+    if prompt_history_per_agent is None:
+        prompt_history_per_agent = [[] for _ in range(int(num_agent))]
+    if response_history_per_agent is None:
+        response_history_per_agent = [[] for _ in range(int(num_agent))]
+
     # Single-agent: only main prompt; exclude aux logic/signals
     if int(num_agent) == 1:
         main_impl = (
@@ -48,19 +58,30 @@ def format_followup_prompts(
             else "No implementation found in required structure"
         )
         main_lines = []
-        if original_prompt_flag:
+        if not memoryless:
+            if previous_prompts and prompt_history_per_agent and prompt_history_per_agent[0]:
+                main_lines.extend(["History: previous prompts:"])
+                for t, ph in enumerate(prompt_history_per_agent[0], start=1):
+                    main_lines.append(f"- Turn {t} prompt:\n{ph}")
+                main_lines.append("")
+            if previous_responses and response_history_per_agent and response_history_per_agent[0]:
+                main_lines.extend(["History: your previous responses:"])
+                for t, resp in enumerate(response_history_per_agent[0], start=1):
+                    main_lines.append(f"- Turn {t} response:\n{resp}")
+                main_lines.append("")
+        else:
             _aux_base, main_base = build_first_turn_prompts(
                 original_prompt, entry_point
             )
             main_lines.extend([main_base, ""])  # context then blank line
-        if previous_response_flag:
-            main_lines.extend(
-                [
-                    "Your previous implementation:",
-                    r.get("main_func") or "<no implementation found>",
-                    "",
-                ]
-            )
+            if previous_responses:
+                main_lines.extend(
+                    [
+                        "Your previous implementation:",
+                        r.get("main_func") or "<no implementation found>",
+                        "",
+                    ]
+                )
         main_lines.extend(
             [
                 "Signals:",
@@ -94,26 +115,54 @@ def format_followup_prompts(
     aux_lines = []
     main_lines = []
 
-    if original_prompt_flag:
+    if not memoryless:
+        if previous_prompts:
+            if prompt_history_per_agent and len(prompt_history_per_agent) >= 2:
+                aux_ph = prompt_history_per_agent[0]
+                main_ph = prompt_history_per_agent[1]
+                if aux_ph:
+                    aux_lines.append("History: previous prompts:")
+                    for t, ph in enumerate(aux_ph, start=1):
+                        aux_lines.append(f"- Turn {t} prompt:\n{ph}")
+                    aux_lines.append("")
+                if main_ph:
+                    main_lines.append("History: previous prompts:")
+                    for t, ph in enumerate(main_ph, start=1):
+                        main_lines.append(f"- Turn {t} prompt:\n{ph}")
+                    main_lines.append("")
+        if previous_responses:
+            if response_history_per_agent and len(response_history_per_agent) >= 2:
+                aux_rh = response_history_per_agent[0]
+                main_rh = response_history_per_agent[1]
+                if aux_rh:
+                    aux_lines.append("History: your previous aux(...) responses:")
+                    for t, resp in enumerate(aux_rh, start=1):
+                        aux_lines.append(f"- Turn {t} response:\n{resp}")
+                    aux_lines.append("")
+                if main_rh:
+                    main_lines.append("History: your previous main responses:")
+                    for t, resp in enumerate(main_rh, start=1):
+                        main_lines.append(f"- Turn {t} response:\n{resp}")
+                    main_lines.append("")
+    else:
         aux_base, main_base = build_first_turn_prompts(original_prompt, entry_point)
         aux_lines.extend([aux_base, ""])  # context then blank line
         main_lines.extend([main_base, ""])  # context then blank line
-
-    if previous_response_flag:
-        aux_lines.extend(
-            [
-                "Your previous aux(...) implementation:",
-                r.get("aux_func") or "<no implementation found>",
-                "",
-            ]
-        )
-        main_lines.extend(
-            [
-                "Your previous main implementation:",
-                r.get("main_func") or "<no implementation found>",
-                "",
-            ]
-        )
+        if previous_responses:
+            aux_lines.extend(
+                [
+                    "Your previous aux(...) implementation:",
+                    r.get("aux_func") or "<no implementation found>",
+                    "",
+                ]
+            )
+            main_lines.extend(
+                [
+                    "Your previous main implementation:",
+                    r.get("main_func") or "<no implementation found>",
+                    "",
+                ]
+            )
 
     aux_lines.extend(
         [
