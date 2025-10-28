@@ -489,7 +489,7 @@ def main():
         expert_model = external_cfg.get("expert_model", "deepseek-coder")
         previous_prompts_flag = bool(external_cfg.get("previous_prompts", False))
         previous_responses_flag = bool(external_cfg.get("previous_responses", True))
-        memoryless_flag = bool(external_cfg.get("memoryless", True))
+        memory_mode = str(external_cfg.get("memory_mode", "full")).lower()
 
         def external_transition_wrapper(
             prompt,
@@ -509,7 +509,7 @@ def main():
                 mode=external_mode,
                 previous_prompts=previous_prompts_flag,
                 previous_responses=previous_responses_flag,
-                memoryless=memoryless_flag,
+                memory_mode=memory_mode,
                 prompt_history_per_agent=prompt_history_per_agent,
                 response_history_per_agent=response_history_per_agent,
             )

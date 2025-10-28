@@ -167,7 +167,7 @@ def format_followup_prompts(
     *,
     previous_prompts: bool = False,
     previous_responses: bool = True,
-    memoryless: bool = True,
+    memory_mode: str = "last",
     num_agent: int = 2,
     prompt_history_per_agent: Optional[List[List[str]]] = None,
     response_history_per_agent: Optional[List[List[str]]] = None,
@@ -182,6 +182,17 @@ def format_followup_prompts(
     target_entry = entry_point or "main"
 
     # Normalize histories
+    memory_mode = (memory_mode or "last").lower()
+    # If full history has only one prior turn, render identically to 'last'
+    if memory_mode == "full":
+        try:
+            counts_p = [len(x or []) for x in (prompt_history_per_agent or [])]
+            counts_r = [len(x or []) for x in (response_history_per_agent or [])]
+            if counts_p and max(counts_p) <= 1 and counts_r and max(counts_r) <= 1:
+                memory_mode = "last"
+        except Exception:
+            pass
+
     if prompt_history_per_agent is None:
         prompt_history_per_agent = [[] for _ in range(int(num_agent))]
     if response_history_per_agent is None:
@@ -196,7 +207,7 @@ def format_followup_prompts(
             or "<no implementation found>"
         )
 
-        if not memoryless:
+        if memory_mode == "full":
             if previous_prompts and prompt_history_per_agent and prompt_history_per_agent[0]:
                 main_lines.extend(["History: previous prompts:"])
                 for t, ph in enumerate(prompt_history_per_agent[0], start=1):
@@ -207,12 +218,13 @@ def format_followup_prompts(
                 for t, resp in enumerate(response_history_per_agent[0], start=1):
                     main_lines.append(f"- Turn {t} response:\n{resp}")
                 main_lines.append("")
-        else:
-            _aux_base, main_base = build_first_turn_prompts(
-                original_prompt, target_entry
-            )
-            main_lines.extend([main_base, ""])  # context then blank line
-        if memoryless and previous_responses:
+        elif memory_mode == "last":
+            if previous_prompts:
+                _aux_base, main_base = build_first_turn_prompts(
+                    original_prompt, target_entry
+                )
+                main_lines.extend([main_base, ""])  # context then blank line
+        if memory_mode == "last" and previous_responses:
             main_lines.extend(
                 [
                     "Your previous implementation:",
@@ -220,6 +232,8 @@ def format_followup_prompts(
                     "",
                 ]
             )
+        elif memory_mode == "memoryful":
+            pass
 
         main_lines.extend(
             [
@@ -245,7 +259,7 @@ def format_followup_prompts(
     aux_lines: List[str] = []
     main_lines: List[str] = []
 
-    if not memoryless:
+    if memory_mode == "full":
         if previous_prompts:
             if prompt_history_per_agent and len(prompt_history_per_agent) >= 2:
                 aux_ph = prompt_history_per_agent[0]
@@ -274,13 +288,16 @@ def format_followup_prompts(
                     for t, resp in enumerate(main_rh, start=1):
                         main_lines.append(f"- Turn {t} response:\n{resp}")
                     main_lines.append("")
-    else:
-        aux_base, main_base = build_first_turn_prompts(original_prompt, target_entry)
-        aux_lines.extend([aux_base, ""])  # add a blank line after context
-        main_lines.extend([main_base, ""])
+    elif memory_mode == "last":
+        if previous_prompts:
+            aux_base, main_base = build_first_turn_prompts(original_prompt, target_entry)
+            aux_lines.extend([aux_base, ""])  # add a blank line after context
+            main_lines.extend([main_base, ""])
         if previous_responses:
             aux_lines.extend(["Your previous aux(...) implementation:", prev_aux, ""])
             main_lines.extend(["Your previous main implementation:", prev_main, ""])
+    elif memory_mode == "memoryful":
+        pass
 
     aux_lines.extend(
         [

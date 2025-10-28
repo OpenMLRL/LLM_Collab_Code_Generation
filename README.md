@@ -48,7 +48,12 @@ Advantages are used to optimize the agents policies, which use a mean baseline w
 
 ### History Controls
 
-`external.previous_prompts` and `external.previous_responses` control whether 2+ turn prompts include prior prompts and prior responses respectively. When paired with `external.memoryless=false`, the trainer passes full per‑turn history for the branch (all previous prompts/responses) to the external mode, which renders a compact history block. When `external.memoryless=true` (default), modes follow the minimal style (first‑turn prompt and/or last response only) similar to earlier behavior.
+- `external.previous_prompts`: include prompts history (per agent).
+- `external.previous_responses`: include responses history (per agent).
+- `external.memory_mode`: one of `last`, `full`, `memoryful`.
+  - `full` (default): include all prior prompts/responses per flags (compact “History” block).
+  - `last`: include only first‑turn prompt and last response per flags.
+  - `memoryful`: rely on model’s internal state (KV cache). Trainer carries per‑agent KV caches across turns and continues generation from them; prompts omit explicit history.
 
 ### External Modes
 

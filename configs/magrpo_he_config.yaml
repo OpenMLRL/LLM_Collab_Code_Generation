@@ -28,8 +28,9 @@ output:
 external:
   mode: "level_feedback"
   sandbox_slice: 1
-  original_prompt: true
-  previous_response: true
+  previous_prompts: true
+  previous_responses: true
+  memory_mode: full
 
 # magrpo
 magrpo:
