@@ -30,7 +30,7 @@ python LLM_Collaboration_with_MARL/train_magrpo.py \
 
 ### Joint Action
 
-`magrpo.joint_mode` determines how to combine each agent’s G generations into joint actions at each turn. Two modes are supported: 'align' (default), which pairs the g‑th generation of every agent to form G joint actions per node; and 'cross', which forms the Cartesian product within a node, yielding G^N joint actions per node (N agents). Total leaf joint trajectories after T turns (no early termination): align → G^T; cross → G^{N·T}. 
+`magrpo.joint_mode` determines how to combine each agent’s $G$ generations into joint actions at each turn. Two modes are supported: 'align' (default), which pairs the $g$‑th generation of every agent to form $G$ joint actions per node; and 'cross', which forms the Cartesian product within a node, yielding $G^N$ joint actions per node ($N$ agents). Total leaf joint trajectories after $T$ turns (no early termination): align → $G^T$; cross → $G^{N\cdot T}$. 
 
 Aligned is faster in wall‑time (fewer sibling evaluations per node), while cross is more sample‑efficient (better value estimation) without extra VRAM because it reuses the same G generations per agent and only crosses them within the node. We never cross across different nodes/prompts; this preserves causal state consistency (actions are conditioned on the same prompts), keeps siblings comparable for the baseline/advantage, maintains correct credit assignment (log‑probs matched to rewards from the same state), and remains computationally tractable.
 
@@ -40,7 +40,7 @@ Advantages are used to optimize the agents policies, which use a mean baseline w
 
 ### Number of Samples
 
-`magrpo.num_turns` is the number of turns in training and evaluation, and `magrpo.num_generations` is the number of samples per generation. Leaf (total samples at current turn) counts grow with T: `aligned` → G^T; `cross` → G^{N·T}. At each node, the sibling set (competing joint actions under the same prompt/context/turn) has size G for `aligned`, and G^N for `cross`. The policy‑gradient baseline is the mean return over these siblings at that node, i.e., advantage Aᵢ = Returnᵢ − mean_sibling(Return).
+`magrpo.num_turns` is the number of turns in training and evaluation, and `magrpo.num_generations` is the number of samples per generation. Leaf (total samples at current turn) counts grow with $T$: `aligned` → $G^T$; `cross` → $G^{N\cdot T}$. At each node, the sibling set (competing joint actions under the same prompt/context/turn) has size $G$ for `aligned`, and $G^N$ for `cross`. The policy‑gradient baseline is the mean return over these siblings at that node, i.e., advantage $A_i = \mathrm{Return}_i - \operatorname{mean}_{\text{sibling}}(\mathrm{Return})$.
 
 ### Termination
 
@@ -48,12 +48,7 @@ Advantages are used to optimize the agents policies, which use a mean baseline w
 
 ### History Controls
 
-- `external.previous_prompts`: include prompts history (per agent).
-- `external.previous_responses`: include responses history (per agent).
-- `external.memory_mode`: one of `last`, `full`, `memoryful`.
-  - `full` (default): include all prior prompts/responses per flags (compact “History” block).
-  - `last`: include only first‑turn prompt and last response per flags.
-  - `memoryful`: rely on model’s internal state (KV cache). Trainer carries per‑agent KV caches across turns and continues generation from them; prompts omit explicit history.
+`external.memory_mode` controls how many memory and what memory to be given to each agent, it should be selected from `last`, `full`, `memoryful`. `full` (default) includes all prior prompts/responses per flags (compact "History" block); `last` includes only first‑turn prompt and last response per flags; `memoryful`: rely on model’s internal state (KV cache), trainer carries per‑agent KV caches across turns and continues generation from them and prompts omit explicit history. In addition, `external.previous_prompts` and `external.previous_responses` determine which parts of the agent‑wise history are inserted into the next‑turn prompt text: in `last`, `previous_prompts` includes the agent’s first‑turn prompt and `previous_responses` includes only the most recent response; in `full`, `previous_prompts` includes all prior prompts and `previous_responses` includes all prior responses; in `memoryful`, neither history is injected into the text because the per‑agent KV cache already carries this context.
 
 ### External Modes
 
