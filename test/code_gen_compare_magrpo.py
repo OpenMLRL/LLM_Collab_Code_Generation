@@ -96,7 +96,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--dataset-split", type=str, default="test[16:]")
     parser.add_argument("--dataset-size", type=int, default=128)
     parser.add_argument("--output-dir", type=str, default="./magrpo_che")
-    parser.add_argument("--num-train-epochs", type=int, default=10)
+    parser.add_argument("--num-train-epochs", type=int, default=20)
     parser.add_argument("--num-generations", type=int, default=4)
     parser.add_argument("--max-new-tokens", type=int, default=256)
     parser.add_argument("--temperature", type=float, default=0.6)
