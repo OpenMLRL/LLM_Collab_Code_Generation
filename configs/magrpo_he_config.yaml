@@ -49,7 +49,7 @@ magrpo:
 
 # wandb
 wandb:
-  project: "mlrl"
+  project: "comlrl"
   entity: "OpenMLRL"
   name: "magrpo_humaneval"
   dir: "output"

@@ -50,7 +50,7 @@ grpo:
 
 # wandb
 wandb:
-  project: "mlrl"
+  project: "comlrl"
   entity: "OpenMLRL"
   name: "grpo_mbpp"
   dir: "output"
