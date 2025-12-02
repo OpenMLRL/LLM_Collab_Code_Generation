@@ -180,7 +180,7 @@ def main() -> None:
         train_dataset=dataset,
         model_config={
             "tokenizer_kwargs": {"trust_remote_code": True},
-            "model_kwargs": {"trust_remote_code": True},
+            "model_kwargs": {"trust_remote_code": True, "torch_dtype": "bfloat16"},
         },
         wandb_config={
             "project": args.wandb_project,
