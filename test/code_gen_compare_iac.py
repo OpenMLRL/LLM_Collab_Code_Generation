@@ -104,6 +104,17 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--top-k", type=int, default=None)
     parser.add_argument("--actor-learning-rate", type=float, default=1e-6)
     parser.add_argument("--critic-learning-rate", type=float, default=1e-6)
+    parser.add_argument(
+        "--use-separate-critic",
+        action="store_true",
+        help="Enable a separate critic model instead of the shared value head.",
+    )
+    parser.add_argument(
+        "--critic-model",
+        type=str,
+        default=None,
+        help="Critic model name/path when using a separate critic. Defaults to actor model.",
+    )
     parser.add_argument("--value-loss-coef", type=float, default=0.5)
     parser.add_argument("--rollout-buffer-size", type=int, default=8)
     parser.add_argument("--mini-batch-size", type=int, default=4)
@@ -213,6 +224,10 @@ def main() -> None:
     use_sampling = args.num_generations > 1
     top_k = args.top_k if use_sampling else None
 
+    critic_identifier = (
+        args.critic_model if args.critic_model is not None else args.model_name
+    ) if args.use_separate_critic else None
+
     iac_trainer = IACTrainer(
         model=args.model_name,
         tokenizer=tokenizer,
@@ -235,6 +250,8 @@ def main() -> None:
             num_train_epochs=args.num_train_epochs,
             num_agents=2,
             num_return_sequences=args.num_generations,
+            use_separate_critic=args.use_separate_critic,
+            critic_model_name_or_path=critic_identifier,
         ),
         train_dataset=dataset,
         model_config={
