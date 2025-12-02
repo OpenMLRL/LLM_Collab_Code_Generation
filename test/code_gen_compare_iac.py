@@ -119,7 +119,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--rollout-buffer-size", type=int, default=8)
     parser.add_argument("--mini-batch-size", type=int, default=4)
     parser.add_argument("--ac-epochs", type=int, default=1)
-    parser.add_argument("--wandb-project", type=str, default="compare")
+    parser.add_argument("--wandb-project", type=str, default="code-gen-compare")
     parser.add_argument("--wandb-entity", type=str, default="openmlrl")
     parser.add_argument("--wandb-run-name", type=str, default="codegen-iac")
     parser.add_argument("--seed", type=int, default=42)

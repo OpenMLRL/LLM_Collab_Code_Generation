@@ -412,7 +412,7 @@ def main():
     output_section = config.get_section("output") if hasattr(config, "get_section") else {}
 
     wandb_config = {
-        "project": wandb_section.get("project", "mlrl"),
+        "project": wandb_section.get("project", "comlrl"),
         "entity": wandb_section.get("entity", "OpenMLRL"),
         "name": f"{wandb_name}",
         "dir": wandb_section.get("dir", "../../../projects/bepg/sliu30"),
