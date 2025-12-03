@@ -102,8 +102,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--temperature", type=float, default=0.6)
     parser.add_argument("--top-p", type=float, default=0.6)
     parser.add_argument("--top-k", type=int, default=None)
-    parser.add_argument("--actor-learning-rate", type=float, default=1e-6)
-    parser.add_argument("--critic-learning-rate", type=float, default=1e-6)
+    parser.add_argument("--actor-learning-rate", type=float, default=2e-5)
+    parser.add_argument("--critic-learning-rate", type=float, default=2e-5)
     parser.add_argument(
         "--use-separate-critic",
         action="store_true",
