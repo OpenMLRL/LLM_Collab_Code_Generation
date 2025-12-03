@@ -102,8 +102,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--temperature", type=float, default=0.6)
     parser.add_argument("--top-p", type=float, default=0.6)
     parser.add_argument("--top-k", type=int, default=None)
-    parser.add_argument("--actor-learning-rate", type=float, default=2e-5)
-    parser.add_argument("--critic-learning-rate", type=float, default=2e-5)
+    parser.add_argument("--actor-learning-rate", type=float, default=5e-6)
+    parser.add_argument("--critic-learning-rate", type=float, default=5e-6)
     parser.add_argument(
         "--use-separate-critic",
         action="store_true",
@@ -115,7 +115,7 @@ def parse_args() -> argparse.Namespace:
         default=None,
         help="Critic model name/path when using a separate critic. Defaults to actor model.",
     )
-    parser.add_argument("--value-loss-coef", type=float, default=0.5)
+    parser.add_argument("--value-loss-coef", type=float, default=0.6)
     parser.add_argument("--rollout-buffer-size", type=int, default=8)
     parser.add_argument("--mini-batch-size", type=int, default=4)
     parser.add_argument("--ac-epochs", type=int, default=1)
@@ -233,7 +233,7 @@ def main() -> None:
         tokenizer=tokenizer,
         reward_func=reward_fn,
         formatters=formatters,
-        metrics_callback=value_variance_metrics,
+        metrics_callback=None,
         args=IACConfig(
             output_dir=f"{args.output_dir}/iac",
             actor_learning_rate=args.actor_learning_rate,
