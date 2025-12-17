@@ -4,6 +4,7 @@ import random
 import re
 from pathlib import Path
 from typing import Any, Dict, List
+import types
 
 import torch
 import wandb
@@ -154,6 +155,102 @@ def make_prompt_reward_fn(prompt_lookup: Dict[str, Dict[str, str]]):
         )
 
     return _reward
+
+
+def _apply_low_vram_monkey_patches(trainer: MAACTrainer, low_vram_cfg: Dict[str, Any]):
+    """
+    Best-effort VRAM reductions without extra deps (no bitsandbytes/peft).
+
+    Options (all optional, default False):
+      - gradient_checkpointing: enable checkpointing on actor/critic backbones
+      - disable_cache: set config.use_cache=False on actor/critic backbones
+      - critic_value_head_only: train critic value head only; detach critic backbone
+      - share_critic_backbone_with_actor0: reuse actor0 backbone for critic to save one model copy
+    """
+    enabled = bool(low_vram_cfg.get("enabled", False))
+    if not enabled:
+        return
+
+    disable_cache = bool(low_vram_cfg.get("disable_cache", True))
+    gradient_ckpt = bool(low_vram_cfg.get("gradient_checkpointing", True))
+    critic_value_head_only = bool(low_vram_cfg.get("critic_value_head_only", True))
+    share_critic_backbone = bool(
+        low_vram_cfg.get("share_critic_backbone_with_actor0", False)
+    )
+
+    def _patch_backbone(backbone):
+        cfg = getattr(backbone, "config", None)
+        if disable_cache and cfg is not None and hasattr(cfg, "use_cache"):
+            cfg.use_cache = False
+        if gradient_ckpt and hasattr(backbone, "gradient_checkpointing_enable"):
+            try:
+                backbone.gradient_checkpointing_enable()
+            except Exception:
+                pass
+
+    # Actor backbones
+    for actor in getattr(trainer, "actor_models", []):
+        backbone = getattr(actor, "model", None)
+        if backbone is not None:
+            _patch_backbone(backbone)
+
+    # Critic backbone
+    critic_wrapper = getattr(trainer, "critic_model", None)
+    critic_backbone = getattr(critic_wrapper, "model", None) if critic_wrapper else None
+    if critic_backbone is not None:
+        _patch_backbone(critic_backbone)
+
+    # Share critic backbone weights with actor0 to save VRAM (optional).
+    if share_critic_backbone and critic_wrapper is not None:
+        if not getattr(trainer, "actor_models", None):
+            raise ValueError("Cannot share critic backbone: no actor models found.")
+        actor0_backbone = trainer.actor_models[0].model
+        # Keep a reference to release the original backbone if possible.
+        old_backbone = critic_wrapper.model
+        critic_wrapper.model = actor0_backbone
+        try:
+            del old_backbone
+        except Exception:
+            pass
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
+
+    # Train only critic value head + detach critic backbone during critic forward.
+    if critic_value_head_only and critic_wrapper is not None:
+        if critic_wrapper.value_head is None:
+            raise ValueError("critic_value_head_only requires a critic with value_head.")
+
+        # Replace critic optimizer to only track value head params (saves optimizer state VRAM).
+        trainer.critic_optimizer = torch.optim.AdamW(
+            critic_wrapper.value_head.parameters(),
+            lr=trainer.args.critic_learning_rate,
+            betas=(trainer.args.adam_beta1, trainer.args.adam_beta2),
+            eps=trainer.args.adam_epsilon,
+            weight_decay=trainer.args.weight_decay,
+        )
+
+        def _value_on_prompt_only_valuehead(self, model, sequences, attention_mask, prompt_len):
+            prompt_ids = sequences[:, :prompt_len]
+            prompt_mask = (
+                attention_mask[:, :prompt_len] if attention_mask is not None else None
+            )
+            # Detach backbone to avoid storing activations for backward.
+            with torch.no_grad():
+                outputs = model.model(
+                    input_ids=prompt_ids,
+                    attention_mask=prompt_mask,
+                    output_hidden_states=True,
+                    return_dict=True,
+                    use_cache=False,
+                )
+                hidden = outputs.hidden_states[-1]
+            values = model.value_head(hidden).squeeze(-1)
+            last_index = prompt_len - 1
+            return values[:, last_index]
+
+        trainer._value_on_prompt_only = types.MethodType(
+            _value_on_prompt_only_valuehead, trainer
+        )
 
 
 def main() -> None:
@@ -399,6 +496,11 @@ def main() -> None:
         },
         wandb_config=_build_wandb_config(config, dataset_name, dataset_split, usable),
     )
+    low_vram_cfg = maac_cfg.get("low_vram", {})
+    if isinstance(low_vram_cfg, bool):
+        low_vram_cfg = {"enabled": bool(low_vram_cfg)}
+    if isinstance(low_vram_cfg, dict):
+        _apply_low_vram_monkey_patches(trainer, low_vram_cfg)
     trainer.train()
 
     if config.get("output.save_final_model", False):

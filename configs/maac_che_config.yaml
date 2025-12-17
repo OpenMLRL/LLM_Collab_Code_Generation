@@ -51,6 +51,14 @@ maac:
   critic_model: null    # optional override, falls back to model.name
   reward_shift: 0
   discount: 0.9
+  # VRAM-saving options (no extra deps required)
+  # Note: full fine-tuning a 3B model with AdamW is still very VRAM-heavy.
+  low_vram:
+    enabled: false
+    gradient_checkpointing: true
+    disable_cache: true
+    critic_value_head_only: true
+    share_critic_backbone_with_actor0: false
 
 # wandb
 wandb:
