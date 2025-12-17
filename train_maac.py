@@ -1,9 +1,3 @@
-"""
-Two-agent MAAC training for code generation (2-turn aux -> main, single generation).
-Prompts mirror train_magrpo.py; critic reward logic mirrors test/code_gen_compare_maac.py.
-Configuration comes from YAML + --override (same pattern as train_magrpo.py).
-"""
-
 import argparse
 import os
 import random
