@@ -25,6 +25,11 @@ output:
   save_final_model: false
   save_path: "output/maac_final"
 
+# external
+external:
+  mode: "level_feedback"
+  sandbox_slice: 1
+
 # maac
 maac:
   num_turns: 2  # two-agent, two-turn setup
@@ -45,6 +50,7 @@ maac:
   num_agents: 2
   critic_model: null    # optional override, falls back to model.name
   reward_shift: 0
+  discount: 0.9
 
 # wandb
 wandb:

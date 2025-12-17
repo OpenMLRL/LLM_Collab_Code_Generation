@@ -13,6 +13,8 @@ from transformers import AutoTokenizer
 from config import Config, add_config_args, parse_overrides
 from comlrl.trainers.maac import MAACConfig, MAACTrainer
 from rewards.code_rewards import execution_reward_aux
+import external as external_ctx
+from external import get_external_transition
 
 
 def extract_function_params_from_prompt(prompt_text: str) -> List[str]:
@@ -237,6 +239,86 @@ def main() -> None:
         print(f"Using model: {model_name}")
         print(f"Dataset: {dataset_name} split={dataset_split} size={usable}")
 
+    # ------------------------------------------------------------------ #
+    # External context resolver (for multi-turn transitions)
+    # ------------------------------------------------------------------ #
+    external_cfg = config.get_section("external") if hasattr(config, "get_section") else {}
+    def _normalize_prompt(p: str) -> str:
+        return " ".join((p or "").split()).strip()
+
+    context_map = {}
+    _sandbox_val = external_cfg.get("sandbox_slice", 1)
+    if isinstance(_sandbox_val, str):
+        _sv = _sandbox_val.strip().lower()
+        if _sv == "all":
+            sandbox_slice = 0
+        elif _sv.lstrip("-").isdigit():
+            sandbox_slice = int(_sv)
+        else:
+            sandbox_slice = None
+    elif isinstance(_sandbox_val, int):
+        sandbox_slice = _sandbox_val
+    else:
+        sandbox_slice = None if _sandbox_val is None else 0
+
+    def _make_sliced_assert_tests(test_code: str, n: int) -> str:
+        if not isinstance(test_code, str) or not test_code.strip():
+            return test_code
+        if n is None or n == 0:
+            return test_code
+        lines = test_code.splitlines()
+        preamble = []
+        check_idx = None
+        for idx, line in enumerate(lines):
+            if re.match(r"\s*def\s+check\s*\(candidate\)\s*:\s*", line):
+                check_idx = idx
+                break
+            preamble.append(line)
+        asserts = []
+        search_start = check_idx + 1 if check_idx is not None else 0
+        for line in lines[search_start:]:
+            s = line.strip()
+            if s.startswith("assert") and "candidate" in s:
+                asserts.append(s)
+        if not asserts:
+            return test_code
+        preamble_text = "\n".join(preamble).strip()
+        new_parts = []
+        if preamble_text:
+            new_parts.append(preamble_text)
+        new_parts.append("def check(candidate):")
+        selected = asserts[:n] if n > 0 else asserts[n:]
+        for a in selected:
+            new_parts.append(f"    {a}")
+        return "\n".join(new_parts) + "\n"
+
+    def _register_split(ds):
+        try:
+            for item in ds:
+                key = _normalize_prompt(item.get("prompt", ""))
+                if key and key not in context_map:
+                    tests_eval = item.get("test", "")
+                    tests_sandbox = (
+                        _make_sliced_assert_tests(tests_eval, sandbox_slice)
+                        if sandbox_slice is not None and sandbox_slice != 0
+                        else tests_eval
+                    )
+                    context_map[key] = {
+                        "entry_point": item.get("entry_point", ""),
+                        "tests_eval": tests_eval,
+                        "tests_sandbox": tests_sandbox,
+                    }
+        except Exception:
+            pass
+
+    if dataset is not None:
+        _register_split(dataset)
+
+    def _resolver(prompt: str):
+        return context_map.get(_normalize_prompt(prompt))
+
+    external_ctx.set_context_resolver(_resolver)
+
     formatters = build_prompt_formatters()
     prompt_lookup = build_prompt_lookup(dataset)
     reward_fn = make_prompt_reward_fn(prompt_lookup)
@@ -254,6 +336,30 @@ def main() -> None:
         or maac_cfg.get("critic_model_name_or_path")
         or model_name
     )
+    num_turns = maac_cfg.get("num_turns", 1)
+    discount = maac_cfg.get("discount", 0.9)
+
+    external_transition_fn = None
+    if num_turns > 1:
+        external_mode = external_cfg.get("mode", "level_feedback")
+        expert_model = external_cfg.get("expert_model", "deepseek-coder")
+
+        def external_transition_fn(
+            prompt,
+            agent_completions,
+            num_agents,
+            prompt_history_per_agent=None,
+            response_history_per_agent=None,
+        ):
+            return get_external_transition(
+                prompt=prompt,
+                agent_completions=agent_completions,
+                num_agents=num_agents,
+                expert_model=expert_model,
+                mode=external_mode,
+                prompt_history_per_agent=prompt_history_per_agent,
+                response_history_per_agent=response_history_per_agent,
+            )
 
     trainer = MAACTrainer(
         model=model_name,
@@ -261,6 +367,7 @@ def main() -> None:
         reward_func=reward_fn,
         formatters=formatters,
         metrics_callback=None,
+        external_transition=external_transition_fn,
         args=MAACConfig(
             output_dir=os.path.join(output_dir, "maac"),
             actor_learning_rate=maac_cfg.get("actor_learning_rate", 5e-6),
@@ -279,6 +386,8 @@ def main() -> None:
             num_agents=maac_cfg.get("num_agents", 2),
             num_return_sequences=num_generations,
             critic_model_name_or_path=critic_model,
+            num_turns=num_turns,
+            discount=discount,
         ),
         train_dataset=dataset,
         model_config={
@@ -290,7 +399,6 @@ def main() -> None:
         },
         wandb_config=_build_wandb_config(config, dataset_name, dataset_split, usable),
     )
-    _set_seed(int(config.get("seed", maac_cfg.get("seed", 42))))
     trainer.train()
 
     if config.get("output.save_final_model", False):
@@ -317,10 +425,12 @@ def _build_wandb_config(config: Config, dataset_name: str, dataset_split: str, s
             "dataset": {"name": dataset_name, "split": dataset_split, "size": size},
             "trainer": {
                 "num_generations": maac_section.get("num_generations", 1),
+                "num_turns": maac_section.get("num_turns", 1),
                 "max_new_tokens": maac_section.get("max_new_tokens", 256),
                 "temperature": maac_section.get("temperature"),
                 "top_p": maac_section.get("top_p"),
                 "top_k": maac_section.get("top_k"),
+                "discount": maac_section.get("discount", 0.9),
             },
         },
     }
