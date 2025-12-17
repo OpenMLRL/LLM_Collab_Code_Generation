@@ -1,0 +1,55 @@
+# model
+model:
+  name: "Qwen/Qwen2.5-Coder-3B"
+  type: "qwen"
+  temperature: 0.7
+  top_p: 0.9
+  max_length: 2048
+  tokenizer_kwargs:
+    trust_remote_code: true
+  model_kwargs:
+    trust_remote_code: true
+    torch_dtype: "bfloat16"
+
+# dataset
+dataset:
+  name: "CoMLRL/CoopHumanEval"
+  type: "coophumaneval"
+  split: "test[16:]"
+  size: 128
+
+# output
+output:
+  base_dir: "output"
+  verbose: false
+  save_final_model: false
+  save_path: "output/maac_final"
+
+# maac
+maac:
+  num_turns: 2  # two-agent, two-turn setup
+  num_train_epochs: 20
+  per_device_train_batch_size: 1
+  actor_learning_rate: 5.0e-6
+  critic_learning_rate: 5.0e-6
+  value_loss_coef: 0.6
+  rollout_buffer_size: 8
+  mini_batch_size: 4
+  ac_epochs: 1
+  num_generations: 1   # single generation by default
+  do_sample: false
+  max_new_tokens: 256
+  temperature: 0.6
+  top_p: 0.6
+  top_k: null
+  num_agents: 2
+  critic_model: null    # optional override, falls back to model.name
+  reward_shift: -4
+
+# wandb
+wandb:
+  project: "mlrl"
+  entity: "OpenMLRL"
+  name: "maac_coophumaneval_two_turn"
+  dir: "output"
+  tags: ["maac", "coophumaneval", "multi-agent", "turns_2"]
