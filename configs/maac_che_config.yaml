@@ -44,11 +44,11 @@ maac:
   top_k: null
   num_agents: 2
   critic_model: null    # optional override, falls back to model.name
-  reward_shift: -4
+  reward_shift: 0
 
 # wandb
 wandb:
-  project: "mlrl"
+  project: "comlrl"
   entity: "OpenMLRL"
   name: "maac_coophumaneval_two_turn"
   dir: "output"
