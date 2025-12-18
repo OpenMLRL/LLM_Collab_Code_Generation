@@ -32,7 +32,9 @@ external:
 
 # maac
 maac:
-  num_turns: 2  # two-agent, two-turn setup
+  num_turns: 2
+  critic_type: "v"
+  critic_target: "td0"
   num_train_epochs: 20
   per_device_train_batch_size: 1
   actor_learning_rate: 5.0e-6
@@ -41,24 +43,21 @@ maac:
   rollout_buffer_size: 8
   mini_batch_size: 4
   ac_epochs: 1
-  num_generations: 1   # single generation by default
+  num_generations: 1
   do_sample: false
   max_new_tokens: 256
   temperature: 0.6
   top_p: 0.6
   top_k: null
   num_agents: 2
-  critic_model: null    # optional override, falls back to model.name
+  critic_model: null
   reward_shift: 0
   discount: 0.9
-  # VRAM-saving options (no extra deps required)
-  # Note: full fine-tuning a 3B model with AdamW is still very VRAM-heavy.
   low_vram:
     enabled: false
     gradient_checkpointing: true
     disable_cache: true
     critic_value_head_only: true
-    share_critic_backbone_with_actor0: false
 
 # wandb
 wandb:

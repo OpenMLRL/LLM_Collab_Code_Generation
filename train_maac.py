@@ -159,13 +159,7 @@ def make_prompt_reward_fn(prompt_lookup: Dict[str, Dict[str, str]]):
 
 def _apply_low_vram_monkey_patches(trainer: MAACTrainer, low_vram_cfg: Dict[str, Any]):
     """
-    Best-effort VRAM reductions without extra deps (no bitsandbytes/peft).
-
-    Options (all optional, default False):
-      - gradient_checkpointing: enable checkpointing on actor/critic backbones
-      - disable_cache: set config.use_cache=False on actor/critic backbones
-      - critic_value_head_only: train critic value head only; detach critic backbone
-      - share_critic_backbone_with_actor0: reuse actor0 backbone for critic to save one model copy
+    Best-effort VRAM reductions without extra dependencies.
     """
     enabled = bool(low_vram_cfg.get("enabled", False))
     if not enabled:
@@ -174,9 +168,6 @@ def _apply_low_vram_monkey_patches(trainer: MAACTrainer, low_vram_cfg: Dict[str,
     disable_cache = bool(low_vram_cfg.get("disable_cache", True))
     gradient_ckpt = bool(low_vram_cfg.get("gradient_checkpointing", True))
     critic_value_head_only = bool(low_vram_cfg.get("critic_value_head_only", True))
-    share_critic_backbone = bool(
-        low_vram_cfg.get("share_critic_backbone_with_actor0", False)
-    )
 
     def _patch_backbone(backbone):
         cfg = getattr(backbone, "config", None)
@@ -199,21 +190,6 @@ def _apply_low_vram_monkey_patches(trainer: MAACTrainer, low_vram_cfg: Dict[str,
     critic_backbone = getattr(critic_wrapper, "model", None) if critic_wrapper else None
     if critic_backbone is not None:
         _patch_backbone(critic_backbone)
-
-    # Share critic backbone weights with actor0 to save VRAM (optional).
-    if share_critic_backbone and critic_wrapper is not None:
-        if not getattr(trainer, "actor_models", None):
-            raise ValueError("Cannot share critic backbone: no actor models found.")
-        actor0_backbone = trainer.actor_models[0].model
-        # Keep a reference to release the original backbone if possible.
-        old_backbone = critic_wrapper.model
-        critic_wrapper.model = actor0_backbone
-        try:
-            del old_backbone
-        except Exception:
-            pass
-        if torch.cuda.is_available():
-            torch.cuda.empty_cache()
 
     # Train only critic value head + detach critic backbone during critic forward.
     if critic_value_head_only and critic_wrapper is not None:
@@ -485,6 +461,8 @@ def main() -> None:
             critic_model_name_or_path=critic_model,
             num_turns=num_turns,
             discount=discount,
+            critic_type=maac_cfg.get("critic_type", "v"),
+            critic_target=maac_cfg.get("critic_target", "mc"),
         ),
         train_dataset=dataset,
         model_config={
