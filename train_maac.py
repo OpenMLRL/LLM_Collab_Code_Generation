@@ -13,6 +13,7 @@ from transformers import AutoTokenizer
 
 from config import Config, add_config_args, parse_overrides
 from comlrl.trainers.maac import MAACConfig, MAACTrainer
+from comlrl.utils.reward_processor import RewardProcessors
 from rewards.code_rewards import execution_reward_aux
 import external as external_ctx
 from external import get_external_transition
@@ -287,8 +288,7 @@ def main() -> None:
     slurm_job_id = os.environ.get("SLURM_JOB_ID", "no_job_id")
     output_dir = os.path.join(output_base_dir, f"maac_job_{slurm_job_id}")
     os.makedirs(output_dir, exist_ok=True)
-    if hasattr(config, "save"):
-        config.save(os.path.join(output_dir, "config.yaml"))
+    config_save_path = os.path.join(output_dir, "config.yaml")
 
     # ------------------------------------------------------------------ #
     # Tokenizer / dataset
@@ -311,6 +311,18 @@ def main() -> None:
     if output_verbose:
         print(f"Using model: {model_name}")
         print(f"Dataset: {dataset_name} split={dataset_split} size={usable}")
+
+    config.update(
+        {
+            "dataset": {
+                "type": dataset_type,
+                "split": dataset_split,
+                "size": usable,
+            }
+        }
+    )
+    if hasattr(config, "save"):
+        config.save(config_save_path)
 
     # ------------------------------------------------------------------ #
     # External context resolver (for multi-turn transitions)
@@ -396,6 +408,16 @@ def main() -> None:
     prompt_lookup = build_prompt_lookup(dataset)
     reward_fn = make_prompt_reward_fn(prompt_lookup)
 
+    reward_processor = None
+    shift_val = maac_cfg.get("reward_shift", None)
+    if shift_val is not None:
+        try:
+            shift_val_f = float(shift_val)
+        except (TypeError, ValueError):
+            shift_val_f = None
+        if shift_val_f is not None:
+            reward_processor = RewardProcessors.shift(value=shift_val_f)
+
     # ------------------------------------------------------------------ #
     # MAAC-specific config
     # ------------------------------------------------------------------ #
@@ -438,6 +460,7 @@ def main() -> None:
         model=model_name,
         tokenizer=tokenizer,
         reward_func=reward_fn,
+        reward_processor=reward_processor,
         formatters=formatters,
         metrics_callback=None,
         external_transition=external_transition_fn,
@@ -454,7 +477,7 @@ def main() -> None:
             top_p=top_p,
             top_k=top_k,
             do_sample=use_sampling,
-            num_train_epochs=maac_cfg.get("num_train_epochs", 20),
+            num_train_epochs=maac_cfg.get("num_train_epochs", 8),
             per_device_train_batch_size=maac_cfg.get("per_device_train_batch_size", 1),
             num_agents=maac_cfg.get("num_agents", 2),
             num_return_sequences=num_generations,
@@ -463,6 +486,9 @@ def main() -> None:
             discount=discount,
             critic_type=maac_cfg.get("critic_type", "v"),
             critic_target=maac_cfg.get("critic_target", "mc"),
+            early_termination_threshold=maac_cfg.get(
+                "early_termination_threshold", None
+            ),
         ),
         train_dataset=dataset,
         model_config={

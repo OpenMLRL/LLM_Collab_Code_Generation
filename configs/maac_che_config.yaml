@@ -35,7 +35,7 @@ maac:
   num_turns: 2
   critic_type: "v"
   critic_target: "td0"
-  num_train_epochs: 20
+  num_train_epochs: 8
   per_device_train_batch_size: 1
   actor_learning_rate: 5.0e-6
   critic_learning_rate: 5.0e-6
@@ -51,8 +51,9 @@ maac:
   top_k: null
   num_agents: 2
   critic_model: null
-  reward_shift: 0
+  reward_shift: -4
   discount: 0.9
+  early_termination_threshold: -0.2
   low_vram:
     enabled: false
     gradient_checkpointing: true
