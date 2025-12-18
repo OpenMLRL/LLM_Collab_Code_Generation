@@ -497,6 +497,7 @@ def _build_wandb_config(
                 "top_p": maac_section.get("top_p"),
                 "top_k": maac_section.get("top_k"),
                 "discount": maac_section.get("discount", 0.9),
+                "critic_type": maac_section.get("critic_type", "v"),
             },
         },
     }
