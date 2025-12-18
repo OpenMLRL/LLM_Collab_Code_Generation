@@ -433,7 +433,6 @@ def main() -> None:
             num_turns=num_turns,
             discount=discount,
             critic_type=maac_cfg.get("critic_type", "v"),
-            critic_target=maac_cfg.get("critic_target", "mc"),
             early_termination_threshold=maac_cfg.get(
                 "early_termination_threshold", None
             ),
