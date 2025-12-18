@@ -4,7 +4,6 @@ import random
 import re
 from pathlib import Path
 from typing import Any, Dict, List
-import types
 
 import torch
 import wandb
@@ -156,78 +155,6 @@ def make_prompt_reward_fn(prompt_lookup: Dict[str, Dict[str, str]]):
         )
 
     return _reward
-
-
-def _apply_low_vram_monkey_patches(trainer: MAACTrainer, low_vram_cfg: Dict[str, Any]):
-    """
-    Best-effort VRAM reductions without extra dependencies.
-    """
-    enabled = bool(low_vram_cfg.get("enabled", False))
-    if not enabled:
-        return
-
-    disable_cache = bool(low_vram_cfg.get("disable_cache", True))
-    gradient_ckpt = bool(low_vram_cfg.get("gradient_checkpointing", True))
-    critic_value_head_only = bool(low_vram_cfg.get("critic_value_head_only", True))
-
-    def _patch_backbone(backbone):
-        cfg = getattr(backbone, "config", None)
-        if disable_cache and cfg is not None and hasattr(cfg, "use_cache"):
-            cfg.use_cache = False
-        if gradient_ckpt and hasattr(backbone, "gradient_checkpointing_enable"):
-            try:
-                backbone.gradient_checkpointing_enable()
-            except Exception:
-                pass
-
-    # Actor backbones
-    for actor in getattr(trainer, "actor_models", []):
-        backbone = getattr(actor, "model", None)
-        if backbone is not None:
-            _patch_backbone(backbone)
-
-    # Critic backbone
-    critic_wrapper = getattr(trainer, "critic_model", None)
-    critic_backbone = getattr(critic_wrapper, "model", None) if critic_wrapper else None
-    if critic_backbone is not None:
-        _patch_backbone(critic_backbone)
-
-    # Train only critic value head + detach critic backbone during critic forward.
-    if critic_value_head_only and critic_wrapper is not None:
-        if critic_wrapper.value_head is None:
-            raise ValueError("critic_value_head_only requires a critic with value_head.")
-
-        # Replace critic optimizer to only track value head params (saves optimizer state VRAM).
-        trainer.critic_optimizer = torch.optim.AdamW(
-            critic_wrapper.value_head.parameters(),
-            lr=trainer.args.critic_learning_rate,
-            betas=(trainer.args.adam_beta1, trainer.args.adam_beta2),
-            eps=trainer.args.adam_epsilon,
-            weight_decay=trainer.args.weight_decay,
-        )
-
-        def _value_on_prompt_only_valuehead(self, model, sequences, attention_mask, prompt_len):
-            prompt_ids = sequences[:, :prompt_len]
-            prompt_mask = (
-                attention_mask[:, :prompt_len] if attention_mask is not None else None
-            )
-            # Detach backbone to avoid storing activations for backward.
-            with torch.no_grad():
-                outputs = model.model(
-                    input_ids=prompt_ids,
-                    attention_mask=prompt_mask,
-                    output_hidden_states=True,
-                    return_dict=True,
-                    use_cache=False,
-                )
-                hidden = outputs.hidden_states[-1]
-            values = model.value_head(hidden).squeeze(-1)
-            last_index = prompt_len - 1
-            return values[:, last_index]
-
-        trainer._value_on_prompt_only = types.MethodType(
-            _value_on_prompt_only_valuehead, trainer
-        )
 
 
 def main() -> None:
@@ -477,7 +404,7 @@ def main() -> None:
             top_p=top_p,
             top_k=top_k,
             do_sample=use_sampling,
-            num_train_epochs=maac_cfg.get("num_train_epochs", 8),
+            num_train_epochs=maac_cfg.get("num_train_epochs", 20),
             per_device_train_batch_size=maac_cfg.get("per_device_train_batch_size", 1),
             num_agents=maac_cfg.get("num_agents", 2),
             num_return_sequences=num_generations,
@@ -500,11 +427,6 @@ def main() -> None:
         },
         wandb_config=_build_wandb_config(config, dataset_name, dataset_split, usable),
     )
-    low_vram_cfg = maac_cfg.get("low_vram", {})
-    if isinstance(low_vram_cfg, bool):
-        low_vram_cfg = {"enabled": bool(low_vram_cfg)}
-    if isinstance(low_vram_cfg, dict):
-        _apply_low_vram_monkey_patches(trainer, low_vram_cfg)
     trainer.train()
 
     if config.get("output.save_final_model", False):
