@@ -15,8 +15,10 @@ model:
 dataset:
   name: "CoMLRL/CoopHumanEval"
   type: "coophumaneval"
-  split: "test[16:]"
+  train_split: "test[16:]"
+  eval_split: "test[:16]"
   size: 128
+  eval_size: 16
 
 # output
 output:
@@ -35,7 +37,7 @@ maac:
   num_turns: 2
   critic_type: "v"
   critic_target: "td0"
-  num_train_epochs: 20
+  num_train_epochs: 40
   per_device_train_batch_size: 1
   actor_learning_rate: 5.0e-6
   critic_learning_rate: 5.0e-6
@@ -54,6 +56,8 @@ maac:
   reward_shift: -4
   discount: 0.9
   early_termination_threshold: -0.2
+  eval_interval: 4
+  eval_num_samples: 4
 
 # wandb
 wandb:

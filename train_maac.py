@@ -187,8 +187,12 @@ def main() -> None:
     model_name = model_config.name
     dataset_name = config.get("dataset.name")
     dataset_type = config.get("dataset.type")
-    dataset_split = config.get("dataset.split", "train")
-    dataset_size = config.get("dataset.size")
+    train_split = config.get("dataset.train_split") or config.get(
+        "dataset.split", "train"
+    )
+    eval_split = config.get("dataset.eval_split")
+    train_size = config.get("dataset.size")
+    eval_size = config.get("dataset.eval_size")
     output_base_dir = config.get("output.base_dir", "output")
     output_verbose = config.get("output.verbose", False)
 
@@ -228,23 +232,36 @@ def main() -> None:
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
 
-    dataset = load_dataset(dataset_name, split=dataset_split)
-    if dataset_size is not None:
-        usable = min(int(dataset_size), len(dataset))
-        dataset = dataset.select(range(usable))
+    train_dataset = load_dataset(dataset_name, split=train_split)
+    if train_size is not None:
+        train_size = min(int(train_size), len(train_dataset))
+        train_dataset = train_dataset.select(range(train_size))
     else:
-        usable = len(dataset)
+        train_size = len(train_dataset)
+
+    eval_dataset = None
+    if eval_split:
+        eval_dataset = load_dataset(dataset_name, split=eval_split)
+        if eval_size is not None:
+            eval_size = min(int(eval_size), len(eval_dataset))
+            eval_dataset = eval_dataset.select(range(eval_size))
+        else:
+            eval_size = len(eval_dataset)
 
     if output_verbose:
         print(f"Using model: {model_name}")
-        print(f"Dataset: {dataset_name} split={dataset_split} size={usable}")
+        print(f"Train dataset: {dataset_name} split={train_split} size={train_size}")
+        if eval_dataset is not None:
+            print(f"Eval dataset: {dataset_name} split={eval_split} size={eval_size}")
 
     config.update(
         {
             "dataset": {
                 "type": dataset_type,
-                "split": dataset_split,
-                "size": usable,
+                "train_split": train_split,
+                "eval_split": eval_split,
+                "size": train_size,
+                "eval_size": eval_size,
             }
         }
     )
@@ -323,8 +340,10 @@ def main() -> None:
         except Exception:
             pass
 
-    if dataset is not None:
-        _register_split(dataset)
+    if train_dataset is not None:
+        _register_split(train_dataset)
+    if eval_dataset is not None:
+        _register_split(eval_dataset)
 
     def _resolver(prompt: str):
         return context_map.get(_normalize_prompt(prompt))
@@ -332,7 +351,9 @@ def main() -> None:
     external_ctx.set_context_resolver(_resolver)
 
     formatters = build_prompt_formatters()
-    prompt_lookup = build_prompt_lookup(dataset)
+    prompt_lookup = build_prompt_lookup(train_dataset)
+    if eval_dataset is not None:
+        prompt_lookup.update(build_prompt_lookup(eval_dataset))
     reward_fn = make_prompt_reward_fn(prompt_lookup)
 
     reward_processor = None
@@ -416,8 +437,11 @@ def main() -> None:
             early_termination_threshold=maac_cfg.get(
                 "early_termination_threshold", None
             ),
+            eval_interval=maac_cfg.get("eval_interval", 4),
+            eval_num_samples=maac_cfg.get("eval_num_samples", 4),
         ),
-        train_dataset=dataset,
+        train_dataset=train_dataset,
+        eval_dataset=eval_dataset,
         model_config={
             "tokenizer_kwargs": model_config.tokenizer_kwargs,
             "model_kwargs": model_config.model_kwargs,
@@ -425,7 +449,9 @@ def main() -> None:
                 "critic_model_kwargs", model_config.model_kwargs
             ),
         },
-        wandb_config=_build_wandb_config(config, dataset_name, dataset_split, usable),
+        wandb_config=_build_wandb_config(
+            config, dataset_name, train_split, eval_split, train_size, eval_size
+        ),
     )
     trainer.train()
 
@@ -439,7 +465,14 @@ def main() -> None:
         wandb.finish()
 
 
-def _build_wandb_config(config: Config, dataset_name: str, dataset_split: str, size: int):
+def _build_wandb_config(
+    config: Config,
+    dataset_name: str,
+    train_split: str,
+    eval_split: str,
+    train_size: int,
+    eval_size: int | None,
+):
     wandb_section = config.get_section("wandb") if hasattr(config, "get_section") else {}
     maac_section = config.get_section("maac") if hasattr(config, "get_section") else {}
     tags = wandb_section.get("tags", ["maac", dataset_name or "code", "turns_2"])
@@ -450,7 +483,13 @@ def _build_wandb_config(config: Config, dataset_name: str, dataset_split: str, s
         "dir": wandb_section.get("dir"),
         "tags": tags,
         "config_sections": {
-            "dataset": {"name": dataset_name, "split": dataset_split, "size": size},
+            "dataset": {
+                "name": dataset_name,
+                "train_split": train_split,
+                "eval_split": eval_split,
+                "train_size": train_size,
+                "eval_size": eval_size,
+            },
             "trainer": {
                 "num_generations": maac_section.get("num_generations", 1),
                 "num_turns": maac_section.get("num_turns", 1),
