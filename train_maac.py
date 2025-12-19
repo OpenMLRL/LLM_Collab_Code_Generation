@@ -419,7 +419,6 @@ def main() -> None:
             value_loss_coef=maac_cfg.get("value_loss_coef", 0.6),
             rollout_buffer_size=maac_cfg.get("rollout_buffer_size", 8),
             mini_batch_size=maac_cfg.get("mini_batch_size", 4),
-            ac_epochs=maac_cfg.get("ac_epochs", 1),
             max_new_tokens=maac_cfg.get("max_new_tokens", 256),
             temperature=temperature,
             top_p=top_p,

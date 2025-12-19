@@ -43,7 +43,6 @@ maac:
   value_loss_coef: 0.6
   rollout_buffer_size: 8
   mini_batch_size: 4
-  ac_epochs: 1
   num_generations: 1
   do_sample: false
   max_new_tokens: 256
