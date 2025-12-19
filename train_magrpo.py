@@ -238,7 +238,7 @@ def main():
     )
     num_turns = magrpo_config.get("num_turns", 1)
     is_multi_turn = num_turns > 1
-    output_verbose = config.get("output.verbose", True)
+    output_verbose = config.get("output.verbose", False)
     if output_verbose:
         print(f"Multi-turn training enabled: num_turns={num_turns}") if is_multi_turn else print(
             f"Single-turn training: num_turns={num_turns}"
