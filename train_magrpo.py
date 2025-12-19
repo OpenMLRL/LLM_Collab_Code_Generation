@@ -237,6 +237,7 @@ def main():
         config.get_section("magrpo") if hasattr(config, "get_section") else {}
     )
     num_turns = magrpo_config.get("num_turns", 1)
+    num_agents = magrpo_config.get("num_agents", 2)
     is_multi_turn = num_turns > 1
     output_verbose = config.get("output.verbose", False)
     if output_verbose:
@@ -402,7 +403,7 @@ def main():
     # ------------------------------------------------------------------
     magrpo_args = MAGRPOConfig(
         output_dir=output_dir,
-        num_agents=magrpo_config.get("num_agents", 2),  # Pass num_agents to the config
+        num_agents=num_agents,  # Pass num_agents to the config
         num_train_epochs=magrpo_config.get("num_train_epochs", 20),
         per_device_train_batch_size=magrpo_config.get("per_device_train_batch_size", 1),
         learning_rate=magrpo_config.get("learning_rate", 2e-5),
@@ -424,8 +425,8 @@ def main():
     # ------------------------------------------------------------------
     # Formatters, rewards, and logging
     # ------------------------------------------------------------------
-    formatters = get_formatters(dataset_type, config.get("magrpo.num_agents", 2))
-    reward_func = get_reward_function(dataset_type, config.get("magrpo.num_agents", 2))
+    formatters = get_formatters(dataset_type, num_agents)
+    reward_func = get_reward_function(dataset_type, num_agents)
     eval_logger, eval_aggregator = get_logger_and_aggregator(
         dataset_type, is_multi_turn
     )
@@ -489,8 +490,7 @@ def main():
     except Exception:
         pass
 
-    # Get num_agents from magrpo config (where it belongs for MAGRPO training)
-    num_agents = magrpo_config.get("num_agents", 2)
+    # Use num_agents from magrpo config (where it belongs for MAGRPO training)
     agents = [
         AutoModelForCausalLM.from_pretrained(
             model_name,
