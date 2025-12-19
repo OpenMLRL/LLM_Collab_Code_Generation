@@ -370,7 +370,15 @@ def main() -> None:
     # MAAC-specific config
     # ------------------------------------------------------------------ #
     num_generations = maac_cfg.get("num_generations", maac_cfg.get("num_return_sequences", 1))
-    use_sampling = maac_cfg.get("do_sample", num_generations > 1)
+    if "do_sample" in maac_cfg:
+        use_sampling = bool(maac_cfg.get("do_sample"))
+    else:
+        use_sampling = bool(
+            num_generations > 1
+            or "temperature" in maac_cfg
+            or "top_p" in maac_cfg
+            or "top_k" in maac_cfg
+        )
     top_k = maac_cfg.get("top_k")
     temperature = maac_cfg.get("temperature", model_config.temperature)
     top_p = maac_cfg.get("top_p", model_config.top_p)
