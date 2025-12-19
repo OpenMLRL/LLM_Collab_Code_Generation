@@ -61,6 +61,6 @@ maac:
 wandb:
   project: "comlrl"
   entity: "OpenMLRL"
-  name: "maac_coophumaneval_two_turn"
+  name: "maac_coophumaneval"
   dir: "output"
   tags: ["maac", "coophumaneval", "multi-agent", "turns_2"]
