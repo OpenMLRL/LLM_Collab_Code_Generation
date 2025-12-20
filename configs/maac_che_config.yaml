@@ -13,7 +13,7 @@ model:
 
 # dataset
 dataset:
-  name: "CoMLRL/CoopHumanEval"
+  name: "OpenMLRL/CoopHumanEval"
   type: "coophumaneval"
   train_split: "test[16:]"
   eval_split: "test[:16]"
