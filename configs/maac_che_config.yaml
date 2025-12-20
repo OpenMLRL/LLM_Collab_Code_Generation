@@ -17,8 +17,6 @@ dataset:
   type: "coophumaneval"
   train_split: "test[16:]"
   eval_split: "test[:16]"
-  size: 128
-  eval_size: 16
 
 # output
 output:
@@ -41,8 +39,8 @@ maac:
   actor_learning_rate: 5.0e-6
   critic_learning_rate: 5.0e-6
   value_loss_coef: 0.6
-  rollout_buffer_size: 8
-  mini_batch_size: 4
+  rollout_buffer_size: 4
+  mini_batch_size: 2
   num_generations: 1
   max_new_tokens: 256
   temperature: 0.6
