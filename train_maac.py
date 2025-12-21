@@ -371,7 +371,7 @@ def main() -> None:
     reward_fn = make_prompt_reward_fn(prompt_lookup)
 
     reward_processor = None
-    shift_val = maac_cfg.get("reward_shift", None)
+    shift_val = maac_cfg.get("reward_shift", -4)
     if shift_val is not None:
         try:
             shift_val_f = float(shift_val)
@@ -392,14 +392,14 @@ def main() -> None:
             or "top_k" in maac_cfg
         )
     top_k = maac_cfg.get("top_k")
-    temperature = maac_cfg.get("temperature", model_config.temperature)
-    top_p = maac_cfg.get("top_p", model_config.top_p)
+    temperature = maac_cfg.get("temperature", 0.6)
+    top_p = maac_cfg.get("top_p", 0.6)
     critic_model = (
         maac_cfg.get("critic_model")
         or maac_cfg.get("critic_model_name_or_path")
         or model_name
     )
-    num_turns = maac_cfg.get("num_turns", 1)
+    num_turns = maac_cfg.get("num_turns", 2)
     discount = maac_cfg.get("discount", 0.9)
 
     external_transition_fn = None
@@ -443,7 +443,7 @@ def main() -> None:
             top_p=top_p,
             top_k=top_k,
             do_sample=use_sampling,
-            num_train_epochs=maac_cfg.get("num_train_epochs", 20),
+            num_train_epochs=maac_cfg.get("num_train_epochs", 40),
             per_device_train_batch_size=maac_cfg.get("per_device_train_batch_size", 1),
             num_agents=maac_cfg.get("num_agents", 2),
             num_return_sequences=1,
@@ -452,9 +452,9 @@ def main() -> None:
             discount=discount,
             critic_type=maac_cfg.get("critic_type", "v"),
             early_termination_threshold=maac_cfg.get(
-                "early_termination_threshold", None
+                "early_termination_threshold", -0.2
             ),
-            eval_interval=maac_cfg.get("eval_interval", 4),
+            eval_interval=maac_cfg.get("eval_interval", 16),
             eval_num_samples=maac_cfg.get("eval_num_samples", 4),
         ),
         train_dataset=train_dataset,
@@ -512,10 +512,10 @@ def _build_wandb_config(
             },
             "output": output_section,
             "trainer": {
-                "num_turns": maac_section.get("num_turns", 1),
+                "num_turns": maac_section.get("num_turns", 2),
                 "max_new_tokens": maac_section.get("max_new_tokens", 256),
-                "temperature": maac_section.get("temperature"),
-                "top_p": maac_section.get("top_p"),
+                "temperature": maac_section.get("temperature", 0.6),
+                "top_p": maac_section.get("top_p", 0.6),
                 "top_k": maac_section.get("top_k"),
                 "discount": maac_section.get("discount", 0.9),
                 "critic_type": maac_section.get("critic_type", "v"),

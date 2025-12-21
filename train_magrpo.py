@@ -236,7 +236,7 @@ def main():
     magrpo_config = (
         config.get_section("magrpo") if hasattr(config, "get_section") else {}
     )
-    num_turns = magrpo_config.get("num_turns", 1)
+    num_turns = magrpo_config.get("num_turns", 2)
     num_agents = magrpo_config.get("num_agents", 2)
     is_multi_turn = num_turns > 1
     output_verbose = config.get("output.verbose", False)
@@ -295,8 +295,8 @@ def main():
                 f"Special tokens added: {model_config.special_tokens.get('additional_special_tokens', [])}"
             )
 
-    temperature = magrpo_config.get("temperature", model_config.temperature)
-    top_p = magrpo_config.get("top_p", model_config.top_p)
+    temperature = magrpo_config.get("temperature", 0.6)
+    top_p = magrpo_config.get("top_p", 0.6)
 
     # ------------------------------------------------------------------
     # Config: External transitions (mode, sandbox, expert model, context flags)
@@ -406,10 +406,10 @@ def main():
         num_agents=num_agents,  # Pass num_agents to the config
         num_train_epochs=magrpo_config.get("num_train_epochs", 20),
         per_device_train_batch_size=magrpo_config.get("per_device_train_batch_size", 1),
-        learning_rate=magrpo_config.get("learning_rate", 2e-5),
+        learning_rate=magrpo_config.get("learning_rate", 5e-6),
         logging_steps=magrpo_config.get("logging_steps", 50),
         save_steps=magrpo_config.get("save_steps", 200),
-        eval_interval=magrpo_config.get("eval_interval", 4),
+        eval_interval=magrpo_config.get("eval_interval", 16),
         eval_num_samples=magrpo_config.get("eval_num_samples", 4),
         num_generations=magrpo_config.get("num_generations", 4),
         max_new_tokens=magrpo_config.get("max_new_tokens", 256),
@@ -419,8 +419,8 @@ def main():
         num_turns=num_turns,
         discount=magrpo_config.get("discount", 0.9),
         joint_mode=magrpo_config.get("joint_mode", "aligned"),
-        termination_threshold=magrpo_config.get("termination_threshold", None),
-        rollout_buffer_size=magrpo_config.get("rollout_buffer_size", 1),
+        termination_threshold=magrpo_config.get("termination_threshold", -0.2),
+        rollout_buffer_size=magrpo_config.get("rollout_buffer_size", 2),
     )
 
     # ------------------------------------------------------------------
