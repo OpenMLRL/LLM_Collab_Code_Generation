@@ -350,6 +350,20 @@ def main() -> None:
 
     external_ctx.set_context_resolver(_resolver)
 
+    # Propagate verbosity to reward/external modules
+    try:
+        import rewards.code_rewards as code_rewards
+
+        code_rewards.VERBOSE = bool(output_verbose)
+    except Exception:
+        pass
+    try:
+        import external as external_mod
+
+        external_mod.VERBOSE = bool(output_verbose)
+    except Exception:
+        pass
+
     formatters = build_prompt_formatters()
     prompt_lookup = build_prompt_lookup(train_dataset)
     if eval_dataset is not None:
