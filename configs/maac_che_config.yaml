@@ -39,7 +39,7 @@ maac:
   actor_learning_rate: 5.0e-6
   critic_learning_rate: 5.0e-6
   value_loss_coef: 0.6
-  rollout_buffer_size: 16
+  rollout_buffer_size: 8
   max_new_tokens: 256
   temperature: 0.6
   top_p: 0.6
