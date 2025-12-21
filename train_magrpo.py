@@ -421,9 +421,6 @@ def main():
         joint_mode=magrpo_config.get("joint_mode", "aligned"),
         termination_threshold=magrpo_config.get("termination_threshold", None),
         rollout_buffer_size=magrpo_config.get("rollout_buffer_size", 1),
-        mini_batch_size=magrpo_config.get(
-            "mini_batch_size", magrpo_config.get("rollout_buffer_size", 1)
-        ),
     )
 
     # ------------------------------------------------------------------

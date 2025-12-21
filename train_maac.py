@@ -369,13 +369,11 @@ def main() -> None:
     # ------------------------------------------------------------------ #
     # MAAC-specific config
     # ------------------------------------------------------------------ #
-    num_generations = maac_cfg.get("num_generations", maac_cfg.get("num_return_sequences", 1))
     if "do_sample" in maac_cfg:
         use_sampling = bool(maac_cfg.get("do_sample"))
     else:
         use_sampling = bool(
-            num_generations > 1
-            or "temperature" in maac_cfg
+            "temperature" in maac_cfg
             or "top_p" in maac_cfg
             or "top_k" in maac_cfg
         )
@@ -426,7 +424,6 @@ def main() -> None:
             critic_learning_rate=maac_cfg.get("critic_learning_rate", 5e-6),
             value_loss_coef=maac_cfg.get("value_loss_coef", 0.6),
             rollout_buffer_size=maac_cfg.get("rollout_buffer_size", 8),
-            mini_batch_size=maac_cfg.get("mini_batch_size", 4),
             max_new_tokens=maac_cfg.get("max_new_tokens", 256),
             temperature=temperature,
             top_p=top_p,
@@ -435,7 +432,7 @@ def main() -> None:
             num_train_epochs=maac_cfg.get("num_train_epochs", 20),
             per_device_train_batch_size=maac_cfg.get("per_device_train_batch_size", 1),
             num_agents=maac_cfg.get("num_agents", 2),
-            num_return_sequences=num_generations,
+            num_return_sequences=1,
             critic_model_name_or_path=critic_model,
             num_turns=num_turns,
             discount=discount,
@@ -497,7 +494,6 @@ def _build_wandb_config(
                 "eval_size": eval_size,
             },
             "trainer": {
-                "num_generations": maac_section.get("num_generations", 1),
                 "num_turns": maac_section.get("num_turns", 1),
                 "max_new_tokens": maac_section.get("max_new_tokens", 256),
                 "temperature": maac_section.get("temperature"),
