@@ -478,6 +478,9 @@ def _build_wandb_config(
 ):
     wandb_section = config.get_section("wandb") if hasattr(config, "get_section") else {}
     maac_section = config.get_section("maac") if hasattr(config, "get_section") else {}
+    output_section = (
+        config.get_section("output") if hasattr(config, "get_section") else {}
+    )
     tags = wandb_section.get("tags", ["maac", dataset_name or "code", "turns_2"])
     return {
         "project": wandb_section.get("project", "maac"),
@@ -493,6 +496,7 @@ def _build_wandb_config(
                 "train_size": train_size,
                 "eval_size": eval_size,
             },
+            "output": output_section,
             "trainer": {
                 "num_turns": maac_section.get("num_turns", 1),
                 "max_new_tokens": maac_section.get("max_new_tokens", 256),
