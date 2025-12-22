@@ -6,6 +6,7 @@ Supports multiple datasets and configurations via YAML files.
 
 import argparse
 import os
+import random
 import re
 import sys
 
@@ -15,6 +16,7 @@ from typing import Any, Dict
 
 from config import Config, add_config_args, parse_overrides
 from datasets import load_dataset
+import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
 # Single-turn code logger no longer used directly; multi-turn logger handles all cases
@@ -38,6 +40,12 @@ def extract_function_params_from_prompt(prompt_text):
         params = [p.strip() for p in params_str.split(",") if p.strip()]
         return params
     return []
+
+
+def _set_seed(seed: int) -> None:
+    random.seed(seed)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
 
 
 def aux_function_formatter(example: Dict[str, Any]) -> str:
@@ -236,6 +244,7 @@ def main():
     magrpo_config = (
         config.get_section("magrpo") if hasattr(config, "get_section") else {}
     )
+    seed_value = int(config.get("seed", magrpo_config.get("seed", 42)))
     num_turns = magrpo_config.get("num_turns", 2)
     num_agents = magrpo_config.get("num_agents", 2)
     is_multi_turn = num_turns > 1
@@ -258,6 +267,8 @@ def main():
     if hasattr(config, "save"):
         config_save_path = os.path.join(output_dir, "config.yaml")
         config.save(config_save_path)
+
+    _set_seed(seed_value)
 
     train_dataset = None
     eval_dataset = None
