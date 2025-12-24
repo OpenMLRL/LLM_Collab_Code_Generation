@@ -412,27 +412,36 @@ def main():
     # ------------------------------------------------------------------
     # Build training args
     # ------------------------------------------------------------------
-    magrpo_args = MAGRPOConfig(
-        output_dir=output_dir,
-        num_agents=num_agents,  # Pass num_agents to the config
-        num_train_epochs=magrpo_config.get("num_train_epochs", 20),
-        per_device_train_batch_size=magrpo_config.get("per_device_train_batch_size", 1),
-        learning_rate=magrpo_config.get("learning_rate", 5e-6),
-        logging_steps=magrpo_config.get("logging_steps", 50),
-        save_steps=magrpo_config.get("save_steps", 200),
-        eval_interval=magrpo_config.get("eval_interval", 16),
-        eval_num_samples=magrpo_config.get("eval_num_samples", 4),
-        num_generations=magrpo_config.get("num_generations", 4),
-        max_new_tokens=magrpo_config.get("max_new_tokens", 256),
-        temperature=temperature,
-        top_p=top_p,
+    magrpo_args_kwargs = {
+        "output_dir": output_dir,
+        "num_agents": num_agents,  # Pass num_agents to the config
+        "num_train_epochs": magrpo_config.get("num_train_epochs", 20),
+        "per_device_train_batch_size": magrpo_config.get(
+            "per_device_train_batch_size", 1
+        ),
+        "learning_rate": magrpo_config.get("learning_rate", 5e-6),
+        "logging_steps": magrpo_config.get("logging_steps", 50),
+        "save_steps": magrpo_config.get("save_steps", 200),
+        "eval_interval": magrpo_config.get("eval_interval", 16),
+        "eval_num_samples": magrpo_config.get("eval_num_samples", 4),
+        "num_generations": magrpo_config.get("num_generations", 4),
+        "max_new_tokens": magrpo_config.get("max_new_tokens", 256),
+        "temperature": temperature,
+        "top_p": top_p,
         # Multi-turn parameters (automatically handled based on num_turns)
-        num_turns=num_turns,
-        discount=magrpo_config.get("discount", 0.9),
-        joint_mode=magrpo_config.get("joint_mode", "aligned"),
-        termination_threshold=magrpo_config.get("termination_threshold", -0.2),
-        rollout_buffer_size=magrpo_config.get("rollout_buffer_size", 2),
-    )
+        "num_turns": num_turns,
+        "discount": magrpo_config.get("discount", 0.9),
+        "joint_mode": magrpo_config.get("joint_mode", "aligned"),
+        "termination_threshold": magrpo_config.get("termination_threshold", -0.2),
+        "rollout_buffer_size": magrpo_config.get("rollout_buffer_size", 2),
+    }
+    if "top_k" in magrpo_config:
+        magrpo_args_kwargs["top_k"] = magrpo_config.get("top_k")
+    if "external_prompt_passthrough" in magrpo_config:
+        magrpo_args_kwargs["external_prompt_passthrough"] = magrpo_config.get(
+            "external_prompt_passthrough"
+        )
+    magrpo_args = MAGRPOConfig(**magrpo_args_kwargs)
 
     # ------------------------------------------------------------------
     # Formatters, rewards, and logging

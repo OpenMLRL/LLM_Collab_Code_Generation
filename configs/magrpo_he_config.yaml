@@ -32,6 +32,7 @@ external:
 # magrpo
 magrpo:
   num_turns: 2
+  external_prompt_passthrough: true
   num_train_epochs: 6
   per_device_train_batch_size: 1
   learning_rate: 2.0e-5
@@ -41,6 +42,7 @@ magrpo:
   eval_num_samples: 4
   num_generations: 4
   max_new_tokens: 256
+  top_k: null
   joint_mode: aligned
   num_agents: 2
   discount: 0.9
