@@ -1,7 +1,6 @@
 from typing import Any, Callable, Dict, List, Tuple, Union, Optional
 
 # Mode implementations live alongside this file
-from . import expert_edits
 from . import level_feedback
 from . import plain
 import builtins
@@ -93,6 +92,13 @@ def get_external_transition(
         response_history_per_agent = [[] for _ in range(int(num_agents))]
 
     if mode == "expert_edits":
+        try:
+            from . import expert_edits
+        except Exception as exc:
+            raise ImportError(
+                "external.mode=expert_edits requires optional dependencies (anthropic/openai). "
+                "Install them or switch to external.mode=level_feedback/plain."
+            ) from exc
         if int(num_agents) == 1:
             main_comp = agent_completions[0]
             aux_comp = ""  # isolate aux in single-agent mode
