@@ -49,7 +49,7 @@ maac:
   reward_shift: -4
   discount: 0.9
   early_termination_threshold: -0.2
-  eval_interval: 16
+  eval_interval: 80
   eval_num_samples: 4
 
 # wandb
