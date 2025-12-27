@@ -31,11 +31,9 @@ iac:
   num_train_epochs: 80
   per_device_train_batch_size: 1
   actor_learning_rate: 5.0e-6
-  critic_learning_rate: 4.0e-6
+  critic_learning_rate: 5.0e-6
   value_loss_coef: 0.6
   rollout_buffer_size: 4
-  mini_batch_size: 4
-  ac_epochs: 1
   max_new_tokens: 256
   temperature: 0.6
   top_p: 0.6
@@ -47,8 +45,6 @@ iac:
   reward_shift: -4
   value_clip_range: 0.2
   entropy_coef: 0.0
-  advantage_normalization: true
-  reward_norm_eps: 1.0e-3
 
 # wandb
 wandb:

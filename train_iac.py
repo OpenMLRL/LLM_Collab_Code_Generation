@@ -308,7 +308,6 @@ def main() -> None:
     )
 
     rollout_buffer_size = iac_cfg.get("rollout_buffer_size", 8)
-    mini_batch_size = iac_cfg.get("mini_batch_size", rollout_buffer_size)
 
     trainer = IACTrainer(
         model=model_name,
@@ -323,8 +322,6 @@ def main() -> None:
             critic_learning_rate=iac_cfg.get("critic_learning_rate", 5e-6),
             value_loss_coef=iac_cfg.get("value_loss_coef", 0.6),
             rollout_buffer_size=rollout_buffer_size,
-            mini_batch_size=mini_batch_size,
-            ac_epochs=iac_cfg.get("ac_epochs", 1),
             max_new_tokens=iac_cfg.get("max_new_tokens", 256),
             temperature=temperature,
             top_p=top_p,
@@ -340,8 +337,6 @@ def main() -> None:
             value_head_hidden_dim=iac_cfg.get("value_head_hidden_dim"),
             value_clip_range=iac_cfg.get("value_clip_range", 0.2),
             entropy_coef=iac_cfg.get("entropy_coef", 0.0),
-            advantage_normalization=iac_cfg.get("advantage_normalization", True),
-            reward_norm_eps=iac_cfg.get("reward_norm_eps", 1e-3),
             num_turns=iac_cfg.get("num_turns", 1),
         ),
         train_dataset=train_dataset,
