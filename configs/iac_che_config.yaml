@@ -43,6 +43,8 @@ iac:
   use_separate_critic: true
   critic_model: null
   reward_shift: -4
+  eval_interval: 40
+  eval_num_samples: 4
   value_clip_range: 0.2
   entropy_coef: 0.0
 

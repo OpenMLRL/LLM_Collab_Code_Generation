@@ -338,6 +338,8 @@ def main() -> None:
             value_clip_range=iac_cfg.get("value_clip_range", 0.2),
             entropy_coef=iac_cfg.get("entropy_coef", 0.0),
             num_turns=iac_cfg.get("num_turns", 1),
+            eval_interval=iac_cfg.get("eval_interval", 16),
+            eval_num_samples=iac_cfg.get("eval_num_samples", 4),
         ),
         train_dataset=train_dataset,
         eval_dataset=eval_dataset,
