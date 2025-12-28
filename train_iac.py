@@ -14,6 +14,8 @@ from config import Config, add_config_args, parse_overrides
 from comlrl.trainers.iac import IACConfig, IACTrainer
 from comlrl.utils.reward_processor import RewardProcessors
 from rewards.code_rewards import execution_reward_aux
+import external as external_ctx
+from external import get_external_transition
 
 
 def extract_function_params_from_prompt(prompt_text: str) -> List[str]:
@@ -266,11 +268,100 @@ def main() -> None:
     if hasattr(config, "save"):
         config.save(config_save_path)
 
+    # ------------------------------------------------------------------ #
+    # External context resolver (for multi-turn transitions)
+    # ------------------------------------------------------------------ #
+    external_cfg = config.get_section("external") if hasattr(config, "get_section") else {}
+
+    def _normalize_prompt(p: str) -> str:
+        return " ".join((p or "").split()).strip()
+
+    context_map = {}
+    _sandbox_val = external_cfg.get("sandbox_slice", 1)
+    if isinstance(_sandbox_val, str):
+        _sv = _sandbox_val.strip().lower()
+        if _sv == "all":
+            sandbox_slice = 0
+        elif _sv.lstrip("-").isdigit():
+            sandbox_slice = int(_sv)
+        else:
+            sandbox_slice = None
+    elif isinstance(_sandbox_val, int):
+        sandbox_slice = _sandbox_val
+    else:
+        sandbox_slice = None if _sandbox_val is None else 0
+
+    def _make_sliced_assert_tests(test_code: str, n: int) -> str:
+        if not isinstance(test_code, str) or not test_code.strip():
+            return test_code
+        if n is None or n == 0:
+            return test_code
+        lines = test_code.splitlines()
+        preamble = []
+        check_idx = None
+        for idx, line in enumerate(lines):
+            if re.match(r"\s*def\s+check\s*\(candidate\)\s*:\s*", line):
+                check_idx = idx
+                break
+            preamble.append(line)
+        asserts = []
+        search_start = check_idx + 1 if check_idx is not None else 0
+        for line in lines[search_start:]:
+            s = line.strip()
+            if s.startswith("assert") and "candidate" in s:
+                asserts.append(s)
+        if not asserts:
+            return test_code
+        preamble_text = "\n".join(preamble).strip()
+        new_parts = []
+        if preamble_text:
+            new_parts.append(preamble_text)
+        new_parts.append("def check(candidate):")
+        selected = asserts[:n] if n > 0 else asserts[n:]
+        for a in selected:
+            new_parts.append(f"    {a}")
+        return "\n".join(new_parts) + "\n"
+
+    def _register_split(ds):
+        try:
+            for item in ds:
+                key = _normalize_prompt(item.get("prompt", ""))
+                if key and key not in context_map:
+                    tests_eval = item.get("test", "")
+                    tests_sandbox = (
+                        _make_sliced_assert_tests(tests_eval, sandbox_slice)
+                        if sandbox_slice is not None and sandbox_slice != 0
+                        else tests_eval
+                    )
+                    context_map[key] = {
+                        "entry_point": item.get("entry_point", ""),
+                        "tests_eval": tests_eval,
+                        "tests_sandbox": tests_sandbox,
+                    }
+        except Exception:
+            pass
+
+    if train_dataset is not None:
+        _register_split(train_dataset)
+    if eval_dataset is not None:
+        _register_split(eval_dataset)
+
+    def _resolver(prompt: str):
+        return context_map.get(_normalize_prompt(prompt))
+
+    external_ctx.set_context_resolver(_resolver)
+
     # Propagate verbosity to reward modules
     try:
         import rewards.code_rewards as code_rewards
 
         code_rewards.VERBOSE = bool(output_verbose)
+    except Exception:
+        pass
+    try:
+        import external as external_mod
+
+        external_mod.VERBOSE = bool(output_verbose)
     except Exception:
         pass
 
@@ -306,8 +397,31 @@ def main() -> None:
     critic_model = (
         iac_cfg.get("critic_model") or iac_cfg.get("critic_model_name_or_path")
     )
+    num_turns = iac_cfg.get("num_turns", 1)
 
     rollout_buffer_size = iac_cfg.get("rollout_buffer_size", 8)
+
+    external_transition_fn = None
+    if num_turns > 1:
+        external_mode = external_cfg.get("mode", "level_feedback")
+        expert_model = external_cfg.get("expert_model", "deepseek-coder")
+
+        def external_transition_fn(
+            prompt,
+            agent_completions,
+            num_agents,
+            prompt_history_per_agent=None,
+            response_history_per_agent=None,
+        ):
+            return get_external_transition(
+                prompt=prompt,
+                agent_completions=agent_completions,
+                num_agents=num_agents,
+                expert_model=expert_model,
+                mode=external_mode,
+                prompt_history_per_agent=prompt_history_per_agent,
+                response_history_per_agent=response_history_per_agent,
+            )
 
     trainer = IACTrainer(
         model=model_name,
@@ -316,6 +430,7 @@ def main() -> None:
         reward_processor=reward_processor,
         formatters=formatters,
         metrics_callback=None,
+        external_transition=external_transition_fn,
         args=IACConfig(
             output_dir=os.path.join(output_dir, "iac"),
             actor_learning_rate=iac_cfg.get("actor_learning_rate", 5e-6),
@@ -337,9 +452,13 @@ def main() -> None:
             value_head_hidden_dim=iac_cfg.get("value_head_hidden_dim"),
             value_clip_range=iac_cfg.get("value_clip_range", 0.2),
             entropy_coef=iac_cfg.get("entropy_coef", 0.0),
-            num_turns=iac_cfg.get("num_turns", 1),
+            num_turns=num_turns,
+            discount=iac_cfg.get("discount", 0.9),
             eval_interval=iac_cfg.get("eval_interval", 16),
             eval_num_samples=iac_cfg.get("eval_num_samples", 4),
+            early_termination_threshold=iac_cfg.get(
+                "early_termination_threshold", -0.2
+            ),
         ),
         train_dataset=train_dataset,
         eval_dataset=eval_dataset,

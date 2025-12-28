@@ -27,7 +27,7 @@ output:
 
 # iac
 iac:
-  num_turns: 1
+  num_turns: 2
   num_train_epochs: 80
   per_device_train_batch_size: 1
   actor_learning_rate: 5.0e-6
@@ -43,10 +43,17 @@ iac:
   use_separate_critic: true
   critic_model: null
   reward_shift: -4
+  discount: 0.9
+  early_termination_threshold: -0.2
   eval_interval: 40
   eval_num_samples: 4
   value_clip_range: 0.2
   entropy_coef: 0.0
+
+# external
+external:
+  mode: "level_feedback"
+  sandbox_slice: 1
 
 # wandb
 wandb:
@@ -54,4 +61,4 @@ wandb:
   entity: "OpenMLRL"
   name: "iac_coophumaneval"
   dir: "output"
-  tags: ["iac", "coophumaneval", "multi-agent", "turns_1"]
+  tags: ["iac", "coophumaneval", "multi-agent", "turns_2"]
