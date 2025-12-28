@@ -181,6 +181,7 @@ def main() -> None:
             num_train_epochs=args.num_train_epochs,
             num_agents=2,
             num_return_sequences=args.num_generations,
+            num_turns=1,
         ),
         train_dataset=dataset,
         wandb_config={

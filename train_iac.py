@@ -393,7 +393,7 @@ def main() -> None:
     top_k = iac_cfg.get("top_k")
     temperature = iac_cfg.get("temperature", 0.6)
     top_p = iac_cfg.get("top_p", 0.6)
-    use_separate_critic = bool(iac_cfg.get("use_separate_critic", False))
+    use_separate_critic = bool(iac_cfg.get("use_separate_critic", True))
     critic_model = (
         iac_cfg.get("critic_model") or iac_cfg.get("critic_model_name_or_path")
     )
