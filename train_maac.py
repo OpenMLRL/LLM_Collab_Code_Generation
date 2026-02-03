@@ -164,9 +164,7 @@ def main() -> None:
     add_config_args(parser)
     args = parser.parse_args()
 
-    # ------------------------------------------------------------------ #
     # Config: load YAML and apply overrides
-    # ------------------------------------------------------------------ #
     if args.config:
         config = Config(args.config)
     else:
@@ -180,9 +178,7 @@ def main() -> None:
         overrides = parse_overrides(args.override)
         config.update(overrides)
 
-    # ------------------------------------------------------------------ #
     # Config: model, dataset, output
-    # ------------------------------------------------------------------ #
     model_config = config.get_model_config()
     model_name = model_config.name
     dataset_name = config.get("dataset.name")
@@ -207,23 +203,17 @@ def main() -> None:
     if dataset_type is None:
         raise ValueError("dataset.type must be specified or inferrable from dataset.name")
 
-    # ------------------------------------------------------------------ #
     # MAAC-specific config (needed early for seed)
-    # ------------------------------------------------------------------ #
     maac_cfg = config.get_section("maac") if hasattr(config, "get_section") else {}
     seed_value = int(config.get("seed", maac_cfg.get("seed", 42)))
 
-    # ------------------------------------------------------------------ #
     # Output directory handling
-    # ------------------------------------------------------------------ #
     slurm_job_id = os.environ.get("SLURM_JOB_ID", "no_job_id")
     output_dir = os.path.join(output_base_dir, f"maac_job_{slurm_job_id}")
     os.makedirs(output_dir, exist_ok=True)
     config_save_path = os.path.join(output_dir, "config.yaml")
 
-    # ------------------------------------------------------------------ #
     # Tokenizer / dataset
-    # ------------------------------------------------------------------ #
     _set_seed(seed_value)
 
     tokenizer = AutoTokenizer.from_pretrained(
@@ -268,9 +258,7 @@ def main() -> None:
     if hasattr(config, "save"):
         config.save(config_save_path)
 
-    # ------------------------------------------------------------------ #
     # External context resolver (for multi-turn transitions)
-    # ------------------------------------------------------------------ #
     external_cfg = config.get_section("external") if hasattr(config, "get_section") else {}
     def _normalize_prompt(p: str) -> str:
         return " ".join((p or "").split()).strip()
@@ -369,9 +357,7 @@ def main() -> None:
         if shift_val_f is not None:
             reward_processor = RewardProcessors.shift(value=shift_val_f)
 
-    # ------------------------------------------------------------------ #
     # MAAC-specific config
-    # ------------------------------------------------------------------ #
     if "do_sample" in maac_cfg:
         use_sampling = bool(maac_cfg.get("do_sample"))
     else:
@@ -496,7 +482,7 @@ def _build_wandb_config(
     wandb_name = (
         wandb_section.get("name")
         or wandb_section.get("run_name")
-        or f\"{(dataset_type or dataset_name)}-maac\"
+        or f"{(dataset_type or dataset_name)}-maac"
     )
     return {
         "project": wandb_section.get("project", "maac"),
