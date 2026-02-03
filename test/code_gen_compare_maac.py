@@ -214,7 +214,7 @@ def main() -> None:
             do_sample=use_sampling,
             num_train_epochs=args.num_train_epochs,
             num_agents=2,
-            num_return_sequences=args.num_generations,
+            num_generations=args.num_generations,
             critic_model_name_or_path=args.critic_model or args.model_name,
         ),
         train_dataset=dataset,

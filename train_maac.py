@@ -194,7 +194,7 @@ def main() -> None:
     train_size = config.get("dataset.size")
     eval_size = config.get("dataset.eval_size")
     output_base_dir = config.get("output.base_dir", "output")
-    output_verbose = config.get("output.verbose", False)
+    output_verbose = bool(config.get("output.verbose", False))
 
     # Try to infer dataset type if missing
     if dataset_type is None and dataset_name:
@@ -322,24 +322,20 @@ def main() -> None:
         return "\n".join(new_parts) + "\n"
 
     def _register_split(ds):
-        try:
-            for item in ds:
-                key = _normalize_prompt(item.get("prompt", ""))
-                if key and key not in context_map:
-                    tests_eval = item.get("test", "")
-                    tests_sandbox = (
-                        _make_sliced_assert_tests(tests_eval, sandbox_slice)
-                        if sandbox_slice is not None and sandbox_slice != 0
-                        else tests_eval
-                    )
-                    context_map[key] = {
-                        "entry_point": item.get("entry_point", ""),
-                        "tests_eval": tests_eval,
-                        "tests_sandbox": tests_sandbox,
-                    }
-        except Exception:
-            pass
-
+        for item in ds:
+            key = _normalize_prompt(item.get("prompt", ""))
+            if key and key not in context_map:
+                tests_eval = item.get("test", "")
+                tests_sandbox = (
+                    _make_sliced_assert_tests(tests_eval, sandbox_slice)
+                    if sandbox_slice is not None and sandbox_slice != 0
+                    else tests_eval
+                )
+                context_map[key] = {
+                    "entry_point": item.get("entry_point", ""),
+                    "tests_eval": tests_eval,
+                    "tests_sandbox": tests_sandbox,
+                }
     if train_dataset is not None:
         _register_split(train_dataset)
     if eval_dataset is not None:
@@ -351,19 +347,12 @@ def main() -> None:
     external_ctx.set_context_resolver(_resolver)
 
     # Propagate verbosity to reward/external modules
-    try:
-        import rewards.code_rewards as code_rewards
+    import rewards.code_rewards as code_rewards
 
-        code_rewards.VERBOSE = bool(output_verbose)
-    except Exception:
-        pass
-    try:
-        import external as external_mod
+    code_rewards.VERBOSE = bool(output_verbose)
+    import external as external_mod
 
-        external_mod.VERBOSE = bool(output_verbose)
-    except Exception:
-        pass
-
+    external_mod.VERBOSE = bool(output_verbose)
     formatters = build_prompt_formatters()
     prompt_lookup = build_prompt_lookup(train_dataset)
     if eval_dataset is not None:
@@ -434,6 +423,8 @@ def main() -> None:
         external_transition=external_transition_fn,
         args=MAACConfig(
             output_dir=os.path.join(output_dir, "maac"),
+            num_turns=num_turns,
+            num_train_epochs=maac_cfg.get("num_train_epochs", 40),
             actor_learning_rate=maac_cfg.get("actor_learning_rate", 5e-6),
             critic_learning_rate=maac_cfg.get("critic_learning_rate", 5e-6),
             value_loss_coef=maac_cfg.get("value_loss_coef", 0.6),
@@ -443,12 +434,9 @@ def main() -> None:
             top_p=top_p,
             top_k=top_k,
             do_sample=use_sampling,
-            num_train_epochs=maac_cfg.get("num_train_epochs", 40),
-            per_device_train_batch_size=maac_cfg.get("per_device_train_batch_size", 1),
             num_agents=maac_cfg.get("num_agents", 2),
-            num_return_sequences=1,
+            num_generations=maac_cfg.get("num_generations", 1),
             critic_model_name_or_path=critic_model,
-            num_turns=num_turns,
             discount=discount,
             critic_type=maac_cfg.get("critic_type", "v"),
             early_termination_threshold=maac_cfg.get(
@@ -471,6 +459,7 @@ def main() -> None:
             config, dataset_name, train_split, eval_split, train_size, eval_size
         ),
     )
+    trainer.verbose = bool(output_verbose)
     trainer.train()
 
     if config.get("output.save_final_model", False):

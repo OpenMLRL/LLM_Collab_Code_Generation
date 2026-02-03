@@ -180,7 +180,7 @@ def main() -> None:
             do_sample=use_sampling,
             num_train_epochs=args.num_train_epochs,
             num_agents=2,
-            num_return_sequences=args.num_generations,
+            num_generations=args.num_generations,
             num_turns=1,
         ),
         train_dataset=dataset,

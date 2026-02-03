@@ -144,10 +144,7 @@ def main():
     
 
     args = parser.parse_args()
-
-    # ------------------------------------------------------------------
     # Config: load YAML and apply overrides
-    # ------------------------------------------------------------------
     if args.config:
         config = Config(args.config)
     else:
@@ -160,10 +157,7 @@ def main():
     if args.override:
         overrides = parse_overrides(args.override)
         config.update(overrides)
-
-    # ------------------------------------------------------------------
     # Config: model, dataset, output
-    # ------------------------------------------------------------------
     model_config = config.get_model_config()
     model_name = model_config.name
     dataset_name = config.get("dataset.name")
@@ -185,21 +179,16 @@ def main():
         print(f"Dataset type not specified, inferred as: {dataset_type}")
     train_split = config.get("dataset.train_split")
     eval_split = config.get("dataset.eval_split")
-
-    # ------------------------------------------------------------------
-    # Config: GRPO training params and verbosity
-    # ------------------------------------------------------------------
     grpo_config = config.get_section("grpo") if hasattr(config, "get_section") else {}
     num_turns = grpo_config.get("num_turns", 1)
     is_multi_turn = num_turns > 1
-    output_verbose = config.get("output.verbose", True)
+    output_verbose = bool(config.get("output.verbose", False))
     if output_verbose:
         print(f"Multi-turn GRPO enabled: num_turns={num_turns}") if is_multi_turn else print(
             f"Single-turn GRPO: num_turns={num_turns}"
         )
 
     slurm_job_id = os.environ.get("SLURM_JOB_ID", "no_job_id")
-    # Use different output directory prefix for multi-turn for clarity
     if is_multi_turn:
         output_dir = os.path.join(output_base_dir, f"mt_job_{slurm_job_id}")
     else:
@@ -256,10 +245,7 @@ def main():
     temperature = grpo_config.get("temperature", model_config.temperature)
     top_p = grpo_config.get("top_p", model_config.top_p)
     top_k = grpo_config.get("top_k")
-
-    # ------------------------------------------------------------------
     # Config: External transitions (mode, sandbox, expert model, context flags)
-    # ------------------------------------------------------------------
     external_cfg = config.get_section("external") if hasattr(config, "get_section") else {}
 
     # Register external context resolver using dataset items (for external modes)
@@ -320,24 +306,20 @@ def main():
         return "\n".join(new_parts) + "\n"
 
     def _register_split(ds):
-        try:
-            for item in ds:
-                key = _normalize_prompt(item.get("prompt", ""))
-                if key and key not in context_map:
-                    tests_eval = item.get("test", "")
-                    tests_sandbox = (
-                        _make_sliced_assert_tests(tests_eval, sandbox_slice)
-                        if sandbox_slice is not None and sandbox_slice != 0
-                        else tests_eval
-                    )
-                    context_map[key] = {
-                        "entry_point": item.get("entry_point", ""),
-                        "tests_eval": tests_eval,
-                        "tests_sandbox": tests_sandbox,
-                    }
-        except Exception:
-            pass
-
+        for item in ds:
+            key = _normalize_prompt(item.get("prompt", ""))
+            if key and key not in context_map:
+                tests_eval = item.get("test", "")
+                tests_sandbox = (
+                    _make_sliced_assert_tests(tests_eval, sandbox_slice)
+                    if sandbox_slice is not None and sandbox_slice != 0
+                    else tests_eval
+                )
+                context_map[key] = {
+                    "entry_point": item.get("entry_point", ""),
+                    "tests_eval": tests_eval,
+                    "tests_sandbox": tests_sandbox,
+                }
     if "train_dataset" in locals() and train_dataset is not None:
         _register_split(train_dataset)
     if "eval_dataset" in locals() and eval_dataset is not None:
@@ -347,52 +329,33 @@ def main():
         return context_map.get(_normalize_prompt(prompt))
 
     external_ctx.set_context_resolver(_resolver)
-
-    # ------------------------------------------------------------------
-    # Build training args
-    # ------------------------------------------------------------------
     grpo_args = MAGRPOConfig(
         output_dir=output_dir,
+        num_turns=num_turns,
         num_train_epochs=grpo_config.get("num_train_epochs", 10),
-        per_device_train_batch_size=grpo_config.get("per_device_train_batch_size", 1),
         learning_rate=grpo_config.get("learning_rate", 2e-5),
         logging_steps=grpo_config.get("logging_steps", 50),
         save_steps=grpo_config.get("save_steps", 200),
-        eval_interval=grpo_config.get("eval_interval", 4),
-        eval_num_samples=grpo_config.get("eval_num_samples", 4),
         num_generations=grpo_config.get("num_generations", 4),
         max_new_tokens=grpo_config.get("max_new_tokens", 256),
         temperature=temperature,
         top_p=top_p,
         top_k=top_k,
-        # Multi-turn parameters
-        num_turns=num_turns,
         discount=grpo_config.get("discount", 0.9),
         joint_mode=grpo_config.get("joint_mode", "aligned"),
         termination_threshold=grpo_config.get("termination_threshold", None),
+        eval_interval=grpo_config.get("eval_interval", 4),
+        eval_num_samples=grpo_config.get("eval_num_samples", 4),
     )
-
-    # ------------------------------------------------------------------
-    # Formatters, rewards, and logging
-    # ------------------------------------------------------------------
     formatter = get_formatter(dataset_type)
     reward_func = get_reward_function(dataset_type)
-
-    # ------------------------------------------------------------------
-    # W&B configuration and tags
-    # ------------------------------------------------------------------
     wandb_section = (
         config.get_section("wandb") if hasattr(config, "get_section") else {}
     )
-    # Model short name no longer used in W&B naming
-    # Use different wandb name for multi-turn
     if is_multi_turn:
         wandb_name = wandb_section.get("name", f"mt_grpo_{dataset_type}")
     else:
         wandb_name = wandb_section.get("name", f"grpo_{dataset_type}")
-
-    # external_cfg already loaded above
-    # Compute tags and add self-evolved when using analysis-based external modes
     external_mode = external_cfg.get("mode", "level_feedback")
     default_tags = ["grpo", dataset_type or "code", f"turns_{num_turns}"]
     tags_from_cfg = wandb_section.get("tags", default_tags)
@@ -401,14 +364,11 @@ def main():
         if "self-evolved" not in tags:
             tags.append("self-evolved")
 
-    # If sandbox_slice is active (non-zero), append _slice to run name
     if isinstance(sandbox_slice, int) and sandbox_slice != 0:
         if not str(wandb_name).endswith("_slice"):
             wandb_name = f"{wandb_name}_slice"
         if "slice" not in tags:
             tags.append("slice")
-
-    # Collect full config sections for W&B searchability
     dataset_section = config.get_section("dataset") if hasattr(config, "get_section") else {}
     model_section = config.get_section("model") if hasattr(config, "get_section") else {}
     output_section = config.get_section("output") if hasattr(config, "get_section") else {}
@@ -419,7 +379,6 @@ def main():
         "name": f"{wandb_name}",
         "dir": wandb_section.get("dir", "../../../projects/bepg/sliu30"),
         "tags": tags,
-        # Provide full sections for the trainer to log cleanly
         "config_sections": {
             "dataset": dataset_section,
             "model": model_section,
@@ -430,17 +389,10 @@ def main():
     }
 
     # Propagate verbosity to reward/external modules
-    try:
-        import rewards.code_rewards as code_rewards
-        code_rewards.VERBOSE = bool(output_verbose)
-    except Exception:
-        pass
-    try:
-        import external as external_mod
-        external_mod.VERBOSE = bool(output_verbose)
-    except Exception:
-        pass
-
+    import rewards.code_rewards as code_rewards
+    code_rewards.VERBOSE = bool(output_verbose)
+    import external as external_mod
+    external_mod.VERBOSE = bool(output_verbose)
     reward_processor = None
     # Optional scale
     if config.get("reward_processor.enabled", False):
@@ -460,10 +412,7 @@ def main():
             else:
                 prev = reward_processor
                 reward_processor = (lambda p=prev, s=shift_proc: (lambda x: s(p(x))))()
-
-    # ------------------------------------------------------------------
     # Build trainer kwargs (grouped: model/data, reward/formatting, logging, args)
-    # ------------------------------------------------------------------
     trainer_kwargs = {
         # Model / data
         "agents": [model],
@@ -520,6 +469,7 @@ def main():
         trainer_kwargs["external_transition"] = external_transition_wrapper
 
     trainer = MAGRPOTrainer(**trainer_kwargs)
+    trainer.verbose = bool(output_verbose)
     trainer.train()
 
     save_final = config.get("output.save_final_model", False)
