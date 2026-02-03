@@ -388,12 +388,10 @@ def main():
     external_ctx.set_context_resolver(_resolver)
 
     magrpo_args_kwargs = {
-        "output_dir": output_dir,
         "num_turns": num_turns,
         "num_train_epochs": magrpo_config.get("num_train_epochs", 20),
         "learning_rate": magrpo_config.get("learning_rate", 5e-6),
         "logging_steps": magrpo_config.get("logging_steps", 50),
-        "save_steps": magrpo_config.get("save_steps", 200),
         "num_generations": magrpo_config.get("num_generations", 4),
         "max_new_tokens": magrpo_config.get("max_new_tokens", 256),
         "temperature": temperature,
@@ -412,6 +410,7 @@ def main():
             "rollout_buffer_size": magrpo_config.get("rollout_buffer_size", 2),
             "eval_interval": magrpo_config.get("eval_interval", 16),
             "eval_num_samples": magrpo_config.get("eval_num_samples", 4),
+            "eval_batch_size": magrpo_config.get("eval_batch_size", 1),
             "external_prompt_passthrough": True,
         }
     )
@@ -425,9 +424,14 @@ def main():
         config.get_section("wandb") if hasattr(config, "get_section") else {}
     )
     if is_multi_turn:
-        wandb_name = wandb_section.get("name", f"mt_magrpo_{dataset_type}")
+        default_name = f"mt_magrpo_{dataset_type}"
     else:
-        wandb_name = wandb_section.get("name", f"magrpo_{dataset_type}")
+        default_name = f"magrpo_{dataset_type}"
+    wandb_name = (
+        wandb_section.get("name")
+        or wandb_section.get("run_name")
+        or default_name
+    )
     external_mode = external_cfg.get("mode", "level_feedback")
     default_tags = ["magrpo", dataset_type or "code", f"turns_{num_turns}"]
     tags_from_cfg = wandb_section.get("tags", default_tags)

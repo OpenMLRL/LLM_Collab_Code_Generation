@@ -15,8 +15,8 @@ model:
 dataset:
   name: "OpenMLRL/CoopHumanEval"
   type: "coophumaneval"
-  train_split: "test[16:]"
-  eval_split: "test[:16]"
+  train_split: "train[16:]"
+  eval_split: "train[:16]"
 
 # output
 output:
@@ -33,6 +33,7 @@ external:
 # ac
 ac:
   num_turns: 2
+  critic_model: null
   num_train_epochs: 80
   actor_learning_rate: 5.0e-6
   critic_learning_rate: 5.0e-6
@@ -42,12 +43,11 @@ ac:
   temperature: 0.6
   top_p: 0.6
   top_k: null
-  num_agents: 1
-  critic_model: null
   discount: 0.9
   early_termination_threshold: -0.2
   eval_interval: 40
   eval_num_samples: 4
+  eval_batch_size: 1
 
 # wandb
   reward_shift: -4

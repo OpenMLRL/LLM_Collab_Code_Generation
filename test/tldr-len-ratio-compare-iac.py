@@ -168,7 +168,6 @@ def main() -> None:
         formatters=formatters,
         metrics_callback=value_variance_metrics,
         args=IACConfig(
-            output_dir=f"{args.output_dir}/iac",
             actor_learning_rate=args.actor_learning_rate,
             critic_learning_rate=args.critic_learning_rate,
             value_loss_coef=args.value_loss_coef,

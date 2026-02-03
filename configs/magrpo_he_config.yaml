@@ -34,18 +34,17 @@ external:
 
 # magrpo
 magrpo:
+  num_agents: 2
   num_turns: 2
   num_train_epochs: 6
   learning_rate: 2.0e-5
   logging_steps: 50
-  save_steps: 200
 
   num_generations: 4
   max_new_tokens: 256
   temperature: 0.6
   top_p: 0.6
   top_k: null
-  num_agents: 2
   discount: 0.9
   joint_mode: aligned
   termination_threshold: -0.2
@@ -53,6 +52,7 @@ magrpo:
   rollout_buffer_size: 2
   eval_interval: 4
   eval_num_samples: 4
+  eval_batch_size: 1
 reward_processor:
   enabled: true
   scale_factor: 1.0

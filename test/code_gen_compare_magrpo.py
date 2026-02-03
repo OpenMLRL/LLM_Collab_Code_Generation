@@ -158,7 +158,6 @@ def main() -> None:
     dataset = dataset.select(range(usable))
 
     magrpo_args = MAGRPOConfig(
-        output_dir=args.output_dir,
         learning_rate=args.learning_rate,
         num_train_epochs=args.num_train_epochs,
         num_generations=args.num_generations,

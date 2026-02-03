@@ -330,12 +330,10 @@ def main():
 
     external_ctx.set_context_resolver(_resolver)
     grpo_args = MAGRPOConfig(
-        output_dir=output_dir,
         num_turns=num_turns,
         num_train_epochs=grpo_config.get("num_train_epochs", 10),
         learning_rate=grpo_config.get("learning_rate", 2e-5),
         logging_steps=grpo_config.get("logging_steps", 50),
-        save_steps=grpo_config.get("save_steps", 200),
         num_generations=grpo_config.get("num_generations", 4),
         max_new_tokens=grpo_config.get("max_new_tokens", 256),
         temperature=temperature,
@@ -346,6 +344,7 @@ def main():
         termination_threshold=grpo_config.get("termination_threshold", None),
         eval_interval=grpo_config.get("eval_interval", 4),
         eval_num_samples=grpo_config.get("eval_num_samples", 4),
+        eval_batch_size=grpo_config.get("eval_batch_size", 1),
     )
     formatter = get_formatter(dataset_type)
     reward_func = get_reward_function(dataset_type)
@@ -353,9 +352,14 @@ def main():
         config.get_section("wandb") if hasattr(config, "get_section") else {}
     )
     if is_multi_turn:
-        wandb_name = wandb_section.get("name", f"mt_grpo_{dataset_type}")
+        default_name = f"mt_grpo_{dataset_type}"
     else:
-        wandb_name = wandb_section.get("name", f"grpo_{dataset_type}")
+        default_name = f"grpo_{dataset_type}"
+    wandb_name = (
+        wandb_section.get("name")
+        or wandb_section.get("run_name")
+        or default_name
+    )
     external_mode = external_cfg.get("mode", "level_feedback")
     default_tags = ["grpo", dataset_type or "code", f"turns_{num_turns}"]
     tags_from_cfg = wandb_section.get("tags", default_tags)

@@ -421,14 +421,12 @@ def main() -> None:
         metrics_callback=None,
         external_transition=external_transition_fn,
         args=IACConfig(
-            output_dir=os.path.join(output_dir, "iac"),
             num_turns=num_turns,
             num_train_epochs=iac_cfg.get("num_train_epochs", 40),
             actor_learning_rate=iac_cfg.get("actor_learning_rate", 5e-6),
             critic_learning_rate=iac_cfg.get("critic_learning_rate", 5e-6),
             value_loss_coef=iac_cfg.get("value_loss_coef", 0.6),
             value_clip_range=iac_cfg.get("value_clip_range", 0.2),
-            entropy_coef=iac_cfg.get("entropy_coef", 0.0),
             rollout_buffer_size=rollout_buffer_size,
             max_new_tokens=iac_cfg.get("max_new_tokens", 256),
             temperature=temperature,
@@ -447,6 +445,7 @@ def main() -> None:
             ),
             eval_interval=iac_cfg.get("eval_interval", 16),
             eval_num_samples=iac_cfg.get("eval_num_samples", 4),
+            eval_batch_size=iac_cfg.get("eval_batch_size", 1),
             logging_steps=iac_cfg.get("logging_steps", 1),
         ),
         train_dataset=train_dataset,
@@ -489,10 +488,15 @@ def _build_wandb_config(
         config.get_section("output") if hasattr(config, "get_section") else {}
     )
     tags = wandb_section.get("tags", ["iac", dataset_name or "code", "turns_1"])
+    wandb_name = (
+        wandb_section.get("name")
+        or wandb_section.get("run_name")
+        or "iac_run"
+    )
     return {
         "project": wandb_section.get("project", "iac"),
         "entity": wandb_section.get("entity"),
-        "name": wandb_section.get("name", "iac_run"),
+        "name": wandb_name,
         "dir": wandb_section.get("dir"),
         "tags": tags,
         "config_sections": {

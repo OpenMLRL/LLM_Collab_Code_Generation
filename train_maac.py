@@ -422,7 +422,6 @@ def main() -> None:
         metrics_callback=None,
         external_transition=external_transition_fn,
         args=MAACConfig(
-            output_dir=os.path.join(output_dir, "maac"),
             num_turns=num_turns,
             num_train_epochs=maac_cfg.get("num_train_epochs", 40),
             actor_learning_rate=maac_cfg.get("actor_learning_rate", 5e-6),
@@ -444,6 +443,7 @@ def main() -> None:
             ),
             eval_interval=maac_cfg.get("eval_interval", 16),
             eval_num_samples=maac_cfg.get("eval_num_samples", 4),
+            eval_batch_size=maac_cfg.get("eval_batch_size", 1),
             logging_steps=maac_cfg.get("logging_steps", 1),
         ),
         train_dataset=train_dataset,
@@ -486,10 +486,15 @@ def _build_wandb_config(
         config.get_section("output") if hasattr(config, "get_section") else {}
     )
     tags = wandb_section.get("tags", ["maac", dataset_name or "code", "turns_2"])
+    wandb_name = (
+        wandb_section.get("name")
+        or wandb_section.get("run_name")
+        or "maac_two_turn"
+    )
     return {
         "project": wandb_section.get("project", "maac"),
         "entity": wandb_section.get("entity"),
-        "name": wandb_section.get("name", "maac_two_turn"),
+        "name": wandb_name,
         "dir": wandb_section.get("dir"),
         "tags": tags,
         "config_sections": {
