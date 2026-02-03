@@ -424,9 +424,9 @@ def main():
         config.get_section("wandb") if hasattr(config, "get_section") else {}
     )
     if is_multi_turn:
-        default_name = f"mt_magrpo_{dataset_type}"
+        default_name = f"{dataset_type}-magrpo"
     else:
-        default_name = f"magrpo_{dataset_type}"
+        default_name = f"{dataset_type}-magrpo"
     wandb_name = (
         wandb_section.get("name")
         or wandb_section.get("run_name")

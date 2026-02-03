@@ -458,7 +458,13 @@ def main() -> None:
             ),
         },
         wandb_config=_build_wandb_config(
-            config, dataset_name, train_split, eval_split, train_size, eval_size
+            config,
+            dataset_name,
+            dataset_type,
+            train_split,
+            eval_split,
+            train_size,
+            eval_size,
         ),
     )
     trainer.verbose = bool(output_verbose)
@@ -477,6 +483,7 @@ def main() -> None:
 def _build_wandb_config(
     config: Config,
     dataset_name: str,
+    dataset_type: str | None,
     train_split: str,
     eval_split: str,
     train_size: int,
@@ -491,7 +498,7 @@ def _build_wandb_config(
     wandb_name = (
         wandb_section.get("name")
         or wandb_section.get("run_name")
-        or "iac_run"
+        or f\"{(dataset_type or dataset_name)}-iac\"
     )
     return {
         "project": wandb_section.get("project", "iac"),
