@@ -81,48 +81,28 @@ def _set_seed(seed: int) -> None:
     torch.cuda.manual_seed_all(seed)
 
 
-def extract_problem_from_prompt(formatted_prompt: str) -> str:
-    match = re.search(
-        r"Problem:\s*(.*?)\n\nIMPORTANT INSTRUCTIONS:", formatted_prompt, re.DOTALL
-    )
-    if match:
-        return match.group(1).strip()
-    return formatted_prompt.strip()
-
-
-def build_prompt_lookup(dataset) -> Dict[str, Dict[str, str]]:
-    lookup: Dict[str, Dict[str, str]] = {}
-    for item in dataset:
-        raw_prompt = item.get("prompt", "")
-        if not raw_prompt:
-            continue
-        lookup[raw_prompt.strip()] = {
-            "prompt": raw_prompt,
-            "entry_point": item.get("entry_point", ""),
-            "test": item.get("test", ""),
-        }
-    return lookup
-
-
-def make_prompt_reward_fn(prompt_lookup: Dict[str, Dict[str, str]]):
-    def _reward(prompts: List[str], outputs: List[str]) -> List[float]:
-        if not prompts:
-            return []
-
-        problem_text = extract_problem_from_prompt(prompts[0])
-        meta = prompt_lookup.get(problem_text) or prompt_lookup.get(problem_text.strip())
-        if meta is None:
-            raise KeyError("Failed to find metadata for provided prompt text.")
-
+def make_prompt_reward_fn():
+    def _reward(
+        outputs: List[str],
+        *,
+        batch_items=None,
+    ) -> List[float]:
         count = len(outputs)
         if count == 0:
             return []
+        if batch_items:
+            if len(batch_items) >= count:
+                items = list(batch_items)[:count]
+            else:
+                items = [batch_items[0]] * count
+            test_cases = [item.get("test", "") for item in items]
+            entry_points = [item.get("entry_point", "") for item in items]
+            raw_prompts = [item.get("prompt", "") for item in items]
+        else:
+            raise ValueError("batch_items must be provided for reward calculation")
 
         aux_outputs = [""] * count
         main_outputs = outputs[:count]
-        test_cases = [meta["test"]] * count
-        entry_points = [meta["entry_point"]] * count
-        raw_prompts = [meta["prompt"]] * count
 
         return execution_reward_aux(
             aux_outputs,
@@ -324,10 +304,7 @@ def main() -> None:
 
     external_mod.VERBOSE = bool(output_verbose)
     formatter = get_formatter(dataset_type)
-    prompt_lookup = build_prompt_lookup(train_dataset)
-    if eval_dataset is not None:
-        prompt_lookup.update(build_prompt_lookup(eval_dataset))
-    reward_fn = make_prompt_reward_fn(prompt_lookup)
+    reward_fn = make_prompt_reward_fn()
 
     reward_processor = None
     shift_val = ac_cfg.get("reward_shift", -4)
