@@ -7,7 +7,7 @@ import wandb
 from datasets import load_dataset
 from transformers import AutoTokenizer
 
-from comlrl.trainers.magrpo import MAGRPOConfig, MAGRPOTrainer
+from comlrl.trainers.reinforce import MAGRPOConfig, MAGRPOTrainer
 
 
 def dual_length_reward(

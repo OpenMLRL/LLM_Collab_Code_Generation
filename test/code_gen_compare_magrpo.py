@@ -8,7 +8,7 @@ import wandb
 from datasets import load_dataset
 from transformers import AutoTokenizer
 
-from comlrl.trainers.magrpo import MAGRPOConfig, MAGRPOTrainer
+from comlrl.trainers.reinforce import MAGRPOConfig, MAGRPOTrainer
 from rewards.code_rewards import execution_reward_aux
 
 

@@ -8,7 +8,7 @@ import wandb
 from datasets import load_dataset
 from transformers import AutoTokenizer
 
-from comlrl.trainers.iac import IACConfig, IACTrainer
+from comlrl.trainers.actor_critic import IACConfig, IACTrainer
 from rewards.code_rewards import execution_reward_aux
 
 

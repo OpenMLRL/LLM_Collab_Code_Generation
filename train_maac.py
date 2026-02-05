@@ -11,7 +11,7 @@ from datasets import load_dataset
 from transformers import AutoTokenizer
 
 from config import Config, add_config_args, parse_overrides
-from comlrl.trainers.maac import MAACConfig, MAACTrainer
+from comlrl.trainers.actor_critic import MAACConfig, MAACTrainer
 from comlrl.utils.reward_processor import RewardProcessors
 from rewards.code_rewards import execution_reward_aux
 import external as external_ctx

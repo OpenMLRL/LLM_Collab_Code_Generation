@@ -8,7 +8,7 @@ import wandb
 from datasets import load_dataset
 from transformers import AutoTokenizer
 
-from comlrl.trainers.maac import MAACConfig, MAACTrainer
+from comlrl.trainers.actor_critic import MAACConfig, MAACTrainer
 from rewards.code_rewards import execution_reward_aux
 
 

@@ -21,7 +21,7 @@ from transformers import AutoModelForCausalLM, AutoTokenizer
 
 from rewards.code_rewards import execution_reward_aux
 from comlrl.utils.reward_processor import RewardProcessors
-from comlrl.trainers.magrpo import MAGRPOConfig, MAGRPOTrainer
+from comlrl.trainers.reinforce import MAGRPOConfig, MAGRPOTrainer
 import external as external_ctx
 from external import get_external_transition
 
