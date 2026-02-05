@@ -142,7 +142,6 @@ def main() -> None:
     add_config_args(parser)
     args = parser.parse_args()
 
-    # Config: load YAML and apply overrides
     if args.config:
         config = Config(args.config)
     else:
@@ -156,7 +155,6 @@ def main() -> None:
         overrides = parse_overrides(args.override)
         config.update(overrides)
 
-    # Config: model, dataset, output
     model_config = config.get_model_config()
     model_name = model_config.name
     dataset_name = config.get("dataset.name")
@@ -181,17 +179,14 @@ def main() -> None:
     if dataset_type is None:
         raise ValueError("dataset.type must be specified or inferrable from dataset.name")
 
-    # IAC-specific config (needed early for seed)
     iac_cfg = config.get_section("iac") if hasattr(config, "get_section") else {}
     seed_value = int(config.get("seed", iac_cfg.get("seed", 42)))
 
-    # Output directory handling
     slurm_job_id = os.environ.get("SLURM_JOB_ID", "no_job_id")
     output_dir = os.path.join(output_base_dir, f"iac_job_{slurm_job_id}")
     os.makedirs(output_dir, exist_ok=True)
     config_save_path = os.path.join(output_dir, "config.yaml")
 
-    # Tokenizer / dataset
     _set_seed(seed_value)
 
     tokenizer = AutoTokenizer.from_pretrained(
@@ -236,7 +231,6 @@ def main() -> None:
     if hasattr(config, "save"):
         config.save(config_save_path)
 
-    # External context resolver (for multi-turn transitions)
     external_cfg = config.get_section("external") if hasattr(config, "get_section") else {}
 
     def _normalize_prompt(p: str) -> str:
@@ -333,7 +327,6 @@ def main() -> None:
         if shift_val_f is not None:
             reward_processor = RewardProcessors.shift(value=shift_val_f)
 
-    # IAC-specific config
     if "do_sample" in iac_cfg:
         use_sampling = bool(iac_cfg.get("do_sample"))
     else:

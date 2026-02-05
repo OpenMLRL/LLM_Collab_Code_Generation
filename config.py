@@ -11,7 +11,6 @@ from typing import Any, Dict, Optional
 import yaml
 
 
-# Model Configuration
 @dataclass(frozen=True)
 class ModelConfig:
     """Configuration for model loading and generation."""

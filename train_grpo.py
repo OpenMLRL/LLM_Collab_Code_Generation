@@ -144,7 +144,6 @@ def main():
     
 
     args = parser.parse_args()
-    # Config: load YAML and apply overrides
     if args.config:
         config = Config(args.config)
     else:
@@ -157,7 +156,6 @@ def main():
     if args.override:
         overrides = parse_overrides(args.override)
         config.update(overrides)
-    # Config: model, dataset, output
     model_config = config.get_model_config()
     model_name = model_config.name
     dataset_name = config.get("dataset.name")
@@ -245,7 +243,6 @@ def main():
     temperature = grpo_config.get("temperature", model_config.temperature)
     top_p = grpo_config.get("top_p", model_config.top_p)
     top_k = grpo_config.get("top_k")
-    # Config: External transitions (mode, sandbox, expert model, context flags)
     external_cfg = config.get_section("external") if hasattr(config, "get_section") else {}
 
     # Register external context resolver using dataset items (for external modes)
@@ -418,19 +415,16 @@ def main():
                 reward_processor = (lambda p=prev, s=shift_proc: (lambda x: s(p(x))))()
     # Build trainer kwargs (grouped: model/data, reward/formatting, logging, args)
     trainer_kwargs = {
-        # Model / data
         "agents": [model],
         "num_agents": 1,
         "tokenizer": tokenizer,
         "train_dataset": train_dataset,
         "eval_dataset": eval_dataset,
-        # Reward / formatting
         "reward_func": reward_func,
         "formatters": formatter,
         # Logging / config
         "wandb_config": wandb_config,
         "dataset_type": dataset_type,
-        # Training args
         "args": grpo_args,
     }
 

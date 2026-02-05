@@ -195,7 +195,6 @@ def main():
     
 
     args = parser.parse_args()
-    # Config: load YAML and apply overrides
     if args.config:
         config = Config(args.config)
     else:
@@ -205,7 +204,6 @@ def main():
         overrides = parse_overrides(args.override)
         config.update(overrides)
 
-    # Config: model, dataset, output
     model_config = config.get_model_config()
     model_name = model_config.name
     dataset_name = config.get("dataset.name")
@@ -294,7 +292,6 @@ def main():
 
     temperature = magrpo_config.get("temperature", 0.6)
     top_p = magrpo_config.get("top_p", 0.6)
-    # Config: External transitions (mode, sandbox, expert model, context flags)
     external_cfg = config.get_section("external") if hasattr(config, "get_section") else {}
 
     # Register external context resolver using dataset items
@@ -488,13 +485,11 @@ def main():
                 reward_processor = (lambda p=prev, s=shift_proc: (lambda x: s(p(x))))()
     # Build trainer kwargs (grouped: model/data, reward/formatting, logging, args)
     trainer_kwargs = {
-        # Model / data
         "agents": agents,
         "num_agents": num_agents,
         "tokenizer": tokenizer,
         "train_dataset": train_dataset,
         "eval_dataset": eval_dataset,
-        # Reward / formatting
         "reward_func": reward_func,
         "formatters": formatters,
         # Logging / eval / config
@@ -502,7 +497,6 @@ def main():
         "eval_logger": eval_logger,
         "eval_aggregator": eval_aggregator,
         "dataset_type": dataset_type,
-        # Training args
         "args": magrpo_args,
     }
 

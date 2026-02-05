@@ -102,9 +102,7 @@ def execution_reward_aux(
         print(f"\n--- EXTRACTED MAIN FUNCTION ---")
         print(repr(main_func))
 
-        # ================================================================
         # LEVEL 1: FUNCTION DEFINITION REQUIREMENTS
-        # ================================================================
         print("\n📋 LEVEL 1: FUNCTION DEFINITION REQUIREMENTS")
         print("-" * 50)
 
@@ -143,9 +141,7 @@ def execution_reward_aux(
             rewards.append(reward)
             continue
 
-        # ================================================================
         # LEVEL 2: SYNTAX REQUIREMENTS
-        # ================================================================
         print("\n⚙️  LEVEL 2: SYNTAX REQUIREMENTS")
         print("-" * 40)
 
@@ -169,9 +165,7 @@ def execution_reward_aux(
             rewards.append(reward)
             continue
 
-        # ================================================================
         # LEVEL 3: TEST EXECUTION REQUIREMENTS
-        # ================================================================
         print("\n🧪 LEVEL 3: TEST EXECUTION REQUIREMENTS")
         print("-" * 40)
 
@@ -290,9 +284,7 @@ def execution_reward_aux(
             print(f"❌ Code loading failed: {str(e)}")
             signal.alarm(0)
 
-        # ================================================================
         # LEVEL 3 BONUS: AUX FUNCTION USAGE AND ANTI-WRAPPER BONUSES
-        # ================================================================
         print("\n🎁 LEVEL 3 BONUS: COLLABORATION AND COMPLEXITY CHECKS")
         print("-" * 55)
 

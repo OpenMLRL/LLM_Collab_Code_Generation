@@ -122,7 +122,6 @@ def main() -> None:
     add_config_args(parser)
     args = parser.parse_args()
 
-    # Config: load YAML and apply overrides
     if args.config:
         config = Config(args.config)
     else:
@@ -136,7 +135,6 @@ def main() -> None:
         overrides = parse_overrides(args.override)
         config.update(overrides)
 
-    # Config: model, dataset, output
     model_config = config.get_model_config()
     model_name = model_config.name
     dataset_name = config.get("dataset.name")
@@ -168,13 +166,11 @@ def main() -> None:
     if num_agents != 1:
         raise ValueError("train_ac expects ac.num_agents=1. Use train_iac for multi-agent.")
 
-    # Output directory handling
     slurm_job_id = os.environ.get("SLURM_JOB_ID", "no_job_id")
     output_dir = os.path.join(output_base_dir, f"ac_job_{slurm_job_id}")
     os.makedirs(output_dir, exist_ok=True)
     config_save_path = os.path.join(output_dir, "config.yaml")
 
-    # Tokenizer / dataset
     _set_seed(seed_value)
 
     tokenizer = AutoTokenizer.from_pretrained(
@@ -219,7 +215,6 @@ def main() -> None:
     if hasattr(config, "save"):
         config.save(config_save_path)
 
-    # External context resolver (for multi-turn transitions)
     external_cfg = config.get_section("external") if hasattr(config, "get_section") else {}
 
     def _normalize_prompt(p: str) -> str:
