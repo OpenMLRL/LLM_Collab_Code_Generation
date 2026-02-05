@@ -79,9 +79,7 @@ def code_reward_logger(
         aux_func = extract_specific_function(c1_clean, "aux")
         main_func = extract_specific_function(c2_clean, entry_point)
 
-        # ================================================================
         # LEVEL 1: FUNCTION DEFINITION REQUIREMENTS
-        # ================================================================
 
         # Check aux function (+0.4)
         aux_check_passed, _ = check_function_definition(c1_clean, "aux", "Aux function")
@@ -102,9 +100,7 @@ def code_reward_logger(
             all_metrics.append(metrics)
             continue
 
-        # ================================================================
         # LEVEL 2: SYNTAX REQUIREMENTS
-        # ================================================================
 
         # Concatenate functions with imports
         combined_code = concatenate_functions(aux_func, main_func, imports)
@@ -123,9 +119,7 @@ def code_reward_logger(
             all_metrics.append(metrics)
             continue
 
-        # ================================================================
         # LEVEL 3: TEST EXECUTION REQUIREMENTS
-        # ================================================================
 
         # Extract test cases
         test_cases_list = extract_test_cases(test_code, entry_point)
@@ -189,9 +183,7 @@ def code_reward_logger(
         # Level 3 reward is just test reward at this point
         metrics["level_3_reward"] = metrics["test_reward"]
 
-        # ================================================================
         # LEVEL 3 BONUS: COLLABORATION AND COMPLEXITY CHECKS
-        # ================================================================
 
         # Only award bonuses if we have aux function and passed tests
         if passed_tests > 0 and aux_func:
@@ -221,9 +213,7 @@ def code_reward_logger(
         # Update level 3 reward to include bonuses (after deduction)
         metrics["level_3_reward"] += metrics["bonus_reward"]
 
-        # ================================================================
         # FINAL REWARD CALCULATION
-        # ================================================================
 
         metrics["total_reward"] = (
             metrics["level_1_reward"]
@@ -237,6 +227,3 @@ def code_reward_logger(
         all_metrics.append(metrics)
 
     return all_metrics
-
-
-# Legacy single-turn aggregator removed in favor of multi-turn aggregator

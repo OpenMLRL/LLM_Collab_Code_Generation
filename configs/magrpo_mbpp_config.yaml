@@ -1,4 +1,4 @@
-# model
+
 model:
   name: "Qwen/Qwen2.5-Coder-3B"
   type: "qwen"
@@ -12,7 +12,6 @@ model:
     torch_dtype: "bfloat16"
   special_tokens: {}
 
-# dataset
 dataset:
   name: "OpenMLRL/MBPP"
   type: "mbpp"
@@ -21,44 +20,39 @@ dataset:
 
 seed: 42
 
-# output
 output:
   base_dir: "output"
   save_final_model: false
   verbose: false
 
-# external
 external:
   mode: "level_feedback"
   sandbox_slice: 1
 
-# magrpo
 magrpo:
+  num_agents: 2
   num_turns: 2
   num_train_epochs: 8
-  per_device_train_batch_size: 1
-  rollout_buffer_size: 2
   learning_rate: 3.0e-5
-  eval_interval: 4
-  eval_num_samples: 4
+  logging_steps: 50
   num_generations: 4
   max_new_tokens: 256
   temperature: 0.8
   top_p: 0.95
   top_k: null
-  joint_mode: aligned
-  num_agents: 2
   discount: 0.9
+  joint_mode: aligned
   termination_threshold: -0.2
-
-  logging_steps: 50
-  save_steps: 200
+  rollout_buffer_size: 2
+  eval_interval: 4
+  eval_num_samples: 4
+  eval_batch_size: 1
 
 reward_processor:
   enabled: true
   scale_factor: 1.0
   shift: -4
-# wandb
+
 wandb:
   project: "comlrl"
   entity: "OpenMLRL"

@@ -15,9 +15,7 @@ def upload_json_to_hf_dataset(json_file_path, dataset_name, hf_token=None):
         hf_token (str, optional): Hugging Face API token. If None, will prompt for login.
     """
 
-    # ------------------------------------------------------------------
     # Load raw JSON and normalize schema
-    # ------------------------------------------------------------------
 
     # Step 1: Load the JSON file
     print(f"Loading JSON file from {json_file_path}...")
@@ -56,9 +54,7 @@ def upload_json_to_hf_dataset(json_file_path, dataset_name, hf_token=None):
     # Create the dataset with features
     dataset = Dataset.from_dict(dataset_dict, features=features)
 
-    # ------------------------------------------------------------------
     # Authenticate to Hugging Face
-    # ------------------------------------------------------------------
     if hf_token:
         login(token=hf_token)
     else:
@@ -73,9 +69,7 @@ def upload_json_to_hf_dataset(json_file_path, dataset_name, hf_token=None):
     df = dataset.to_pandas()
     dataset_size = sum(df.memory_usage(deep=True))
 
-    # ------------------------------------------------------------------
     # Build dataset card (README) with metadata
-    # ------------------------------------------------------------------
     readme_content = f"""---
 dataset_info:
   features:

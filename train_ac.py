@@ -11,7 +11,7 @@ from datasets import load_dataset
 from transformers import AutoTokenizer
 
 from config import Config, add_config_args, parse_overrides
-from comlrl.trainers.iac import IACConfig, IACTrainer
+from comlrl.trainers.actor_critic import IACConfig, IACTrainer
 from comlrl.utils.reward_processor import RewardProcessors
 from rewards.code_rewards import execution_reward_aux
 import external as external_ctx
@@ -81,48 +81,28 @@ def _set_seed(seed: int) -> None:
     torch.cuda.manual_seed_all(seed)
 
 
-def extract_problem_from_prompt(formatted_prompt: str) -> str:
-    match = re.search(
-        r"Problem:\s*(.*?)\n\nIMPORTANT INSTRUCTIONS:", formatted_prompt, re.DOTALL
-    )
-    if match:
-        return match.group(1).strip()
-    return formatted_prompt.strip()
-
-
-def build_prompt_lookup(dataset) -> Dict[str, Dict[str, str]]:
-    lookup: Dict[str, Dict[str, str]] = {}
-    for item in dataset:
-        raw_prompt = item.get("prompt", "")
-        if not raw_prompt:
-            continue
-        lookup[raw_prompt.strip()] = {
-            "prompt": raw_prompt,
-            "entry_point": item.get("entry_point", ""),
-            "test": item.get("test", ""),
-        }
-    return lookup
-
-
-def make_prompt_reward_fn(prompt_lookup: Dict[str, Dict[str, str]]):
-    def _reward(prompts: List[str], outputs: List[str]) -> List[float]:
-        if not prompts:
-            return []
-
-        problem_text = extract_problem_from_prompt(prompts[0])
-        meta = prompt_lookup.get(problem_text) or prompt_lookup.get(problem_text.strip())
-        if meta is None:
-            raise KeyError("Failed to find metadata for provided prompt text.")
-
+def make_prompt_reward_fn():
+    def _reward(
+        outputs: List[str],
+        *,
+        batch_items=None,
+    ) -> List[float]:
         count = len(outputs)
         if count == 0:
             return []
+        if batch_items:
+            if len(batch_items) >= count:
+                items = list(batch_items)[:count]
+            else:
+                items = [batch_items[0]] * count
+            test_cases = [item.get("test", "") for item in items]
+            entry_points = [item.get("entry_point", "") for item in items]
+            raw_prompts = [item.get("prompt", "") for item in items]
+        else:
+            raise ValueError("batch_items must be provided for reward calculation")
 
         aux_outputs = [""] * count
         main_outputs = outputs[:count]
-        test_cases = [meta["test"]] * count
-        entry_points = [meta["entry_point"]] * count
-        raw_prompts = [meta["prompt"]] * count
 
         return execution_reward_aux(
             aux_outputs,
@@ -142,9 +122,6 @@ def main() -> None:
     add_config_args(parser)
     args = parser.parse_args()
 
-    # ------------------------------------------------------------------ #
-    # Config: load YAML and apply overrides
-    # ------------------------------------------------------------------ #
     if args.config:
         config = Config(args.config)
     else:
@@ -158,9 +135,6 @@ def main() -> None:
         overrides = parse_overrides(args.override)
         config.update(overrides)
 
-    # ------------------------------------------------------------------ #
-    # Config: model, dataset, output
-    # ------------------------------------------------------------------ #
     model_config = config.get_model_config()
     model_name = model_config.name
     dataset_name = config.get("dataset.name")
@@ -172,7 +146,7 @@ def main() -> None:
     train_size = config.get("dataset.size")
     eval_size = config.get("dataset.eval_size")
     output_base_dir = config.get("output.base_dir", "output")
-    output_verbose = config.get("output.verbose", False)
+    output_verbose = bool(config.get("output.verbose", False))
 
     if dataset_type is None and dataset_name:
         if "humaneval" in dataset_name.lower() and "coop" not in dataset_name.lower():
@@ -184,9 +158,7 @@ def main() -> None:
     if dataset_type is None:
         raise ValueError("dataset.type must be specified or inferrable from dataset.name")
 
-    # ------------------------------------------------------------------ #
     # AC-specific config (needed early for seed)
-    # ------------------------------------------------------------------ #
     ac_cfg = config.get_section("ac") if hasattr(config, "get_section") else {}
     seed_value = int(config.get("seed", ac_cfg.get("seed", 42)))
 
@@ -194,17 +166,11 @@ def main() -> None:
     if num_agents != 1:
         raise ValueError("train_ac expects ac.num_agents=1. Use train_iac for multi-agent.")
 
-    # ------------------------------------------------------------------ #
-    # Output directory handling
-    # ------------------------------------------------------------------ #
     slurm_job_id = os.environ.get("SLURM_JOB_ID", "no_job_id")
     output_dir = os.path.join(output_base_dir, f"ac_job_{slurm_job_id}")
     os.makedirs(output_dir, exist_ok=True)
     config_save_path = os.path.join(output_dir, "config.yaml")
 
-    # ------------------------------------------------------------------ #
-    # Tokenizer / dataset
-    # ------------------------------------------------------------------ #
     _set_seed(seed_value)
 
     tokenizer = AutoTokenizer.from_pretrained(
@@ -249,9 +215,6 @@ def main() -> None:
     if hasattr(config, "save"):
         config.save(config_save_path)
 
-    # ------------------------------------------------------------------ #
-    # External context resolver (for multi-turn transitions)
-    # ------------------------------------------------------------------ #
     external_cfg = config.get_section("external") if hasattr(config, "get_section") else {}
 
     def _normalize_prompt(p: str) -> str:
@@ -304,24 +267,20 @@ def main() -> None:
         return "\n".join(new_parts) + "\n"
 
     def _register_split(ds):
-        try:
-            for item in ds:
-                key = _normalize_prompt(item.get("prompt", ""))
-                if key and key not in context_map:
-                    tests_eval = item.get("test", "")
-                    tests_sandbox = (
-                        _make_sliced_assert_tests(tests_eval, sandbox_slice)
-                        if sandbox_slice is not None and sandbox_slice != 0
-                        else tests_eval
-                    )
-                    context_map[key] = {
-                        "entry_point": item.get("entry_point", ""),
-                        "tests_eval": tests_eval,
-                        "tests_sandbox": tests_sandbox,
-                    }
-        except Exception:
-            pass
-
+        for item in ds:
+            key = _normalize_prompt(item.get("prompt", ""))
+            if key and key not in context_map:
+                tests_eval = item.get("test", "")
+                tests_sandbox = (
+                    _make_sliced_assert_tests(tests_eval, sandbox_slice)
+                    if sandbox_slice is not None and sandbox_slice != 0
+                    else tests_eval
+                )
+                context_map[key] = {
+                    "entry_point": item.get("entry_point", ""),
+                    "tests_eval": tests_eval,
+                    "tests_sandbox": tests_sandbox,
+                }
     if train_dataset is not None:
         _register_split(train_dataset)
     if eval_dataset is not None:
@@ -333,24 +292,14 @@ def main() -> None:
     external_ctx.set_context_resolver(_resolver)
 
     # Propagate verbosity to reward/external modules
-    try:
-        import rewards.code_rewards as code_rewards
+    import rewards.code_rewards as code_rewards
 
-        code_rewards.VERBOSE = bool(output_verbose)
-    except Exception:
-        pass
-    try:
-        import external as external_mod
+    code_rewards.VERBOSE = bool(output_verbose)
+    import external as external_mod
 
-        external_mod.VERBOSE = bool(output_verbose)
-    except Exception:
-        pass
-
+    external_mod.VERBOSE = bool(output_verbose)
     formatter = get_formatter(dataset_type)
-    prompt_lookup = build_prompt_lookup(train_dataset)
-    if eval_dataset is not None:
-        prompt_lookup.update(build_prompt_lookup(eval_dataset))
-    reward_fn = make_prompt_reward_fn(prompt_lookup)
+    reward_fn = make_prompt_reward_fn()
 
     reward_processor = None
     shift_val = ac_cfg.get("reward_shift", -4)
@@ -362,9 +311,7 @@ def main() -> None:
         if shift_val_f is not None:
             reward_processor = RewardProcessors.shift(value=shift_val_f)
 
-    # ------------------------------------------------------------------ #
     # AC-specific config
-    # ------------------------------------------------------------------ #
     if "do_sample" in ac_cfg:
         use_sampling = bool(ac_cfg.get("do_sample"))
     else:
@@ -415,33 +362,31 @@ def main() -> None:
         metrics_callback=None,
         external_transition=external_transition_fn,
         args=IACConfig(
-            output_dir=os.path.join(output_dir, "ac"),
+            num_turns=num_turns,
+            num_train_epochs=ac_cfg.get("num_train_epochs", 40),
             actor_learning_rate=ac_cfg.get("actor_learning_rate", 5e-6),
             critic_learning_rate=ac_cfg.get("critic_learning_rate", 5e-6),
             value_loss_coef=ac_cfg.get("value_loss_coef", 0.6),
+            value_clip_range=ac_cfg.get("value_clip_range", 0.2),
             rollout_buffer_size=rollout_buffer_size,
             max_new_tokens=ac_cfg.get("max_new_tokens", 256),
             temperature=temperature,
             top_p=top_p,
             top_k=top_k,
             do_sample=use_sampling,
-            num_train_epochs=ac_cfg.get("num_train_epochs", 40),
-            per_device_train_batch_size=ac_cfg.get("per_device_train_batch_size", 1),
             num_agents=1,
-            num_return_sequences=ac_cfg.get("num_return_sequences", 1),
+            num_generations=ac_cfg.get("num_generations", 1),
             use_separate_critic=use_separate_critic,
             critic_model_name_or_path=critic_model,
             critic_value_head_hidden_dim=ac_cfg.get("critic_value_head_hidden_dim"),
             value_head_hidden_dim=ac_cfg.get("value_head_hidden_dim"),
-            value_clip_range=ac_cfg.get("value_clip_range", 0.2),
-            entropy_coef=ac_cfg.get("entropy_coef", 0.0),
-            num_turns=num_turns,
             discount=ac_cfg.get("discount", 0.9),
-            eval_interval=ac_cfg.get("eval_interval", 16),
-            eval_num_samples=ac_cfg.get("eval_num_samples", 4),
             early_termination_threshold=ac_cfg.get(
                 "early_termination_threshold", -0.2
             ),
+            eval_interval=ac_cfg.get("eval_interval", 16),
+            eval_num_samples=ac_cfg.get("eval_num_samples", 4),
+            eval_batch_size=ac_cfg.get("eval_batch_size", 1),
         ),
         train_dataset=train_dataset,
         eval_dataset=eval_dataset,
@@ -453,9 +398,16 @@ def main() -> None:
             ),
         },
         wandb_config=_build_wandb_config(
-            config, dataset_name, train_split, eval_split, train_size, eval_size
+            config,
+            dataset_name,
+            dataset_type,
+            train_split,
+            eval_split,
+            train_size,
+            eval_size,
         ),
     )
+    trainer.verbose = bool(output_verbose)
     trainer.train()
 
     if config.get("output.save_final_model", False):
@@ -471,6 +423,7 @@ def main() -> None:
 def _build_wandb_config(
     config: Config,
     dataset_name: str,
+    dataset_type: str | None,
     train_split: str,
     eval_split: str,
     train_size: int,
@@ -482,10 +435,15 @@ def _build_wandb_config(
         config.get_section("output") if hasattr(config, "get_section") else {}
     )
     tags = wandb_section.get("tags", ["ac", dataset_name or "code", "turns_1"])
+    wandb_name = (
+        wandb_section.get("name")
+        or wandb_section.get("run_name")
+        or f"{(dataset_type or dataset_name)}-ac"
+    )
     return {
         "project": wandb_section.get("project", "ac"),
         "entity": wandb_section.get("entity"),
-        "name": wandb_section.get("name", "ac_run"),
+        "name": wandb_name,
         "dir": wandb_section.get("dir"),
         "tags": tags,
         "config_sections": {

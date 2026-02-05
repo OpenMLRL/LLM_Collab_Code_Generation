@@ -19,7 +19,6 @@ from datasets import load_dataset
 import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
-# Single-turn code logger no longer used directly; multi-turn logger handles all cases
 from loggers.mt_code_logger import (
     aggregate_mt_humaneval_metrics_for_logging,
     mt_humaneval_logger,
@@ -27,7 +26,7 @@ from loggers.mt_code_logger import (
 
 from rewards.code_rewards import execution_reward_aux
 from comlrl.utils.reward_processor import RewardProcessors
-from comlrl.trainers.magrpo import MAGRPOConfig, MAGRPOTrainer
+from comlrl.trainers.reinforce import MAGRPOConfig, MAGRPOTrainer
 import external as external_ctx
 from external import get_external_transition
 
@@ -196,10 +195,6 @@ def main():
     
 
     args = parser.parse_args()
-
-    # ------------------------------------------------------------------
-    # Config: load YAML and apply overrides
-    # ------------------------------------------------------------------
     if args.config:
         config = Config(args.config)
     else:
@@ -209,12 +204,6 @@ def main():
         overrides = parse_overrides(args.override)
         config.update(overrides)
 
-    # Apply command-line overrides
-    
-
-    # ------------------------------------------------------------------
-    # Config: model, dataset, output
-    # ------------------------------------------------------------------
     model_config = config.get_model_config()
     model_name = model_config.name
     dataset_name = config.get("dataset.name")
@@ -237,10 +226,6 @@ def main():
 
     train_split = config.get("dataset.train_split")
     eval_split = config.get("dataset.eval_split")
-
-    # ------------------------------------------------------------------
-    # Config: MAGRPO training params and verbosity
-    # ------------------------------------------------------------------
     magrpo_config = (
         config.get_section("magrpo") if hasattr(config, "get_section") else {}
     )
@@ -248,7 +233,7 @@ def main():
     num_turns = magrpo_config.get("num_turns", 2)
     num_agents = magrpo_config.get("num_agents", 2)
     is_multi_turn = num_turns > 1
-    output_verbose = config.get("output.verbose", False)
+    output_verbose = bool(config.get("output.verbose", False))
     if output_verbose:
         print(f"Multi-turn training enabled: num_turns={num_turns}") if is_multi_turn else print(
             f"Single-turn training: num_turns={num_turns}"
@@ -256,7 +241,6 @@ def main():
 
     slurm_job_id = os.environ.get("SLURM_JOB_ID", "no_job_id")
 
-    # Use different output directory prefix for multi-turn
     if is_multi_turn:
         output_dir = os.path.join(output_base_dir, f"mt_job_{slurm_job_id}")
     else:
@@ -308,10 +292,6 @@ def main():
 
     temperature = magrpo_config.get("temperature", 0.6)
     top_p = magrpo_config.get("top_p", 0.6)
-
-    # ------------------------------------------------------------------
-    # Config: External transitions (mode, sandbox, expert model, context flags)
-    # ------------------------------------------------------------------
     external_cfg = config.get_section("external") if hasattr(config, "get_section") else {}
 
     # Register external context resolver using dataset items
@@ -380,24 +360,20 @@ def main():
         return "\n".join(new_parts) + "\n"
 
     def _register_split(ds):
-        try:
-            for item in ds:
-                key = _normalize_prompt(item.get("prompt", ""))
-                if key and key not in context_map:
-                    tests_eval = item.get("test", "")
-                    tests_sandbox = (
-                        _make_sliced_assert_tests(tests_eval, sandbox_slice)
-                        if sandbox_slice is not None and sandbox_slice != 0
-                        else tests_eval
-                    )
-                    context_map[key] = {
-                        "entry_point": item.get("entry_point", ""),
-                        "tests_eval": tests_eval,
-                        "tests_sandbox": tests_sandbox,
-                    }
-        except Exception:
-            pass
-
+        for item in ds:
+            key = _normalize_prompt(item.get("prompt", ""))
+            if key and key not in context_map:
+                tests_eval = item.get("test", "")
+                tests_sandbox = (
+                    _make_sliced_assert_tests(tests_eval, sandbox_slice)
+                    if sandbox_slice is not None and sandbox_slice != 0
+                    else tests_eval
+                )
+                context_map[key] = {
+                    "entry_point": item.get("entry_point", ""),
+                    "tests_eval": tests_eval,
+                    "tests_sandbox": tests_sandbox,
+                }
     if "train_dataset" in locals() and train_dataset is not None:
         _register_split(train_dataset)
     if "eval_dataset" in locals() and eval_dataset is not None:
@@ -408,74 +384,58 @@ def main():
 
     external_ctx.set_context_resolver(_resolver)
 
-    # Use unified MAGRPOConfig which handles both single-turn and multi-turn
-    # ------------------------------------------------------------------
-    # Build training args
-    # ------------------------------------------------------------------
     magrpo_args_kwargs = {
-        "output_dir": output_dir,
-        "num_agents": num_agents,  # Pass num_agents to the config
+        "num_turns": num_turns,
         "num_train_epochs": magrpo_config.get("num_train_epochs", 20),
-        "per_device_train_batch_size": magrpo_config.get(
-            "per_device_train_batch_size", 1
-        ),
         "learning_rate": magrpo_config.get("learning_rate", 5e-6),
         "logging_steps": magrpo_config.get("logging_steps", 50),
-        "save_steps": magrpo_config.get("save_steps", 200),
-        "eval_interval": magrpo_config.get("eval_interval", 16),
-        "eval_num_samples": magrpo_config.get("eval_num_samples", 4),
         "num_generations": magrpo_config.get("num_generations", 4),
         "max_new_tokens": magrpo_config.get("max_new_tokens", 256),
         "temperature": temperature,
         "top_p": top_p,
-        # Multi-turn parameters (automatically handled based on num_turns)
-        "num_turns": num_turns,
-        "discount": magrpo_config.get("discount", 0.9),
-        "joint_mode": magrpo_config.get("joint_mode", "aligned"),
-        "termination_threshold": magrpo_config.get("termination_threshold", -0.2),
-        "rollout_buffer_size": magrpo_config.get("rollout_buffer_size", 2),
-        "external_prompt_passthrough": True,
     }
     if "top_k" in magrpo_config:
         magrpo_args_kwargs["top_k"] = magrpo_config.get("top_k")
+    magrpo_args_kwargs.update(
+        {
+            "num_agents": num_agents,
+            "discount": magrpo_config.get("discount", 0.9),
+            "joint_mode": magrpo_config.get("joint_mode", "aligned"),
+            "termination_threshold": magrpo_config.get(
+                "termination_threshold", -0.2
+            ),
+            "rollout_buffer_size": magrpo_config.get("rollout_buffer_size", 2),
+            "eval_interval": magrpo_config.get("eval_interval", 16),
+            "eval_num_samples": magrpo_config.get("eval_num_samples", 4),
+            "eval_batch_size": magrpo_config.get("eval_batch_size", 1),
+            "external_prompt_passthrough": True,
+        }
+    )
     magrpo_args = MAGRPOConfig(**magrpo_args_kwargs)
-
-    # ------------------------------------------------------------------
-    # Formatters, rewards, and logging
-    # ------------------------------------------------------------------
     formatters = get_formatters(dataset_type, num_agents)
     reward_func = get_reward_function(dataset_type, num_agents)
     eval_logger, eval_aggregator = get_logger_and_aggregator(
         dataset_type, is_multi_turn
     )
-
-    # ------------------------------------------------------------------
-    # W&B configuration and tags
-    # ------------------------------------------------------------------
     wandb_section = (
         config.get_section("wandb") if hasattr(config, "get_section") else {}
     )
-    # Model short name no longer used in W&B naming
-
-    # Use different wandb name for multi-turn
     if is_multi_turn:
-        wandb_name = wandb_section.get("name", f"mt_magrpo_{dataset_type}")
+        default_name = f"{dataset_type}-magrpo"
     else:
-        wandb_name = wandb_section.get("name", f"magrpo_{dataset_type}")
-
-    # external_cfg already loaded above
-    # Compute tags and add self-evolved when using analysis-based external modes
+        default_name = f"{dataset_type}-magrpo"
+    wandb_name = (
+        wandb_section.get("name")
+        or wandb_section.get("run_name")
+        or default_name
+    )
     external_mode = external_cfg.get("mode", "level_feedback")
     default_tags = ["magrpo", dataset_type or "code", f"turns_{num_turns}"]
     tags_from_cfg = wandb_section.get("tags", default_tags)
-    # Ensure list
     tags = list(tags_from_cfg) if isinstance(tags_from_cfg, list) else default_tags
-    # Add a marker tag for analysis-based external modes
     if external_mode == "level_feedback":
         if "self-evolved" not in tags:
             tags.append("self-evolved")
-
-    # Collect full config sections for W&B searchability
     dataset_section = config.get_section("dataset") if hasattr(config, "get_section") else {}
     model_section = config.get_section("model") if hasattr(config, "get_section") else {}
     output_section = config.get_section("output") if hasattr(config, "get_section") else {}
@@ -497,18 +457,10 @@ def main():
     }
 
     # Propagate verbosity to reward/external modules
-    try:
-        import rewards.code_rewards as code_rewards
-        code_rewards.VERBOSE = bool(output_verbose)
-    except Exception:
-        pass
-    try:
-        import external as external_mod
-        external_mod.VERBOSE = bool(output_verbose)
-    except Exception:
-        pass
-
-    # Use num_agents from magrpo config (where it belongs for MAGRPO training)
+    import rewards.code_rewards as code_rewards
+    code_rewards.VERBOSE = bool(output_verbose)
+    import external as external_mod
+    external_mod.VERBOSE = bool(output_verbose)
     agents = [
         AutoModelForCausalLM.from_pretrained(
             model_name,
@@ -531,18 +483,13 @@ def main():
                 shift_proc = RewardProcessors.shift(value=shift_val_f)
                 prev = reward_processor
                 reward_processor = (lambda p=prev, s=shift_proc: (lambda x: s(p(x))))()
-
-    # ------------------------------------------------------------------
     # Build trainer kwargs (grouped: model/data, reward/formatting, logging, args)
-    # ------------------------------------------------------------------
     trainer_kwargs = {
-        # Model / data
         "agents": agents,
         "num_agents": num_agents,
         "tokenizer": tokenizer,
         "train_dataset": train_dataset,
         "eval_dataset": eval_dataset,
-        # Reward / formatting
         "reward_func": reward_func,
         "formatters": formatters,
         # Logging / eval / config
@@ -550,7 +497,6 @@ def main():
         "eval_logger": eval_logger,
         "eval_aggregator": eval_aggregator,
         "dataset_type": dataset_type,
-        # Training args
         "args": magrpo_args,
     }
 
@@ -586,6 +532,7 @@ def main():
         trainer_kwargs["external_transition"] = external_transition_wrapper
 
     trainer = MAGRPOTrainer(**trainer_kwargs)
+    trainer.verbose = bool(output_verbose)
     trainer.train()
     save_final = config.get("output.save_final_model", False)
     if save_final:

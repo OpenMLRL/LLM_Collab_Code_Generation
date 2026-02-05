@@ -8,7 +8,7 @@ import wandb
 from datasets import load_dataset
 from transformers import AutoTokenizer
 
-from comlrl.trainers.maac import MAACConfig, MAACTrainer
+from comlrl.trainers.actor_critic import MAACConfig, MAACTrainer
 from rewards.code_rewards import execution_reward_aux
 
 
@@ -202,7 +202,6 @@ def main() -> None:
         formatters=formatters,
         metrics_callback=None,
         args=MAACConfig(
-            output_dir=f"{args.output_dir}/maac",
             actor_learning_rate=args.actor_learning_rate,
             critic_learning_rate=args.critic_learning_rate,
             value_loss_coef=args.value_loss_coef,
@@ -214,7 +213,7 @@ def main() -> None:
             do_sample=use_sampling,
             num_train_epochs=args.num_train_epochs,
             num_agents=2,
-            num_return_sequences=args.num_generations,
+            num_generations=args.num_generations,
             critic_model_name_or_path=args.critic_model or args.model_name,
         ),
         train_dataset=dataset,

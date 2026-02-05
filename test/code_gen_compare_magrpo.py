@@ -8,7 +8,7 @@ import wandb
 from datasets import load_dataset
 from transformers import AutoTokenizer
 
-from comlrl.trainers.magrpo import MAGRPOConfig, MAGRPOTrainer
+from comlrl.trainers.reinforce import MAGRPOConfig, MAGRPOTrainer
 from rewards.code_rewards import execution_reward_aux
 
 
@@ -158,8 +158,6 @@ def main() -> None:
     dataset = dataset.select(range(usable))
 
     magrpo_args = MAGRPOConfig(
-        output_dir=args.output_dir,
-        per_device_train_batch_size=1,
         learning_rate=args.learning_rate,
         num_train_epochs=args.num_train_epochs,
         num_generations=args.num_generations,

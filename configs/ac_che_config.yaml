@@ -1,4 +1,4 @@
-# model
+
 model:
   name: "Qwen/Qwen2.5-Coder-3B"
   type: "qwen"
@@ -11,30 +11,26 @@ model:
     trust_remote_code: true
     torch_dtype: "bfloat16"
 
-# dataset
 dataset:
   name: "OpenMLRL/CoopHumanEval"
   type: "coophumaneval"
-  train_split: "test[16:]"
-  eval_split: "test[:16]"
+  train_split: "train[16:]"
+  eval_split: "train[:16]"
 
-# output
 output:
   base_dir: "output"
   verbose: false
   save_final_model: false
   save_path: "output/maac_final"
 
-# external
 external:
   mode: "level_feedback"
   sandbox_slice: 1
 
-# ac
 ac:
   num_turns: 2
+  critic_model: null
   num_train_epochs: 80
-  per_device_train_batch_size: 1
   actor_learning_rate: 5.0e-6
   critic_learning_rate: 5.0e-6
   value_loss_coef: 0.6
@@ -43,15 +39,13 @@ ac:
   temperature: 0.6
   top_p: 0.6
   top_k: null
-  num_agents: 1
-  critic_model: null
-  reward_shift: -4
   discount: 0.9
   early_termination_threshold: -0.2
   eval_interval: 40
   eval_num_samples: 4
+  eval_batch_size: 1
+  reward_shift: -4
 
-# wandb
 wandb:
   project: "comlrl"
   entity: "OpenMLRL"
