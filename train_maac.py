@@ -156,6 +156,7 @@ def main() -> None:
         config.update(overrides)
 
     model_config = config.get_model_config()
+    critic_config = config.get_critic_config()
     model_name = model_config.name
     dataset_name = config.get("dataset.name")
     dataset_type = config.get("dataset.type")
@@ -337,11 +338,11 @@ def main() -> None:
     top_k = maac_cfg.get("top_k")
     temperature = maac_cfg.get("temperature", 0.6)
     top_p = maac_cfg.get("top_p", 0.6)
-    critic_model = (
-        maac_cfg.get("critic_model")
-        or maac_cfg.get("critic_model_name_or_path")
-        or model_name
-    )
+    num_agents = maac_cfg.get("num_agents", 2)
+    critic_name = critic_config.name
+    if not critic_name:
+        raise ValueError("critic.name must be provided for MAAC.")
+    critics = [critic_name]
     num_turns = maac_cfg.get("num_turns", 2)
     discount = maac_cfg.get("discount", 0.9)
 
@@ -378,7 +379,7 @@ def main() -> None:
         args=MAACConfig(
             num_turns=num_turns,
             num_train_epochs=maac_cfg.get("num_train_epochs", 40),
-            actor_learning_rate=maac_cfg.get("actor_learning_rate", 5e-6),
+            agent_learning_rate=maac_cfg.get("agent_learning_rate", 5e-6),
             critic_learning_rate=maac_cfg.get("critic_learning_rate", 5e-6),
             value_loss_coef=maac_cfg.get("value_loss_coef", 0.6),
             rollout_buffer_size=maac_cfg.get("rollout_buffer_size", 8),
@@ -387,9 +388,8 @@ def main() -> None:
             top_p=top_p,
             top_k=top_k,
             do_sample=use_sampling,
-            num_agents=maac_cfg.get("num_agents", 2),
+            num_agents=num_agents,
             num_generations=maac_cfg.get("num_generations", 1),
-            critic_model_name_or_path=critic_model,
             discount=discount,
             critic_type=maac_cfg.get("critic_type", "v"),
             early_termination_threshold=maac_cfg.get(
@@ -405,9 +405,7 @@ def main() -> None:
         model_config={
             "tokenizer_kwargs": model_config.tokenizer_kwargs,
             "model_kwargs": model_config.model_kwargs,
-            "critic_model_kwargs": maac_cfg.get(
-                "critic_model_kwargs", model_config.model_kwargs
-            ),
+            "critic_model_kwargs": critic_config.model_kwargs,
         },
         wandb_config=_build_wandb_config(
             config,
@@ -418,6 +416,7 @@ def main() -> None:
             train_size,
             eval_size,
         ),
+        critics=critics,
     )
     trainer.verbose = bool(output_verbose)
     trainer.train()

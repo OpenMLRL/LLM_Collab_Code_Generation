@@ -101,7 +101,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--max-new-tokens", type=int, default=256)
     parser.add_argument("--temperature", type=float, default=0.6)
     parser.add_argument("--top-p", type=float, default=0.6)
-    parser.add_argument("--learning-rate", type=float, default=2e-5)
+    parser.add_argument("--agent-learning-rate", type=float, default=2e-5)
     parser.add_argument("--wandb-project", type=str, default="code-gen-compare")
     parser.add_argument("--wandb-entity", type=str, default="openmlrl")
     parser.add_argument("--wandb-run-name", type=str, default="codegen-magrpo")
@@ -158,7 +158,7 @@ def main() -> None:
     dataset = dataset.select(range(usable))
 
     magrpo_args = MAGRPOConfig(
-        learning_rate=args.learning_rate,
+        agent_learning_rate=args.agent_learning_rate,
         num_train_epochs=args.num_train_epochs,
         num_generations=args.num_generations,
         max_new_tokens=args.max_new_tokens,

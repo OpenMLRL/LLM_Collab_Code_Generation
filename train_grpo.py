@@ -329,7 +329,7 @@ def main():
     grpo_args = MAGRPOConfig(
         num_turns=num_turns,
         num_train_epochs=grpo_config.get("num_train_epochs", 10),
-        learning_rate=grpo_config.get("learning_rate", 2e-5),
+        agent_learning_rate=grpo_config.get("agent_learning_rate", 2e-5),
         logging_steps=grpo_config.get("logging_steps", 50),
         num_generations=grpo_config.get("num_generations", 4),
         max_new_tokens=grpo_config.get("max_new_tokens", 256),
@@ -338,7 +338,9 @@ def main():
         top_k=top_k,
         discount=grpo_config.get("discount", 0.9),
         joint_mode=grpo_config.get("joint_mode", "aligned"),
-        termination_threshold=grpo_config.get("termination_threshold", None),
+        early_termination_threshold=grpo_config.get(
+            "early_termination_threshold", None
+        ),
         eval_interval=grpo_config.get("eval_interval", 4),
         eval_num_samples=grpo_config.get("eval_num_samples", 4),
         eval_batch_size=grpo_config.get("eval_batch_size", 1),

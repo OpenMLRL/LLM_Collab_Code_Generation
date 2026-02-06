@@ -76,6 +76,13 @@ class Config:
             raise ValueError("No 'model' section found in configuration")
         return ModelConfig.from_dict(model_section)
 
+    def get_critic_config(self) -> ModelConfig:
+        """Get critic configuration as ModelConfig object."""
+        critic_section = self.get_section("critic")
+        if not critic_section:
+            raise ValueError("No 'critic' section found in configuration")
+        return ModelConfig.from_dict(critic_section)
+
     def update(self, updates: Dict[str, Any]):
         """Update configuration with new values (deep merge)."""
         self._deep_merge(self.data, updates)

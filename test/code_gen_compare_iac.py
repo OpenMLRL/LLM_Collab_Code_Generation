@@ -102,7 +102,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--temperature", type=float, default=0.6)
     parser.add_argument("--top-p", type=float, default=0.6)
     parser.add_argument("--top-k", type=int, default=None)
-    parser.add_argument("--actor-learning-rate", type=float, default=5e-6)
+    parser.add_argument("--agent-learning-rate", type=float, default=5e-6)
     parser.add_argument("--critic-learning-rate", type=float, default=5e-6)
     parser.add_argument(
         "--use-separate-critic",
@@ -110,10 +110,10 @@ def parse_args() -> argparse.Namespace:
         help="Enable a separate critic model instead of the shared value head.",
     )
     parser.add_argument(
-        "--critic-model",
+        "--critic",
         type=str,
         default=None,
-        help="Critic model name/path when using a separate critic. Defaults to actor model.",
+        help="Critic model name/path when using a separate critic.",
     )
     parser.add_argument("--value-loss-coef", type=float, default=0.6)
     parser.add_argument("--rollout-buffer-size", type=int, default=8)
@@ -222,9 +222,11 @@ def main() -> None:
     use_sampling = args.num_generations > 1
     top_k = args.top_k if use_sampling else None
 
-    critic_identifier = (
-        args.critic_model if args.critic_model is not None else args.model_name
-    ) if args.use_separate_critic else None
+    critics = None
+    if args.use_separate_critic:
+        if args.critic is None:
+            raise ValueError("--critic must be provided when --use-separate-critic is set.")
+        critics = [args.critic, args.critic]
 
     iac_trainer = IACTrainer(
         model=args.model_name,
@@ -233,7 +235,7 @@ def main() -> None:
         formatters=formatters,
         metrics_callback=None,
         args=IACConfig(
-            actor_learning_rate=args.actor_learning_rate,
+            agent_learning_rate=args.agent_learning_rate,
             critic_learning_rate=args.critic_learning_rate,
             value_loss_coef=args.value_loss_coef,
             rollout_buffer_size=args.rollout_buffer_size,
@@ -247,7 +249,6 @@ def main() -> None:
             num_generations=args.num_generations,
             num_turns=1,
             use_separate_critic=args.use_separate_critic,
-            critic_model_name_or_path=critic_identifier,
         ),
         train_dataset=dataset,
         model_config={
@@ -258,6 +259,7 @@ def main() -> None:
                 "torch_dtype": "bfloat16",
             },
         },
+        critics=critics,
         wandb_config={
             "project": args.wandb_project,
             "entity": args.wandb_entity,

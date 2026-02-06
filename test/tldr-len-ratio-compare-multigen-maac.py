@@ -89,7 +89,7 @@ def parse_args() -> argparse.Namespace:
         description="Train MAAC (multi-generation) on TL;DR length ratio with aligned sampling."
     )
     parser.add_argument("--model-name", type=str, default="Qwen/Qwen2.5-0.5B")
-    parser.add_argument("--critic-model", type=str, default=None)
+    parser.add_argument("--critic", type=str, default=None)
     parser.add_argument("--output-dir", type=str, default="./maac_multigen")
     parser.add_argument("--dataset-size", type=int, default=128)
     parser.add_argument("--num-train-epochs", type=int, default=10)
@@ -98,7 +98,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--temperature", type=float, default=0.6)
     parser.add_argument("--top-p", type=float, default=0.6)
     parser.add_argument("--top-k", type=int, default=None)
-    parser.add_argument("--actor-learning-rate", type=float, default=1e-6)
+    parser.add_argument("--agent-learning-rate", type=float, default=1e-6)
     parser.add_argument("--critic-learning-rate", type=float, default=1e-6)
     parser.add_argument("--value-loss-coef", type=float, default=0.5)
     parser.add_argument("--rollout-buffer-size", type=int, default=8)
@@ -143,6 +143,9 @@ def main() -> None:
     top_k = args.top_k if use_sampling else None
 
     formatters = build_prompt_formatters(tokenizer)
+    if args.critic is None:
+        raise ValueError("--critic must be provided for MAAC.")
+    critics = [args.critic]
 
     trainer = MAACTrainer(
         model=args.model_name,
@@ -151,7 +154,7 @@ def main() -> None:
         formatters=formatters,
         metrics_callback=None,
         args=MAACConfig(
-            actor_learning_rate=args.actor_learning_rate,
+            agent_learning_rate=args.agent_learning_rate,
             critic_learning_rate=args.critic_learning_rate,
             value_loss_coef=args.value_loss_coef,
             rollout_buffer_size=args.rollout_buffer_size,
@@ -163,9 +166,9 @@ def main() -> None:
             num_train_epochs=args.num_train_epochs,
             num_agents=2,
             num_generations=args.num_generations,
-            critic_model_name_or_path=args.critic_model or args.model_name,
         ),
         train_dataset=dataset,
+        critics=critics,
         wandb_config={
             "project": args.wandb_project,
             "entity": args.wandb_entity,

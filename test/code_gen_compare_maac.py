@@ -92,7 +92,7 @@ def parse_args() -> argparse.Namespace:
         description="MAAC (shared critic) baseline on CoopHumanEval code generation."
     )
     parser.add_argument("--model-name", type=str, default="Qwen/Qwen2.5-Coder-3B")
-    parser.add_argument("--critic-model", type=str, default=None)
+    parser.add_argument("--critic", type=str, default=None)
     parser.add_argument("--dataset-name", type=str, default="CoMLRL/CoopHumanEval")
     parser.add_argument("--dataset-split", type=str, default="test[16:]")
     parser.add_argument("--dataset-size", type=int, default=128)
@@ -103,7 +103,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--temperature", type=float, default=0.6)
     parser.add_argument("--top-p", type=float, default=0.6)
     parser.add_argument("--top-k", type=int, default=None)
-    parser.add_argument("--actor-learning-rate", type=float, default=5e-6)
+    parser.add_argument("--agent-learning-rate", type=float, default=5e-6)
     parser.add_argument("--critic-learning-rate", type=float, default=5e-6)
     parser.add_argument("--value-loss-coef", type=float, default=0.6)
     parser.add_argument("--rollout-buffer-size", type=int, default=8)
@@ -194,6 +194,9 @@ def main() -> None:
 
     use_sampling = args.num_generations > 1
     top_k = args.top_k if use_sampling else None
+    if args.critic is None:
+        raise ValueError("--critic must be provided for MAAC.")
+    critics = [args.critic]
 
     trainer = MAACTrainer(
         model=args.model_name,
@@ -202,7 +205,7 @@ def main() -> None:
         formatters=formatters,
         metrics_callback=None,
         args=MAACConfig(
-            actor_learning_rate=args.actor_learning_rate,
+            agent_learning_rate=args.agent_learning_rate,
             critic_learning_rate=args.critic_learning_rate,
             value_loss_coef=args.value_loss_coef,
             rollout_buffer_size=args.rollout_buffer_size,
@@ -214,7 +217,6 @@ def main() -> None:
             num_train_epochs=args.num_train_epochs,
             num_agents=2,
             num_generations=args.num_generations,
-            critic_model_name_or_path=args.critic_model or args.model_name,
         ),
         train_dataset=dataset,
         model_config={
@@ -225,6 +227,7 @@ def main() -> None:
                 "torch_dtype": "bfloat16",
             },
         },
+        critics=critics,
         wandb_config={
             "project": args.wandb_project,
             "entity": args.wandb_entity,

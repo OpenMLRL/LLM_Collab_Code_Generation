@@ -29,7 +29,7 @@ external:
 grpo:
   num_turns: 2
   num_train_epochs: 6
-  learning_rate: 2.0e-5
+  agent_learning_rate: 2.0e-5
   logging_steps: 50
   num_generations: 4
   max_new_tokens: 256
@@ -37,7 +37,7 @@ grpo:
   top_p: 0.95
   top_k: null
   discount: 0.9
-  termination_threshold: -0.1
+  early_termination_threshold: -0.1
   rollout_buffer_size: 2
   train_batch_size: 2
   eval_interval: 4

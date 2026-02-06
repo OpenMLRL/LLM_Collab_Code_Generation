@@ -62,7 +62,7 @@ Advantages use the mean return of the sibling set at each node as the baseline, 
 
 ### Termination Threshold
 
-`magrpo.termination_threshold` compares the mean immediate reward of the current sibling set against the threshold. When the threshold is exceeded, the branch stops expanding at that turn and the trainer backpropagates from the truncated subtree while other branches continue exploring.
+`magrpo.early_termination_threshold` compares the mean immediate reward of the current sibling set against the threshold. When the threshold is exceeded, the branch stops expanding at that turn and the trainer backpropagates from the truncated subtree while other branches continue exploring.
 
 ### History
 

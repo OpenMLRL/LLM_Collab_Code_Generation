@@ -96,7 +96,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--temperature", type=float, default=0.6)
     parser.add_argument("--top-p", type=float, default=0.6)
     parser.add_argument("--top-k", type=int, default=None)
-    parser.add_argument("--learning-rate", type=float, default=1e-6)
+    parser.add_argument("--agent-learning-rate", type=float, default=1e-6)
     parser.add_argument("--ratio-min", type=float, default=2.0)
     parser.add_argument("--ratio-max", type=float, default=3.0)
     parser.add_argument("--short-target-chars", type=int, default=220)
@@ -137,7 +137,7 @@ def main() -> None:
     )
 
     magrpo_args = MAGRPOConfig(
-        learning_rate=args.learning_rate,
+        agent_learning_rate=args.agent_learning_rate,
         num_train_epochs=args.num_train_epochs,
         num_generations=args.num_generations,
         max_new_tokens=args.max_new_tokens,
