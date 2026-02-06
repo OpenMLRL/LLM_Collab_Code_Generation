@@ -190,9 +190,7 @@ def main() -> None:
 
     _set_seed(seed_value)
 
-    tokenizer = AutoTokenizer.from_pretrained(
-        model_name, **model_config.tokenizer_kwargs
-    )
+    tokenizer = AutoTokenizer.from_pretrained(model_name)
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
 
@@ -330,11 +328,17 @@ def main() -> None:
     top_k = maac_cfg.get("top_k")
     temperature = maac_cfg.get("temperature", 0.6)
     top_p = maac_cfg.get("top_p", 0.6)
+    model_kwargs: Dict[str, Any] = {}
+    if model_config.torch_dtype is not None:
+        model_kwargs["torch_dtype"] = model_config.torch_dtype
     num_agents = maac_cfg.get("num_agents", 2)
     critic_name = critic_config.name
     if not critic_name:
         raise ValueError("critic.name must be provided for MAAC.")
     critics = [critic_name]
+    critic_model_kwargs: Dict[str, Any] = {}
+    if critic_config.torch_dtype is not None:
+        critic_model_kwargs["torch_dtype"] = critic_config.torch_dtype
     num_turns = maac_cfg.get("num_turns", 2)
     discount = maac_cfg.get("discount", 0.9)
 
@@ -394,9 +398,8 @@ def main() -> None:
         train_dataset=train_dataset,
         eval_dataset=eval_dataset,
         model_config={
-            "tokenizer_kwargs": model_config.tokenizer_kwargs,
-            "model_kwargs": model_config.model_kwargs,
-            "critic_model_kwargs": critic_config.model_kwargs,
+            "model_kwargs": model_kwargs,
+            "critic_model_kwargs": critic_model_kwargs,
         },
         wandb_config=_build_wandb_config(
             config,

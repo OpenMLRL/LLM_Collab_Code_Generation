@@ -20,9 +20,8 @@ class ModelConfig:
     temperature: float = 0.7
     top_p: float = 0.9
     max_length: int = 2048
-    tokenizer_kwargs: Dict[str, Any] = field(default_factory=dict)
-    model_kwargs: Dict[str, Any] = field(default_factory=dict)
     special_tokens: Dict[str, str] = field(default_factory=dict)
+    torch_dtype: Optional[str] = None
 
     @classmethod
     def from_dict(cls, config_dict: Dict[str, Any]) -> "ModelConfig":
@@ -33,9 +32,11 @@ class ModelConfig:
             temperature=config_dict.get("temperature", 0.7),
             top_p=config_dict.get("top_p", 0.9),
             max_length=config_dict.get("max_length", 2048),
-            tokenizer_kwargs=config_dict.get("tokenizer_kwargs", {}),
-            model_kwargs=config_dict.get("model_kwargs", {}),
             special_tokens=config_dict.get("special_tokens", {}),
+            torch_dtype=(
+                config_dict.get("torch_dtype")
+                or config_dict.get("dtype")
+            ),
         )
 
 

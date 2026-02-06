@@ -190,9 +190,7 @@ def main() -> None:
 
     _set_seed(seed_value)
 
-    tokenizer = AutoTokenizer.from_pretrained(
-        model_name, **model_config.tokenizer_kwargs
-    )
+    tokenizer = AutoTokenizer.from_pretrained(model_name)
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
 
@@ -332,6 +330,10 @@ def main() -> None:
     temperature = iac_cfg.get("temperature", 0.6)
     top_p = iac_cfg.get("top_p", 0.6)
     use_separate_critic = bool(iac_cfg.get("use_separate_critic", True))
+    model_kwargs: Dict[str, Any] = {}
+    if model_config.torch_dtype is not None:
+        model_kwargs["torch_dtype"] = model_config.torch_dtype
+    critic_config = None
     num_agents = iac_cfg.get("num_agents", 2)
     critics = None
     if use_separate_critic:
@@ -340,6 +342,11 @@ def main() -> None:
         if not critic_name:
             raise ValueError("critic.name must be provided when use_separate_critic is true")
         critics = [critic_name] * num_agents
+        critic_model_kwargs: Dict[str, Any] = {}
+        if critic_config.torch_dtype is not None:
+            critic_model_kwargs["torch_dtype"] = critic_config.torch_dtype
+    else:
+        critic_model_kwargs = model_kwargs
     num_turns = iac_cfg.get("num_turns", 1)
 
     rollout_buffer_size = iac_cfg.get("rollout_buffer_size", 8)
@@ -403,12 +410,11 @@ def main() -> None:
         train_dataset=train_dataset,
         eval_dataset=eval_dataset,
         model_config={
-            "tokenizer_kwargs": model_config.tokenizer_kwargs,
-            "model_kwargs": model_config.model_kwargs,
+            "model_kwargs": model_kwargs,
             "critic_model_kwargs": (
-                critic_config.model_kwargs
+                critic_model_kwargs
                 if critic_config is not None
-                else model_config.model_kwargs
+                else model_kwargs
             ),
         },
         wandb_config=_build_wandb_config(

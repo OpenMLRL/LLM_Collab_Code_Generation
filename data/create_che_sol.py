@@ -92,11 +92,9 @@ def load_agent_from_hf(model_name: str):
         model = AutoModelForCausalLM.from_pretrained(
             model_name,
             torch_dtype=torch.float16 if torch.cuda.is_available() else torch.float32,
-            device_map="auto" if torch.cuda.is_available() else None,
         )
 
-        if device == "cpu":
-            model = model.to(device)
+        model = model.to(device)
 
         return model, tokenizer
 

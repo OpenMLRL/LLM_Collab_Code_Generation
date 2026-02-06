@@ -178,9 +178,7 @@ def main() -> None:
     args = parse_args()
     _set_seed(args.seed)
 
-    tokenizer = AutoTokenizer.from_pretrained(
-        args.model_name, trust_remote_code=True
-    )
+    tokenizer = AutoTokenizer.from_pretrained(args.model_name)
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
 
@@ -218,10 +216,8 @@ def main() -> None:
         ),
         train_dataset=dataset,
         model_config={
-            "tokenizer_kwargs": {"trust_remote_code": True},
-            "model_kwargs": {"trust_remote_code": True, "torch_dtype": "bfloat16"},
+            "model_kwargs": {"torch_dtype": "bfloat16"},
             "critic_model_kwargs": {
-                "trust_remote_code": True,
                 "torch_dtype": "bfloat16",
             },
         },

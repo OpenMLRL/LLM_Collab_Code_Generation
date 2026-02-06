@@ -214,9 +214,7 @@ def main():
     print(f"Max context window: {model_config.max_length} tokens")
 
     print("\nLoading tokenizer...")
-    tokenizer = AutoTokenizer.from_pretrained(
-        model_name, **model_config.tokenizer_kwargs
-    )
+    tokenizer = AutoTokenizer.from_pretrained(model_name)
 
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
@@ -233,10 +231,14 @@ def main():
             f"Special tokens added: {model_config.special_tokens.get('additional_special_tokens', [])}"
         )
 
+    model_kwargs: Dict[str, Any] = {}
+    if model_config.torch_dtype is not None:
+        model_kwargs["torch_dtype"] = model_config.torch_dtype
+
     print(f"\nLoading model {model_name}...")
     model = AutoModelForCausalLM.from_pretrained(
         model_name,
-        **model_config.model_kwargs,
+        **model_kwargs,
     )
     print("Model loaded successfully!")
 

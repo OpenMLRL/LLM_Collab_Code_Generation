@@ -269,9 +269,7 @@ def main():
         print(f"Model type: {model_config.type}")
         print(f"Max context window: {model_config.max_length} tokens")
 
-    tokenizer = AutoTokenizer.from_pretrained(
-        model_name, **model_config.tokenizer_kwargs
-    )
+    tokenizer = AutoTokenizer.from_pretrained(model_name)
 
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
@@ -465,10 +463,13 @@ def main():
     code_rewards.VERBOSE = bool(output_verbose)
     import external as external_mod
     external_mod.VERBOSE = bool(output_verbose)
+    model_kwargs: Dict[str, Any] = {}
+    if model_config.torch_dtype is not None:
+        model_kwargs["torch_dtype"] = model_config.torch_dtype
     agents = [
         AutoModelForCausalLM.from_pretrained(
             model_name,
-            **model_config.model_kwargs,
+            **model_kwargs,
         )
         for _ in range(num_agents)
     ]
