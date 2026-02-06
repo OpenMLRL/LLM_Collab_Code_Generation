@@ -192,8 +192,7 @@ def main() -> None:
     prompt_lookup = build_prompt_lookup(dataset)
     reward_fn = make_prompt_reward_fn(prompt_lookup)
 
-    use_sampling = args.num_generations > 1
-    top_k = args.top_k if use_sampling else None
+    top_k = args.top_k
     if args.critic is None:
         raise ValueError("--critic must be provided for MAAC.")
     critics = [args.critic]
@@ -213,7 +212,6 @@ def main() -> None:
             temperature=args.temperature,
             top_p=args.top_p,
             top_k=top_k,
-            do_sample=use_sampling,
             num_train_epochs=args.num_train_epochs,
             num_agents=2,
             num_generations=args.num_generations,

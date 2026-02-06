@@ -406,6 +406,9 @@ def main():
             ),
             "rollout_buffer_size": magrpo_config.get("rollout_buffer_size", 2),
             "train_batch_size": magrpo_config.get("train_batch_size", None),
+            "advantage_normalization": magrpo_config.get(
+                "advantage_normalization", True
+            ),
             "eval_interval": magrpo_config.get("eval_interval", 16),
             "eval_num_samples": magrpo_config.get("eval_num_samples", 4),
             "eval_batch_size": magrpo_config.get("eval_batch_size", 1),

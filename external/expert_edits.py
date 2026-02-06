@@ -145,17 +145,6 @@ Here is the current combined code to consider:
     return prompt, "", ""
 
 
-def _extract_function_params_from_prompt(prompt_text: str) -> List[str]:
-    import re
-
-    match = re.search(r"def\s+\w+\s*\(([^)]+)\)", prompt_text)
-    if match:
-        params_str = match.group(1)
-        params = [p.strip() for p in params_str.split(",") if p.strip()]
-        return params
-    return []
-
-
 def format_followup_prompts(
     original_prompt: str,
     aux_edits: str,

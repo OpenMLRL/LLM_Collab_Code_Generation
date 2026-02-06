@@ -45,6 +45,7 @@ magrpo:
   early_termination_threshold: -0.2
   rollout_buffer_size: 4
   train_batch_size: 4
+  advantage_normalization: true
   eval_interval: 4
   eval_num_samples: 4
   eval_batch_size: 1

@@ -328,12 +328,6 @@ def main() -> None:
         if shift_val_f is not None:
             reward_processor = RewardProcessors.shift(value=shift_val_f)
 
-    if "do_sample" in iac_cfg:
-        use_sampling = bool(iac_cfg.get("do_sample"))
-    else:
-        use_sampling = bool(
-            "temperature" in iac_cfg or "top_p" in iac_cfg or "top_k" in iac_cfg
-        )
     top_k = iac_cfg.get("top_k")
     temperature = iac_cfg.get("temperature", 0.6)
     top_p = iac_cfg.get("top_p", 0.6)
@@ -392,7 +386,6 @@ def main() -> None:
             temperature=temperature,
             top_p=top_p,
             top_k=top_k,
-            do_sample=use_sampling,
             num_agents=num_agents,
             num_generations=iac_cfg.get("num_generations", 1),
             use_separate_critic=use_separate_critic,

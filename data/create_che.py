@@ -209,18 +209,3 @@ if __name__ == "__main__":
 
 
 # Alternative: Verify dataset after upload
-def verify_dataset(dataset_name):
-    """
-    Verify the uploaded dataset by loading it back.
-    """
-    from datasets import load_dataset
-
-    print(f"\nVerifying dataset {dataset_name}...")
-    dataset = load_dataset(dataset_name)
-
-    print(f"Available splits: {list(dataset.keys())}")
-    print(f"Number of examples in test split: {len(dataset['test'])}")
-    print(f"\nFirst example:")
-    print(dataset["test"][0])
-
-    return dataset

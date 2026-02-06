@@ -327,14 +327,6 @@ def main() -> None:
         if shift_val_f is not None:
             reward_processor = RewardProcessors.shift(value=shift_val_f)
 
-    if "do_sample" in maac_cfg:
-        use_sampling = bool(maac_cfg.get("do_sample"))
-    else:
-        use_sampling = bool(
-            "temperature" in maac_cfg
-            or "top_p" in maac_cfg
-            or "top_k" in maac_cfg
-        )
     top_k = maac_cfg.get("top_k")
     temperature = maac_cfg.get("temperature", 0.6)
     top_p = maac_cfg.get("top_p", 0.6)
@@ -387,7 +379,6 @@ def main() -> None:
             temperature=temperature,
             top_p=top_p,
             top_k=top_k,
-            do_sample=use_sampling,
             num_agents=num_agents,
             num_generations=maac_cfg.get("num_generations", 1),
             discount=discount,

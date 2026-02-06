@@ -158,8 +158,7 @@ def main() -> None:
 
     formatters = build_prompt_formatters(tokenizer)
 
-    use_sampling = args.num_generations > 1
-    top_k = args.top_k if use_sampling else None
+    top_k = args.top_k
 
     iac_trainer = IACTrainer(
         model=args.model_name,
@@ -176,7 +175,6 @@ def main() -> None:
             temperature=args.temperature,
             top_p=args.top_p,
             top_k=top_k,
-            do_sample=use_sampling,
             num_train_epochs=args.num_train_epochs,
             num_agents=2,
             num_generations=args.num_generations,
