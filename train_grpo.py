@@ -342,6 +342,7 @@ def main():
         eval_interval=grpo_config.get("eval_interval", 4),
         eval_num_samples=grpo_config.get("eval_num_samples", 4),
         eval_batch_size=grpo_config.get("eval_batch_size", 1),
+        train_batch_size=grpo_config.get("train_batch_size"),
     )
     formatter = get_formatter(dataset_type)
     reward_func = get_reward_function(dataset_type)

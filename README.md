@@ -73,7 +73,7 @@ Each agent receives its own full history at every turn: all of its past prompts 
 `external.mode` shapes the prompt that seeds each turn:
 
 - `level_feedback` (default) appends syntax/test diagnostics and asks for a code-only revision. `external.sandbox_slice` controls how many eval asserts to surface (1 by default, 0/None/`'all'` to show every test, negatives to index from the end).
-- `expert_edits` calls an external LLM (configured via `external.expert_edits_model`, default DeepSeek-Coder) to produce compact edit suggestions before asking for a revision.
+- `expert_edits` calls an external LLM (configured via `external.expert_model`, default DeepSeek-Coder) to produce compact edit suggestions before asking for a revision.
 - `plain` simply restates the prior attempt and asks for a concise "revise, code-only" answer.
 
 ## Reward Structure
@@ -86,4 +86,4 @@ Each agent receives its own full history at every turn: all of its past prompts 
 
 ## Logging
 
-`loggers/` adapt the shared `MAGRPOTrainer` utilities to emit pass rates, syntax success, reward decomposition, termination statistics, and aux-usage diagnostics. Configure Weights & Biases by setting `wandb.project`, `wandb.entity`, and `wandb.name` in YAML or through overrides. `output.save_model` stays `false` by default to avoid storing large checkpoints, while `output.verbose` toggles the detailed per-episode traces used when debugging on a cluster.
+`loggers/` adapt the shared `MAGRPOTrainer` utilities to emit pass rates, syntax success, reward decomposition, termination statistics, and aux-usage diagnostics. Configure Weights & Biases by setting `wandb.project`, `wandb.entity`, and `wandb.name` in YAML or through overrides. `output.save_final_model` stays `false` by default to avoid storing large checkpoints, while `output.verbose` toggles the detailed per-episode traces used when debugging on a cluster.

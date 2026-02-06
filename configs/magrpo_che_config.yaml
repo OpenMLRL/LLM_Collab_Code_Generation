@@ -44,6 +44,7 @@ magrpo:
   joint_mode: aligned
   termination_threshold: -0.2
   rollout_buffer_size: 4
+  train_batch_size: 4
   eval_interval: 4
   eval_num_samples: 4
   eval_batch_size: 1
