@@ -5,8 +5,6 @@ import re
 class TimeoutException(Exception):
     """Exception raised when code execution times out."""
 
-    pass
-
 
 def timeout_handler(signum, frame):
     """Signal handler for timeouts."""
