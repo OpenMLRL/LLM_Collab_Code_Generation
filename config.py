@@ -54,7 +54,7 @@ class Config:
             self.data = yaml.safe_load(f)
 
     def get(self, key: str, default: Any = None) -> Any:
-        """Get value using dot notation (e.g., 'model.name')."""
+        """Get value using dot notation (e.g., 'agent_model.name')."""
         keys = key.split(".")
         value = self.data
 
@@ -70,18 +70,20 @@ class Config:
         """Get entire configuration section."""
         return self.data.get(section, {})
 
-    def get_model_config(self) -> ModelConfig:
-        """Get model configuration as ModelConfig object."""
-        model_section = self.get_section("model")
+    def get_agent_model_config(self) -> ModelConfig:
+        """Get agent model configuration as ModelConfig object."""
+        model_section = self.get_section("agent_model")
         if not model_section:
-            raise ValueError("No 'model' section found in configuration")
+            raise ValueError("No 'agent_model' section found in configuration")
         return ModelConfig.from_dict(model_section)
 
-    def get_critic_config(self) -> ModelConfig:
-        """Get critic configuration as ModelConfig object."""
-        critic_section = self.get_section("critic")
+    def get_critic_model_config(self, required: bool = True) -> Optional[ModelConfig]:
+        """Get critic model configuration as ModelConfig object."""
+        critic_section = self.get_section("critic_model")
         if not critic_section:
-            raise ValueError("No 'critic' section found in configuration")
+            if required:
+                raise ValueError("No 'critic_model' section found in configuration")
+            return None
         return ModelConfig.from_dict(critic_section)
 
     def update(self, updates: Dict[str, Any]):

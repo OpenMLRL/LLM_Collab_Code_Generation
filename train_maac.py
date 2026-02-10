@@ -155,8 +155,8 @@ def main() -> None:
         overrides = parse_overrides(args.override)
         config.update(overrides)
 
-    model_config = config.get_model_config()
-    critic_config = config.get_critic_config()
+    model_config = config.get_agent_model_config()
+    critic_config = None
     model_name = model_config.name
     dataset_name = config.get("dataset.name")
     dataset_type = config.get("dataset.type")
@@ -183,8 +183,6 @@ def main() -> None:
     maac_cfg = config.get_section("maac") if hasattr(config, "get_section") else {}
     seed_value = int(config.get("seed", maac_cfg.get("seed", 42)))
     num_agents = maac_cfg.get("num_agents", 2)
-    if config.get("model.agents") is not None:
-        raise ValueError("model.agents is not supported; use top-level agents.")
     agent_names = config.get("agents")
     if agent_names is not None:
         if not isinstance(agent_names, (list, tuple)) or not all(
@@ -193,7 +191,7 @@ def main() -> None:
             raise ValueError("agents must be a list of model names.")
         agent_names = [str(x) for x in agent_names]
         if model_name and any(name != model_name for name in agent_names):
-            raise ValueError("model.name conflicts with agents.")
+            raise ValueError("agent_model.name conflicts with agents.")
         if len(agent_names) != int(num_agents):
             raise ValueError("agents length must match maac.num_agents.")
 
@@ -206,7 +204,7 @@ def main() -> None:
 
     tokenizer_source = model_name or (agent_names[0] if agent_names else None)
     if not tokenizer_source:
-        raise ValueError("model.name or agents must be provided.")
+        raise ValueError("agent_model.name or agents must be provided.")
     if agent_names:
         tokenizers = [AutoTokenizer.from_pretrained(name) for name in agent_names]
     else:
@@ -354,12 +352,28 @@ def main() -> None:
     model_kwargs: Dict[str, Any] = {}
     if model_config.torch_dtype is not None:
         model_kwargs["torch_dtype"] = model_config.torch_dtype
-    critic_name = critic_config.name
-    if not critic_name:
-        raise ValueError("critic.name must be provided for MAAC.")
-    critics = [critic_name]
-    critic_model_kwargs: Dict[str, Any] = {}
-    if critic_config.torch_dtype is not None:
+    critics_field = config.get("critics")
+    critic_names = None
+    if critics_field is not None:
+        if not isinstance(critics_field, (list, tuple)) or not all(
+            isinstance(x, str) for x in critics_field
+        ):
+            raise ValueError("critics must be a list of model names.")
+        critic_names = [str(x) for x in critics_field]
+        if len(critic_names) != 1:
+            raise ValueError("critics length must match 1 critic.")
+    critic_config = config.get_critic_model_config(required=False)
+    critic_name = critic_config.name if critic_config is not None else ""
+    if critic_names is None:
+        if not critic_name:
+            raise ValueError("critic_model.name must be provided for MAAC.")
+        critic_names = [critic_name]
+    else:
+        if critic_name and any(name != critic_name for name in critic_names):
+            raise ValueError("critic_model.name conflicts with critics.")
+    critics = critic_names
+    critic_model_kwargs: Dict[str, Any] = dict(model_kwargs)
+    if critic_config is not None and critic_config.torch_dtype is not None:
         critic_model_kwargs["torch_dtype"] = critic_config.torch_dtype
     num_turns = maac_cfg.get("num_turns", 2)
     discount = maac_cfg.get("discount", 0.9)
@@ -393,7 +407,7 @@ def main() -> None:
     else:
         model_arg = model_name
     trainer = MAACTrainer(
-        model=model_arg,
+        agent_model=model_arg,
         agents=agents_arg,
         tokenizer=tokenizers if agent_names else tokenizer,
         reward_func=reward_fn,

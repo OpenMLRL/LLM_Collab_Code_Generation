@@ -156,7 +156,7 @@ def main():
     if args.override:
         overrides = parse_overrides(args.override)
         config.update(overrides)
-    model_config = config.get_model_config()
+    model_config = config.get_agent_model_config()
     model_name = model_config.name
     dataset_name = config.get("dataset.name")
     dataset_type = config.get("dataset.type")
@@ -377,7 +377,9 @@ def main():
         if "slice" not in tags:
             tags.append("slice")
     dataset_section = config.get_section("dataset") if hasattr(config, "get_section") else {}
-    model_section = config.get_section("model") if hasattr(config, "get_section") else {}
+    model_section = (
+        config.get_section("agent_model") if hasattr(config, "get_section") else {}
+    )
     output_section = config.get_section("output") if hasattr(config, "get_section") else {}
 
     wandb_config = {
@@ -388,7 +390,7 @@ def main():
         "tags": tags,
         "config_sections": {
             "dataset": dataset_section,
-            "model": model_section,
+            "agent_model": model_section,
             "output": output_section,
             "external": external_cfg,
             "trainer": grpo_config,

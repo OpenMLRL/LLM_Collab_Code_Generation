@@ -204,7 +204,7 @@ def main():
         overrides = parse_overrides(args.override)
         config.update(overrides)
 
-    model_config = config.get_model_config()
+    model_config = config.get_agent_model_config()
     model_name = model_config.name
     dataset_name = config.get("dataset.name")
     dataset_type = config.get("dataset.type")
@@ -232,8 +232,6 @@ def main():
     seed_value = int(config.get("seed", magrpo_config.get("seed", 42)))
     num_turns = magrpo_config.get("num_turns", 2)
     num_agents = magrpo_config.get("num_agents", 2)
-    if config.get("model.agents") is not None:
-        raise ValueError("model.agents is not supported; use top-level agents.")
     agent_names = config.get("agents")
     if agent_names is not None:
         if not isinstance(agent_names, (list, tuple)) or not all(
@@ -242,7 +240,7 @@ def main():
             raise ValueError("agents must be a list of model names.")
         agent_names = [str(x) for x in agent_names]
         if model_name and any(name != model_name for name in agent_names):
-            raise ValueError("model.name conflicts with agents.")
+            raise ValueError("agent_model.name conflicts with agents.")
         if len(agent_names) != int(num_agents):
             raise ValueError("agents length must match magrpo.num_agents.")
     is_multi_turn = num_turns > 1
@@ -284,7 +282,7 @@ def main():
 
     tokenizer_source = model_name or (agent_names[0] if agent_names else None)
     if not tokenizer_source:
-        raise ValueError("model.name or agents must be provided.")
+        raise ValueError("agent_model.name or agents must be provided.")
     if agent_names:
         tokenizers = [AutoTokenizer.from_pretrained(name) for name in agent_names]
     else:
@@ -454,7 +452,9 @@ def main():
         if "self-evolved" not in tags:
             tags.append("self-evolved")
     dataset_section = config.get_section("dataset") if hasattr(config, "get_section") else {}
-    model_section = config.get_section("model") if hasattr(config, "get_section") else {}
+    model_section = (
+        config.get_section("agent_model") if hasattr(config, "get_section") else {}
+    )
     output_section = config.get_section("output") if hasattr(config, "get_section") else {}
 
     wandb_config = {
@@ -466,7 +466,7 @@ def main():
         # Provide full sections for the trainer to log cleanly
         "config_sections": {
             "dataset": dataset_section,
-            "model": model_section,
+            "agent_model": model_section,
             "output": output_section,
             "external": external_cfg,
             "trainer": magrpo_config,
