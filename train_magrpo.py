@@ -340,8 +340,6 @@ def main():
     else:
         sandbox_slice = None if _sandbox_val is None else 0
 
-    # re already imported at module level
-
     def _make_sliced_assert_tests(test_code: str, n: int) -> str:
         if not isinstance(test_code, str) or not test_code.strip():
             return test_code
