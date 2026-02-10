@@ -232,26 +232,19 @@ def main():
     seed_value = int(config.get("seed", magrpo_config.get("seed", 42)))
     num_turns = magrpo_config.get("num_turns", 2)
     num_agents = magrpo_config.get("num_agents", 2)
-    agent_names = config.get("model.agents")
-    top_agents = config.get("agents")
-    if isinstance(top_agents, (list, tuple)):
-        if not all(isinstance(x, str) for x in top_agents):
-            raise ValueError("agents must be a list of model names.")
-        top_agents = [str(x) for x in top_agents]
-        if agent_names is not None and list(agent_names) != top_agents:
-            raise ValueError("model.agents conflicts with agents.")
-        if agent_names is None:
-            agent_names = top_agents
+    if config.get("model.agents") is not None:
+        raise ValueError("model.agents is not supported; use top-level agents.")
+    agent_names = config.get("agents")
     if agent_names is not None:
         if not isinstance(agent_names, (list, tuple)) or not all(
             isinstance(x, str) for x in agent_names
         ):
-            raise ValueError("model.agents must be a list of model names.")
+            raise ValueError("agents must be a list of model names.")
         agent_names = [str(x) for x in agent_names]
         if model_name and any(name != model_name for name in agent_names):
-            raise ValueError("model.name conflicts with model.agents.")
+            raise ValueError("model.name conflicts with agents.")
         if len(agent_names) != int(num_agents):
-            raise ValueError("model.agents length must match magrpo.num_agents.")
+            raise ValueError("agents length must match magrpo.num_agents.")
     is_multi_turn = num_turns > 1
     output_verbose = bool(config.get("output.verbose", False))
     if output_verbose:
@@ -291,7 +284,7 @@ def main():
 
     tokenizer_source = model_name or (agent_names[0] if agent_names else None)
     if not tokenizer_source:
-        raise ValueError("model.name or model.agents must be provided.")
+        raise ValueError("model.name or agents must be provided.")
     if agent_names:
         tokenizers = [AutoTokenizer.from_pretrained(name) for name in agent_names]
     else:
