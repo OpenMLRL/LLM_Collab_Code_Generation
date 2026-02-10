@@ -182,6 +182,27 @@ def main() -> None:
 
     maac_cfg = config.get_section("maac") if hasattr(config, "get_section") else {}
     seed_value = int(config.get("seed", maac_cfg.get("seed", 42)))
+    num_agents = maac_cfg.get("num_agents", 2)
+    agent_names = config.get("model.agents")
+    top_agents = config.get("agents")
+    if isinstance(top_agents, (list, tuple)):
+        if not all(isinstance(x, str) for x in top_agents):
+            raise ValueError("agents must be a list of model names.")
+        top_agents = [str(x) for x in top_agents]
+        if agent_names is not None and list(agent_names) != top_agents:
+            raise ValueError("model.agents conflicts with agents.")
+        if agent_names is None:
+            agent_names = top_agents
+    if agent_names is not None:
+        if not isinstance(agent_names, (list, tuple)) or not all(
+            isinstance(x, str) for x in agent_names
+        ):
+            raise ValueError("model.agents must be a list of model names.")
+        agent_names = [str(x) for x in agent_names]
+        if model_name and any(name != model_name for name in agent_names):
+            raise ValueError("model.name conflicts with model.agents.")
+        if len(agent_names) != int(num_agents):
+            raise ValueError("model.agents length must match maac.num_agents.")
 
     slurm_job_id = os.environ.get("SLURM_JOB_ID", "no_job_id")
     output_dir = os.path.join(output_base_dir, f"maac_job_{slurm_job_id}")
@@ -190,9 +211,17 @@ def main() -> None:
 
     _set_seed(seed_value)
 
-    tokenizer = AutoTokenizer.from_pretrained(model_name)
-    if tokenizer.pad_token is None:
-        tokenizer.pad_token = tokenizer.eos_token
+    tokenizer_source = model_name or (agent_names[0] if agent_names else None)
+    if not tokenizer_source:
+        raise ValueError("model.name or model.agents must be provided.")
+    if agent_names:
+        tokenizers = [AutoTokenizer.from_pretrained(name) for name in agent_names]
+    else:
+        tokenizers = [AutoTokenizer.from_pretrained(tokenizer_source)]
+    for tok in tokenizers:
+        if tok.pad_token is None:
+            tok.pad_token = tok.eos_token
+    tokenizer = tokenizers[0]
 
     train_dataset = load_dataset(dataset_name, split=train_split)
     if train_size is not None:
@@ -211,7 +240,8 @@ def main() -> None:
             eval_size = len(eval_dataset)
 
     if output_verbose:
-        print(f"Using model: {model_name}")
+        display_model = model_name or (agent_names[0] if agent_names else "")
+        print(f"Using model: {display_model}")
         print(f"Train dataset: {dataset_name} split={train_split} size={train_size}")
         if eval_dataset is not None:
             print(f"Eval dataset: {dataset_name} split={eval_split} size={eval_size}")
@@ -331,7 +361,6 @@ def main() -> None:
     model_kwargs: Dict[str, Any] = {}
     if model_config.torch_dtype is not None:
         model_kwargs["torch_dtype"] = model_config.torch_dtype
-    num_agents = maac_cfg.get("num_agents", 2)
     critic_name = critic_config.name
     if not critic_name:
         raise ValueError("critic.name must be provided for MAAC.")
@@ -364,9 +393,16 @@ def main() -> None:
                 response_history_per_agent=response_history_per_agent,
             )
 
+    model_arg = None
+    agents_arg = None
+    if agent_names:
+        agents_arg = agent_names
+    else:
+        model_arg = model_name
     trainer = MAACTrainer(
-        model=model_name,
-        tokenizer=tokenizer,
+        model=model_arg,
+        agents=agents_arg,
+        tokenizer=tokenizers if agent_names else tokenizer,
         reward_func=reward_fn,
         reward_processor=reward_processor,
         formatters=formatters,

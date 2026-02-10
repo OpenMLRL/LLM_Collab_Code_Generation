@@ -232,6 +232,26 @@ def main():
     seed_value = int(config.get("seed", magrpo_config.get("seed", 42)))
     num_turns = magrpo_config.get("num_turns", 2)
     num_agents = magrpo_config.get("num_agents", 2)
+    agent_names = config.get("model.agents")
+    top_agents = config.get("agents")
+    if isinstance(top_agents, (list, tuple)):
+        if not all(isinstance(x, str) for x in top_agents):
+            raise ValueError("agents must be a list of model names.")
+        top_agents = [str(x) for x in top_agents]
+        if agent_names is not None and list(agent_names) != top_agents:
+            raise ValueError("model.agents conflicts with agents.")
+        if agent_names is None:
+            agent_names = top_agents
+    if agent_names is not None:
+        if not isinstance(agent_names, (list, tuple)) or not all(
+            isinstance(x, str) for x in agent_names
+        ):
+            raise ValueError("model.agents must be a list of model names.")
+        agent_names = [str(x) for x in agent_names]
+        if model_name and any(name != model_name for name in agent_names):
+            raise ValueError("model.name conflicts with model.agents.")
+        if len(agent_names) != int(num_agents):
+            raise ValueError("model.agents length must match magrpo.num_agents.")
     is_multi_turn = num_turns > 1
     output_verbose = bool(config.get("output.verbose", False))
     if output_verbose:
@@ -269,24 +289,28 @@ def main():
         print(f"Model type: {model_config.type}")
         print(f"Max context window: {model_config.max_length} tokens")
 
-    tokenizer = AutoTokenizer.from_pretrained(model_name)
-
-    if tokenizer.pad_token is None:
-        tokenizer.pad_token = tokenizer.eos_token
-
-    padding_side = config.get("tokenizer.padding_side")
-    if padding_side:
-        tokenizer.padding_side = padding_side
-
-    # Add special tokens if needed (e.g., FIM tokens for StarCoder)
-    if model_config.special_tokens:
-        if output_verbose:
-            print("Adding special tokens...")
-        tokenizer.add_special_tokens(model_config.special_tokens)
-        if output_verbose:
-            print(
-                f"Special tokens added: {model_config.special_tokens.get('additional_special_tokens', [])}"
-            )
+    tokenizer_source = model_name or (agent_names[0] if agent_names else None)
+    if not tokenizer_source:
+        raise ValueError("model.name or model.agents must be provided.")
+    if agent_names:
+        tokenizers = [AutoTokenizer.from_pretrained(name) for name in agent_names]
+    else:
+        tokenizers = [AutoTokenizer.from_pretrained(tokenizer_source)]
+    for tok in tokenizers:
+        if tok.pad_token is None:
+            tok.pad_token = tok.eos_token
+        padding_side = config.get("tokenizer.padding_side")
+        if padding_side:
+            tok.padding_side = padding_side
+        if model_config.special_tokens:
+            if output_verbose:
+                print("Adding special tokens...")
+            tok.add_special_tokens(model_config.special_tokens)
+            if output_verbose:
+                print(
+                    f"Special tokens added: {model_config.special_tokens.get('additional_special_tokens', [])}"
+                )
+    tokenizer = tokenizers[0]
 
     temperature = magrpo_config.get("temperature", 0.6)
     top_p = magrpo_config.get("top_p", 0.6)
@@ -466,13 +490,22 @@ def main():
     model_kwargs: Dict[str, Any] = {}
     if model_config.torch_dtype is not None:
         model_kwargs["torch_dtype"] = model_config.torch_dtype
-    agents = [
-        AutoModelForCausalLM.from_pretrained(
-            model_name,
-            **model_kwargs,
-        )
-        for _ in range(num_agents)
-    ]
+    if agent_names:
+        agents = [
+            AutoModelForCausalLM.from_pretrained(
+                name,
+                **model_kwargs,
+            )
+            for name in agent_names
+        ]
+    else:
+        agents = [
+            AutoModelForCausalLM.from_pretrained(
+                model_name,
+                **model_kwargs,
+            )
+            for _ in range(num_agents)
+        ]
 
     reward_processor = None
     if config.get("reward_processor.enabled", True):
@@ -492,7 +525,7 @@ def main():
     trainer_kwargs = {
         "agents": agents,
         "num_agents": num_agents,
-        "tokenizer": tokenizer,
+        "tokenizer": tokenizers if agent_names else tokenizer,
         "train_dataset": train_dataset,
         "eval_dataset": eval_dataset,
         "reward_func": reward_func,
