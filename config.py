@@ -40,7 +40,6 @@ class ModelConfig:
         )
 
 
-# Configuration Loader
 class Config:
     """Simple configuration manager for YAML files."""
 
@@ -105,7 +104,6 @@ class Config:
             yaml.dump(self.data, f, default_flow_style=False, sort_keys=False)
 
 
-# Command-line argument helpers
 def add_config_args(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
     """Add configuration arguments to parser."""
     parser.add_argument(
@@ -132,7 +130,6 @@ def parse_overrides(overrides: list) -> Dict[str, Any]:
         key, value = override.split("=", 1)
         keys = key.split(".")
 
-        # Try to parse value as Python literal
         try:
             import ast
 
@@ -140,7 +137,6 @@ def parse_overrides(overrides: list) -> Dict[str, Any]:
         except (ValueError, SyntaxError):
             pass  # Keep as string
 
-        # Build nested dictionary
         current = result
         for k in keys[:-1]:
             if k not in current:

@@ -38,7 +38,6 @@ def code_reward_logger(
     TEST_TIMEOUT = 10
     MAX_TIMEOUTS = 3
 
-    # Handle case where prompts is not provided
     if prompts is None:
         prompts = [""] * len(completions1)
 
@@ -68,14 +67,11 @@ def code_reward_logger(
             "gated_total_reward": 0.0,
         }
 
-        # Extract imports from prompt
         imports = extract_imports_from_prompt(prompt)
 
-        # Clean completions
         c1_clean = cleanup_code(c1)
         c2_clean = cleanup_code(c2)
 
-        # Extract specific functions
         aux_func = extract_specific_function(c1_clean, "aux")
         main_func = extract_specific_function(c2_clean, entry_point)
 

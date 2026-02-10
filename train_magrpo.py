@@ -536,7 +536,6 @@ def main():
         and dataset_type.lower() in ["humaneval", "coophumaneval", "mbpp"]
     ):
         expert_model = external_cfg.get("expert_model", "deepseek-coder")
-        # external_mode already loaded above
 
         def external_transition_wrapper(
             prompt,

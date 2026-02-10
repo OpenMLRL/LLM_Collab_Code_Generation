@@ -271,7 +271,6 @@ def main():
     else:
         sandbox_slice = None if _sandbox_val is None else 0
 
-    # re already imported at module level
 
     def _make_sliced_assert_tests(test_code: str, n: int) -> str:
         if not isinstance(test_code, str) or not test_code.strip():
@@ -403,7 +402,6 @@ def main():
     import external as external_mod
     external_mod.VERBOSE = bool(output_verbose)
     reward_processor = None
-    # Optional scale
     if config.get("reward_processor.enabled", False):
         scale_factor = config.get("reward_processor.scale_factor", 1)
         reward_processor = RewardProcessors.scale(factor=scale_factor)
@@ -430,7 +428,6 @@ def main():
         "eval_dataset": eval_dataset,
         "reward_func": reward_func,
         "formatters": formatter,
-        # Logging / config
         "wandb_config": wandb_config,
         "dataset_type": dataset_type,
         "args": grpo_args,
@@ -467,7 +464,6 @@ def main():
                 response_history_per_agent=response_history_per_agent,
             )
 
-            # Ensure list of one string is returned
             if isinstance(prompts, (list, tuple)):
                 return list(prompts)
             return [str(prompts)]
