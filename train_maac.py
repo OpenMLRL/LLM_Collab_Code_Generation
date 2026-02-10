@@ -190,10 +190,6 @@ def main() -> None:
         ):
             raise ValueError("agents must be a list of model names.")
         agent_names = [str(x) for x in agent_names]
-        if model_name and any(name != model_name for name in agent_names):
-            raise ValueError("agent_model.name conflicts with agents.")
-        if len(agent_names) != int(num_agents):
-            raise ValueError("agents length must match maac.num_agents.")
 
     slurm_job_id = os.environ.get("SLURM_JOB_ID", "no_job_id")
     output_dir = os.path.join(output_base_dir, f"maac_job_{slurm_job_id}")
@@ -202,7 +198,7 @@ def main() -> None:
 
     _set_seed(seed_value)
 
-    tokenizer_source = model_name or (agent_names[0] if agent_names else None)
+    tokenizer_source = agent_names[0] if agent_names else model_name
     if not tokenizer_source:
         raise ValueError("agent_model.name or agents must be provided.")
     if agent_names:
@@ -231,7 +227,7 @@ def main() -> None:
             eval_size = len(eval_dataset)
 
     if output_verbose:
-        display_model = model_name or (agent_names[0] if agent_names else "")
+        display_model = (agent_names[0] if agent_names else model_name) or ""
         print(f"Using model: {display_model}")
         print(f"Train dataset: {dataset_name} split={train_split} size={train_size}")
         if eval_dataset is not None:
@@ -360,17 +356,8 @@ def main() -> None:
         ):
             raise ValueError("critics must be a list of model names.")
         critic_names = [str(x) for x in critics_field]
-        if len(critic_names) != 1:
-            raise ValueError("critics length must match 1 critic.")
     critic_config = config.get_critic_model_config(required=False)
-    critic_name = critic_config.name if critic_config is not None else ""
-    if critic_names is None:
-        if not critic_name:
-            raise ValueError("critic_model.name must be provided for MAAC.")
-        critic_names = [critic_name]
-    else:
-        if critic_name and any(name != critic_name for name in critic_names):
-            raise ValueError("critic_model.name conflicts with critics.")
+    critic_name = critic_config.name if critic_config is not None else None
     critics = critic_names
     critic_model_kwargs: Dict[str, Any] = dict(model_kwargs)
     if critic_config is not None and critic_config.torch_dtype is not None:
@@ -400,12 +387,8 @@ def main() -> None:
                 response_history_per_agent=response_history_per_agent,
             )
 
-    model_arg = None
-    agents_arg = None
-    if agent_names:
-        agents_arg = agent_names
-    else:
-        model_arg = model_name
+    model_arg = model_name or None
+    agents_arg = agent_names
     trainer = MAACTrainer(
         agent_model=model_arg,
         agents=agents_arg,
@@ -453,6 +436,7 @@ def main() -> None:
             train_size,
             eval_size,
         ),
+        critic_model=critic_name,
         critics=critics,
     )
     trainer.verbose = bool(output_verbose)

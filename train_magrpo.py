@@ -239,10 +239,6 @@ def main():
         ):
             raise ValueError("agents must be a list of model names.")
         agent_names = [str(x) for x in agent_names]
-        if model_name and any(name != model_name for name in agent_names):
-            raise ValueError("agent_model.name conflicts with agents.")
-        if len(agent_names) != int(num_agents):
-            raise ValueError("agents length must match magrpo.num_agents.")
     is_multi_turn = num_turns > 1
     output_verbose = bool(config.get("output.verbose", False))
     if output_verbose:
@@ -276,11 +272,12 @@ def main():
         return
 
     if output_verbose:
-        print(f"\nUsing model: {model_name}")
+        display_model = (agent_names[0] if agent_names else model_name) or ""
+        print(f"\nUsing model: {display_model}")
         print(f"Model type: {model_config.type}")
         print(f"Max context window: {model_config.max_length} tokens")
 
-    tokenizer_source = model_name or (agent_names[0] if agent_names else None)
+    tokenizer_source = agent_names[0] if agent_names else model_name
     if not tokenizer_source:
         raise ValueError("agent_model.name or agents must be provided.")
     if agent_names:
@@ -514,6 +511,7 @@ def main():
                 reward_processor = (lambda p=prev, s=shift_proc: (lambda x: s(p(x))))()
     # Build trainer kwargs (grouped: model/data, reward/formatting, logging, args)
     trainer_kwargs = {
+        "agent_model": model_name or None,
         "agents": agents,
         "num_agents": num_agents,
         "tokenizer": tokenizers if agent_names else tokenizer,
