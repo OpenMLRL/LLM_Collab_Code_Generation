@@ -115,6 +115,21 @@ def add_config_args(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
     return parser
 
 
+def _parse_override_value(raw: str) -> Any:
+    value = raw.strip()
+    lowered = value.lower()
+    if lowered in ("true", "false"):
+        return lowered == "true"
+    if lowered in ("none", "null"):
+        return None
+    try:
+        import ast
+
+        return ast.literal_eval(value)
+    except (ValueError, SyntaxError):
+        return value
+
+
 def parse_overrides(overrides: list) -> Dict[str, Any]:
     """Parse command-line overrides into nested dictionary."""
     if not overrides:
@@ -130,12 +145,7 @@ def parse_overrides(overrides: list) -> Dict[str, Any]:
         key, value = override.split("=", 1)
         keys = key.split(".")
 
-        try:
-            import ast
-
-            value = ast.literal_eval(value)
-        except (ValueError, SyntaxError):
-            pass  # Keep as string
+        value = _parse_override_value(value)
 
         current = result
         for k in keys[:-1]:
