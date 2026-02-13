@@ -156,7 +156,7 @@ def main():
     if args.override:
         overrides = parse_overrides(args.override)
         config.update(overrides)
-    model_config = config.get_model_config()
+    model_config = config.get_agent_model_config()
     model_name = model_config.name
     dataset_name = config.get("dataset.name")
     dataset_type = config.get("dataset.type")
@@ -271,7 +271,6 @@ def main():
     else:
         sandbox_slice = None if _sandbox_val is None else 0
 
-    # re already imported at module level
 
     def _make_sliced_assert_tests(test_code: str, n: int) -> str:
         if not isinstance(test_code, str) or not test_code.strip():
@@ -377,7 +376,9 @@ def main():
         if "slice" not in tags:
             tags.append("slice")
     dataset_section = config.get_section("dataset") if hasattr(config, "get_section") else {}
-    model_section = config.get_section("model") if hasattr(config, "get_section") else {}
+    model_section = (
+        config.get_section("agent_model") if hasattr(config, "get_section") else {}
+    )
     output_section = config.get_section("output") if hasattr(config, "get_section") else {}
 
     wandb_config = {
@@ -388,7 +389,7 @@ def main():
         "tags": tags,
         "config_sections": {
             "dataset": dataset_section,
-            "model": model_section,
+            "agent_model": model_section,
             "output": output_section,
             "external": external_cfg,
             "trainer": grpo_config,
@@ -401,7 +402,6 @@ def main():
     import external as external_mod
     external_mod.VERBOSE = bool(output_verbose)
     reward_processor = None
-    # Optional scale
     if config.get("reward_processor.enabled", False):
         scale_factor = config.get("reward_processor.scale_factor", 1)
         reward_processor = RewardProcessors.scale(factor=scale_factor)
@@ -428,7 +428,6 @@ def main():
         "eval_dataset": eval_dataset,
         "reward_func": reward_func,
         "formatters": formatter,
-        # Logging / config
         "wandb_config": wandb_config,
         "dataset_type": dataset_type,
         "args": grpo_args,
@@ -465,7 +464,6 @@ def main():
                 response_history_per_agent=response_history_per_agent,
             )
 
-            # Ensure list of one string is returned
             if isinstance(prompts, (list, tuple)):
                 return list(prompts)
             return [str(prompts)]

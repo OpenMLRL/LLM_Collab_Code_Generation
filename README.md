@@ -43,7 +43,7 @@ Override any configuration value inline with `--override`:
 ```bash
 python LLM_Collab_Code_Generation/train_magrpo.py \
   --config LLM_Collab_Code_Generation/configs/magrpo_he_config.yaml \
-  --override model.name='bigcode/starcoder2-3b' magrpo.num_turns=1
+  --override agent_model.name='bigcode/starcoder2-3b' magrpo.num_turns=1
 ```
 
 ## Settings

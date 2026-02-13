@@ -1,17 +1,23 @@
-model:
+agent_model:
   name: "Qwen/Qwen2.5-Coder-3B"
   type: "qwen"
   temperature: 0.7
   top_p: 0.9
   max_length: 2048
   torch_dtype: "bfloat16"
-critic:
+
+agents: null
+
+critic_model:
   name: "Qwen/Qwen2.5-Coder-3B"
   type: "qwen"
   temperature: 0.7
   top_p: 0.9
   max_length: 2048
   torch_dtype: "bfloat16"
+
+critics: null
+
 dataset:
   name: "OpenMLRL/MBPP"
   type: "mbpp"
@@ -31,6 +37,7 @@ external:
 iac:
   num_agents: 2
   num_turns: 2
+  use_separate_critic: true
   num_train_epochs: 80
   agent_learning_rate: 5.0e-6
   critic_learning_rate: 5.0e-6

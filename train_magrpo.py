@@ -204,7 +204,7 @@ def main():
         overrides = parse_overrides(args.override)
         config.update(overrides)
 
-    model_config = config.get_model_config()
+    model_config = config.get_agent_model_config()
     model_name = model_config.name
     dataset_name = config.get("dataset.name")
     dataset_type = config.get("dataset.type")
@@ -232,6 +232,13 @@ def main():
     seed_value = int(config.get("seed", magrpo_config.get("seed", 42)))
     num_turns = magrpo_config.get("num_turns", 2)
     num_agents = magrpo_config.get("num_agents", 2)
+    agent_names = config.get("agents")
+    if agent_names is not None:
+        if not isinstance(agent_names, (list, tuple)) or not all(
+            isinstance(x, str) for x in agent_names
+        ):
+            raise ValueError("agents must be a list of model names.")
+        agent_names = [str(x) for x in agent_names]
     is_multi_turn = num_turns > 1
     output_verbose = bool(config.get("output.verbose", False))
     if output_verbose:
@@ -265,28 +272,33 @@ def main():
         return
 
     if output_verbose:
-        print(f"\nUsing model: {model_name}")
+        display_model = (agent_names[0] if agent_names else model_name) or ""
+        print(f"\nUsing model: {display_model}")
         print(f"Model type: {model_config.type}")
         print(f"Max context window: {model_config.max_length} tokens")
 
-    tokenizer = AutoTokenizer.from_pretrained(model_name)
-
-    if tokenizer.pad_token is None:
-        tokenizer.pad_token = tokenizer.eos_token
-
-    padding_side = config.get("tokenizer.padding_side")
-    if padding_side:
-        tokenizer.padding_side = padding_side
-
-    # Add special tokens if needed (e.g., FIM tokens for StarCoder)
-    if model_config.special_tokens:
-        if output_verbose:
-            print("Adding special tokens...")
-        tokenizer.add_special_tokens(model_config.special_tokens)
-        if output_verbose:
-            print(
-                f"Special tokens added: {model_config.special_tokens.get('additional_special_tokens', [])}"
-            )
+    tokenizer_source = agent_names[0] if agent_names else model_name
+    if not tokenizer_source:
+        raise ValueError("agent_model.name or agents must be provided.")
+    if agent_names:
+        tokenizers = [AutoTokenizer.from_pretrained(name) for name in agent_names]
+    else:
+        tokenizers = [AutoTokenizer.from_pretrained(tokenizer_source)]
+    for tok in tokenizers:
+        if tok.pad_token is None:
+            tok.pad_token = tok.eos_token
+        padding_side = config.get("tokenizer.padding_side")
+        if padding_side:
+            tok.padding_side = padding_side
+        if model_config.special_tokens:
+            if output_verbose:
+                print("Adding special tokens...")
+            tok.add_special_tokens(model_config.special_tokens)
+            if output_verbose:
+                print(
+                    f"Special tokens added: {model_config.special_tokens.get('additional_special_tokens', [])}"
+                )
+    tokenizer = tokenizers[0]
 
     temperature = magrpo_config.get("temperature", 0.6)
     top_p = magrpo_config.get("top_p", 0.6)
@@ -315,8 +327,6 @@ def main():
         sandbox_slice = _sandbox_val
     else:
         sandbox_slice = None if _sandbox_val is None else 0
-
-    # re already imported at module level
 
     def _make_sliced_assert_tests(test_code: str, n: int) -> str:
         if not isinstance(test_code, str) or not test_code.strip():
@@ -439,7 +449,9 @@ def main():
         if "self-evolved" not in tags:
             tags.append("self-evolved")
     dataset_section = config.get_section("dataset") if hasattr(config, "get_section") else {}
-    model_section = config.get_section("model") if hasattr(config, "get_section") else {}
+    model_section = (
+        config.get_section("agent_model") if hasattr(config, "get_section") else {}
+    )
     output_section = config.get_section("output") if hasattr(config, "get_section") else {}
 
     wandb_config = {
@@ -451,7 +463,7 @@ def main():
         # Provide full sections for the trainer to log cleanly
         "config_sections": {
             "dataset": dataset_section,
-            "model": model_section,
+            "agent_model": model_section,
             "output": output_section,
             "external": external_cfg,
             "trainer": magrpo_config,
@@ -466,13 +478,22 @@ def main():
     model_kwargs: Dict[str, Any] = {}
     if model_config.torch_dtype is not None:
         model_kwargs["torch_dtype"] = model_config.torch_dtype
-    agents = [
-        AutoModelForCausalLM.from_pretrained(
-            model_name,
-            **model_kwargs,
-        )
-        for _ in range(num_agents)
-    ]
+    if agent_names:
+        agents = [
+            AutoModelForCausalLM.from_pretrained(
+                name,
+                **model_kwargs,
+            )
+            for name in agent_names
+        ]
+    else:
+        agents = [
+            AutoModelForCausalLM.from_pretrained(
+                model_name,
+                **model_kwargs,
+            )
+            for _ in range(num_agents)
+        ]
 
     reward_processor = None
     if config.get("reward_processor.enabled", True):
@@ -490,9 +511,10 @@ def main():
                 reward_processor = (lambda p=prev, s=shift_proc: (lambda x: s(p(x))))()
     # Build trainer kwargs (grouped: model/data, reward/formatting, logging, args)
     trainer_kwargs = {
+        "agent_model": model_name or None,
         "agents": agents,
         "num_agents": num_agents,
-        "tokenizer": tokenizer,
+        "tokenizer": tokenizers if agent_names else tokenizer,
         "train_dataset": train_dataset,
         "eval_dataset": eval_dataset,
         "reward_func": reward_func,
@@ -514,7 +536,6 @@ def main():
         and dataset_type.lower() in ["humaneval", "coophumaneval", "mbpp"]
     ):
         expert_model = external_cfg.get("expert_model", "deepseek-coder")
-        # external_mode already loaded above
 
         def external_transition_wrapper(
             prompt,
