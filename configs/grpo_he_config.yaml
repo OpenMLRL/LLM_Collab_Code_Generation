@@ -20,7 +20,7 @@ dataset:
   eval_split: "test[:32]"
 
 output:
-  base_dir: "output"
+  base_dir: output_grpo_he
   save_final_model: false
   verbose: false
 
@@ -51,5 +51,5 @@ wandb:
   project: "comlrl"
   entity: "OpenMLRL"
   name: "grpo_humaneval"
-  dir: "output"
+  dir: output_grpo_he
   tags: ["grpo", "humaneval"]

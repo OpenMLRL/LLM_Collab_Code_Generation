@@ -23,7 +23,7 @@ dataset:
 seed: 42
 
 output:
-  base_dir: "output"
+  base_dir: output_magrpo_mbpp
   save_final_model: false
   verbose: false
 
@@ -59,5 +59,5 @@ wandb:
   project: "comlrl"
   entity: "OpenMLRL"
   name: "magrpo_mbpp"
-  dir: "output"
+  dir: output_magrpo_mbpp
   tags: ["magrpo", "mbpp", "multi-agent"]

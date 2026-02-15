@@ -24,10 +24,10 @@ dataset:
   eval_split: "train[:16]"
 
 output:
-  base_dir: "output"
+  base_dir: output_ac_che
   verbose: false
   save_final_model: false
-  save_path: "output/maac_final"
+  save_path: output_ac_che
 
 external:
   mode: "level_feedback"
@@ -54,5 +54,5 @@ wandb:
   project: "comlrl"
   entity: "OpenMLRL"
   name: "ac_coophumaneval"
-  dir: "output"
+  dir: output_ac_che
   tags: ["ac", "coophumaneval", "single-agent", "turns_2"]

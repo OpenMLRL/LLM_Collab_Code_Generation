@@ -20,7 +20,7 @@ dataset:
   eval_split: "test[:15]"
 
 output:
-  base_dir: "output"
+  base_dir: output_grpo_mbpp
   save_final_model: false
   verbose: false
 
@@ -51,5 +51,5 @@ wandb:
   project: "comlrl"
   entity: "OpenMLRL"
   name: "grpo_mbpp"
-  dir: "output"
+  dir: output_grpo_mbpp
   tags: ["grpo", "mbpp"]
