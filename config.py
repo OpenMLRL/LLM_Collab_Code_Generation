@@ -4,11 +4,19 @@ Handles YAML loading and model configuration.
 """
 
 import argparse
+import os
+import sys
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Dict, Optional
 
 import yaml
+
+
+REPO_ROOT = os.path.dirname(os.path.abspath(__file__))
+COMLRL_ROOT = os.path.join(os.path.dirname(REPO_ROOT), "CoMLRL")
+if COMLRL_ROOT not in sys.path:
+    sys.path.insert(0, COMLRL_ROOT)
 
 
 @dataclass(frozen=True)
