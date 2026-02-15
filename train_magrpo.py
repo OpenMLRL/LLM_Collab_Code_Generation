@@ -300,8 +300,9 @@ def main():
                 )
     tokenizer = tokenizers[0]
 
-    temperature = magrpo_config.get("temperature", 0.6)
-    top_p = magrpo_config.get("top_p", 0.6)
+    temperature = model_config.temperature
+    top_p = model_config.top_p
+    top_k = model_config.top_k
     external_cfg = config.get_section("external") if hasattr(config, "get_section") else {}
 
     # Register external context resolver using dataset items
@@ -401,9 +402,8 @@ def main():
         "max_new_tokens": magrpo_config.get("max_new_tokens", 256),
         "temperature": temperature,
         "top_p": top_p,
+        "top_k": top_k,
     }
-    if "top_k" in magrpo_config:
-        magrpo_args_kwargs["top_k"] = magrpo_config.get("top_k")
     magrpo_args_kwargs.update(
         {
             "num_agents": num_agents,

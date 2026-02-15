@@ -3,6 +3,7 @@ agent_model:
   type: "qwen"
   temperature: 0.7
   top_p: 0.9
+  top_k: null
   max_length: 2048
   torch_dtype: "bfloat16"
   special_tokens: {}
@@ -39,9 +40,6 @@ magrpo:
   logging_steps: 50
   num_generations: 4
   max_new_tokens: 256
-  temperature: 0.8
-  top_p: 0.95
-  top_k: null
   discount: 0.9
   joint_mode: aligned
   early_termination_threshold: -0.2

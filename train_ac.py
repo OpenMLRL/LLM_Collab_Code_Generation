@@ -311,9 +311,9 @@ def main() -> None:
             reward_processor = RewardProcessors.shift(value=shift_val_f)
 
     # AC-specific config
-    top_k = ac_cfg.get("top_k")
-    temperature = ac_cfg.get("temperature", 0.6)
-    top_p = ac_cfg.get("top_p", 0.6)
+    top_k = model_config.top_k
+    temperature = model_config.temperature
+    top_p = model_config.top_p
     use_separate_critic = bool(ac_cfg.get("use_separate_critic", True))
     model_kwargs: Dict[str, Any] = {}
     if model_config.torch_dtype is not None:
@@ -443,6 +443,9 @@ def _build_wandb_config(
 ):
     wandb_section = config.get_section("wandb") if hasattr(config, "get_section") else {}
     ac_section = config.get_section("ac") if hasattr(config, "get_section") else {}
+    model_section = (
+        config.get_section("agent_model") if hasattr(config, "get_section") else {}
+    )
     output_section = (
         config.get_section("output") if hasattr(config, "get_section") else {}
     )
@@ -470,9 +473,9 @@ def _build_wandb_config(
             "trainer": {
                 "num_turns": ac_section.get("num_turns", 1),
                 "max_new_tokens": ac_section.get("max_new_tokens", 256),
-                "temperature": ac_section.get("temperature", 0.6),
-                "top_p": ac_section.get("top_p", 0.6),
-                "top_k": ac_section.get("top_k"),
+                "temperature": model_section.get("temperature"),
+                "top_p": model_section.get("top_p"),
+                "top_k": model_section.get("top_k"),
                 "discount": ac_section.get("discount", 0.9),
                 "use_separate_critic": ac_section.get("use_separate_critic", True),
             },
