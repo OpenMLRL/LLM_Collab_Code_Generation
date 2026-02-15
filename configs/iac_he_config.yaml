@@ -35,6 +35,7 @@ external:
   sandbox_slice: 1
 
 iac:
+  parallel_training: auto
   num_agents: 2
   num_turns: 2
   use_separate_critic: true

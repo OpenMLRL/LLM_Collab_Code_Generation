@@ -28,6 +28,7 @@ external:
   sandbox_slice: 1
 
 grpo:
+  parallel_training: auto
   num_turns: 2
   num_train_epochs: 20
   agent_learning_rate: 2.0e-5

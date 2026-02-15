@@ -35,6 +35,7 @@ external:
   sandbox_slice: 1
 
 ac:
+  parallel_training: auto
   num_turns: 2
   num_train_epochs: 80
   agent_learning_rate: 5.0e-6

@@ -407,8 +407,8 @@ def main():
     magrpo_args_kwargs.update(
         {
             "num_agents": num_agents,
-            "parallel_mode": str(
-                magrpo_config.get("parallel_mode", "auto")
+            "parallel_training": str(
+                magrpo_config.get("parallel_training", "auto")
             ).strip().lower(),
             "agent_devices": magrpo_config.get("agent_devices", None),
             "discount": magrpo_config.get("discount", 0.9),

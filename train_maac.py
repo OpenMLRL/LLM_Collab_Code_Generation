@@ -411,7 +411,7 @@ def main() -> None:
             top_k=top_k,
             num_agents=num_agents,
             num_generations=maac_cfg.get("num_generations", 1),
-            parallel_mode=str(maac_cfg.get("parallel_mode", "auto")).strip().lower(),
+            parallel_training=str(maac_cfg.get("parallel_training", "auto")).strip().lower(),
             agent_devices=maac_cfg.get("agent_devices", None),
             critic_devices=maac_cfg.get("critic_devices", None),
             discount=discount,
