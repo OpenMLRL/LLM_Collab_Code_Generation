@@ -407,6 +407,10 @@ def main():
     magrpo_args_kwargs.update(
         {
             "num_agents": num_agents,
+            "parallel_mode": str(
+                magrpo_config.get("parallel_mode", "auto")
+            ).strip().lower(),
+            "agent_devices": magrpo_config.get("agent_devices", None),
             "discount": magrpo_config.get("discount", 0.9),
             "joint_mode": magrpo_config.get("joint_mode", "aligned"),
             "early_termination_threshold": magrpo_config.get(

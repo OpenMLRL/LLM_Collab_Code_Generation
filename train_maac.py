@@ -411,6 +411,9 @@ def main() -> None:
             top_k=top_k,
             num_agents=num_agents,
             num_generations=maac_cfg.get("num_generations", 1),
+            parallel_mode=str(maac_cfg.get("parallel_mode", "auto")).strip().lower(),
+            agent_devices=maac_cfg.get("agent_devices", None),
+            critic_devices=maac_cfg.get("critic_devices", None),
             discount=discount,
             critic_type=maac_cfg.get("critic_type", "v"),
             early_termination_threshold=maac_cfg.get(

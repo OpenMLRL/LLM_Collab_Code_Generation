@@ -337,6 +337,8 @@ def main():
         temperature=temperature,
         top_p=top_p,
         top_k=top_k,
+        parallel_mode=str(grpo_config.get("parallel_mode", "auto")).strip().lower(),
+        agent_devices=grpo_config.get("agent_devices", None),
         discount=grpo_config.get("discount", 0.9),
         joint_mode=grpo_config.get("joint_mode", "aligned"),
         early_termination_threshold=grpo_config.get(
