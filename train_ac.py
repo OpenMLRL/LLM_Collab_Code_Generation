@@ -384,7 +384,7 @@ def main() -> None:
             num_agents=1,
             num_generations=ac_cfg.get("num_generations", 1),
             use_separate_critic=use_separate_critic,
-            parallel_training=str(ac_cfg.get("parallel_training", "mp")).strip().lower(),
+            parallel_training=str(ac_cfg.get("parallel_training", "none")).strip().lower(),
             agent_devices=ac_cfg.get("agent_devices", None),
             critic_devices=ac_cfg.get("critic_devices", None),
             critic_value_head_hidden_dim=ac_cfg.get("critic_value_head_hidden_dim"),

@@ -24,7 +24,8 @@ external:
   mode: level_feedback
   sandbox_slice: 1
 magrpo:
-  parallel_training: mp
+  parallel_training: none
+  agent_devices: ["cuda:0"]
   num_agents: 2
   num_turns: 2
   num_train_epochs: 8
