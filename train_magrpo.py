@@ -17,7 +17,7 @@ from typing import Any, Dict
 from config import Config, add_config_args, parse_overrides
 from datasets import load_dataset
 import torch
-from transformers import AutoModelForCausalLM, AutoTokenizer
+from transformers import AutoTokenizer
 
 from loggers.mt_code_logger import (
     aggregate_mt_humaneval_metrics_for_logging,
@@ -490,26 +490,6 @@ def main():
     code_rewards.VERBOSE = bool(output_verbose)
     import external as external_mod
     external_mod.VERBOSE = bool(output_verbose)
-    model_kwargs: Dict[str, Any] = {}
-    if model_config.torch_dtype is not None:
-        model_kwargs["torch_dtype"] = model_config.torch_dtype
-    if agent_names:
-        agents = [
-            AutoModelForCausalLM.from_pretrained(
-                name,
-                **model_kwargs,
-            )
-            for name in agent_names
-        ]
-    else:
-        agents = [
-            AutoModelForCausalLM.from_pretrained(
-                model_name,
-                **model_kwargs,
-            )
-            for _ in range(num_agents)
-        ]
-
     reward_processor = None
     if config.get("reward_processor.enabled", True):
         scale_factor = config.get("reward_processor.scale_factor", 1.0)
@@ -525,11 +505,17 @@ def main():
                 prev = reward_processor
                 reward_processor = (lambda p=prev, s=shift_proc: (lambda x: s(p(x))))()
     # Build trainer kwargs (grouped: model/data, reward/formatting, logging, args)
+    model_arg = model_name or None
+    agents_arg = agent_names
     trainer_kwargs = {
-        "agent_model": model_name or None,
-        "agents": agents,
+        "agent_model": model_arg,
+        "agents": agents_arg,
         "num_agents": num_agents,
         "tokenizer": tokenizers if agent_names else tokenizer,
+        "model_config": {
+            "torch_dtype": model_config.torch_dtype,
+            "special_tokens": model_config.special_tokens,
+        },
         "train_dataset": train_dataset,
         "eval_dataset": eval_dataset,
         "reward_func": reward_func,
