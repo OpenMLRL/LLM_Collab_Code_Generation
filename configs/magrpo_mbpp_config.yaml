@@ -1,8 +1,8 @@
 agent_model:
   name: Qwen/Qwen2.5-Coder-3B
   type: qwen
-  temperature: 0.8
-  top_p: 0.95
+  temperature: 0.6
+  top_p: 0.6
   top_k: null
   max_length: 2048
   torch_dtype: bfloat16

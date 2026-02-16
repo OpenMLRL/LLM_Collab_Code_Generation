@@ -395,8 +395,8 @@ def main():
 
     magrpo_args_kwargs = {
         "num_turns": num_turns,
-        "num_train_epochs": magrpo_config.get("num_train_epochs", 20),
-        "agent_learning_rate": magrpo_config.get("agent_learning_rate", 5e-6),
+        "num_train_epochs": magrpo_config.get("num_train_epochs", 8),
+        "agent_learning_rate": magrpo_config.get("agent_learning_rate", 2e-5),
         "logging_steps": magrpo_config.get("logging_steps", 50),
         "num_generations": magrpo_config.get("num_generations", 4),
         "max_new_tokens": magrpo_config.get("max_new_tokens", 256),
@@ -410,18 +410,18 @@ def main():
             "parallel_training": str(
                 magrpo_config.get("parallel_training", "none")
             ).strip().lower(),
-            "agent_devices": magrpo_config.get("agent_devices", None),
+            "agent_devices": magrpo_config.get("agent_devices", ["cuda:0"]),
             "discount": magrpo_config.get("discount", 0.9),
             "joint_mode": magrpo_config.get("joint_mode", "aligned"),
             "early_termination_threshold": magrpo_config.get(
                 "early_termination_threshold", -0.2
             ),
-            "rollout_buffer_size": magrpo_config.get("rollout_buffer_size", 2),
-            "train_batch_size": magrpo_config.get("train_batch_size", None),
+            "rollout_buffer_size": magrpo_config.get("rollout_buffer_size", 4),
+            "train_batch_size": magrpo_config.get("train_batch_size", 4),
             "advantage_normalization": magrpo_config.get(
                 "advantage_normalization", True
             ),
-            "eval_interval": magrpo_config.get("eval_interval", 16),
+            "eval_interval": magrpo_config.get("eval_interval", 4),
             "eval_num_samples": magrpo_config.get("eval_num_samples", 4),
             "eval_batch_size": magrpo_config.get("eval_batch_size", 1),
             "external_prompt_passthrough": True,

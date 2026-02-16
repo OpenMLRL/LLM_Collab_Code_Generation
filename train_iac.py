@@ -365,9 +365,9 @@ def main() -> None:
     critic_model_kwargs = dict(model_kwargs)
     if critic_config is not None and critic_config.torch_dtype is not None:
         critic_model_kwargs["torch_dtype"] = critic_config.torch_dtype
-    num_turns = iac_cfg.get("num_turns", 1)
+    num_turns = iac_cfg.get("num_turns", 2)
 
-    rollout_buffer_size = iac_cfg.get("rollout_buffer_size", 8)
+    rollout_buffer_size = iac_cfg.get("rollout_buffer_size", 4)
 
     external_transition_fn = None
     if num_turns > 1:
@@ -404,7 +404,7 @@ def main() -> None:
         external_transition=external_transition_fn,
         args=IACConfig(
             num_turns=num_turns,
-            num_train_epochs=iac_cfg.get("num_train_epochs", 40),
+            num_train_epochs=iac_cfg.get("num_train_epochs", 80),
             agent_learning_rate=iac_cfg.get("agent_learning_rate", 5e-6),
             critic_learning_rate=iac_cfg.get("critic_learning_rate", 5e-6),
             value_loss_coef=iac_cfg.get("value_loss_coef", 0.6),
@@ -418,18 +418,18 @@ def main() -> None:
             num_generations=iac_cfg.get("num_generations", 1),
             use_separate_critic=use_separate_critic,
             parallel_training=str(iac_cfg.get("parallel_training", "none")).strip().lower(),
-            agent_devices=iac_cfg.get("agent_devices", None),
-            critic_devices=iac_cfg.get("critic_devices", None),
+            agent_devices=iac_cfg.get("agent_devices", ["cuda:0"]),
+            critic_devices=iac_cfg.get("critic_devices", ["cuda:0"]),
             critic_value_head_hidden_dim=iac_cfg.get("critic_value_head_hidden_dim"),
             value_head_hidden_dim=iac_cfg.get("value_head_hidden_dim"),
             discount=iac_cfg.get("discount", 0.9),
             early_termination_threshold=iac_cfg.get(
                 "early_termination_threshold", -0.2
             ),
-            eval_interval=iac_cfg.get("eval_interval", 16),
+            eval_interval=iac_cfg.get("eval_interval", 40),
             eval_num_samples=iac_cfg.get("eval_num_samples", 4),
             eval_batch_size=iac_cfg.get("eval_batch_size", 1),
-            logging_steps=iac_cfg.get("logging_steps", 1),
+            logging_steps=iac_cfg.get("logging_steps", 10),
         ),
         train_dataset=train_dataset,
         eval_dataset=eval_dataset,
