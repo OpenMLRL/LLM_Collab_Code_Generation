@@ -304,6 +304,17 @@ def main():
     top_p = model_config.top_p
     top_k = model_config.top_k
     external_cfg = config.get_section("external") if hasattr(config, "get_section") else {}
+    _ext_passthrough = external_cfg.get("external_prompt_passthrough", False)
+    if isinstance(_ext_passthrough, str):
+        external_prompt_passthrough = _ext_passthrough.strip().lower() in {
+            "1",
+            "true",
+            "yes",
+            "y",
+            "on",
+        }
+    else:
+        external_prompt_passthrough = bool(_ext_passthrough)
 
     # Register external context resolver using dataset items
     def _normalize_prompt(p: str) -> str:
@@ -424,7 +435,7 @@ def main():
             "eval_interval": magrpo_config.get("eval_interval", 4),
             "eval_num_samples": magrpo_config.get("eval_num_samples", 4),
             "eval_batch_size": magrpo_config.get("eval_batch_size", 1),
-            "external_prompt_passthrough": True,
+            "external_prompt_passthrough": external_prompt_passthrough,
         }
     )
     magrpo_args = MAGRPOConfig(**magrpo_args_kwargs)

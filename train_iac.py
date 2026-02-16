@@ -257,6 +257,17 @@ def main() -> None:
         config.save(config_save_path)
 
     external_cfg = config.get_section("external") if hasattr(config, "get_section") else {}
+    _ext_passthrough = external_cfg.get("external_prompt_passthrough", False)
+    if isinstance(_ext_passthrough, str):
+        external_prompt_passthrough = _ext_passthrough.strip().lower() in {
+            "1",
+            "true",
+            "yes",
+            "y",
+            "on",
+        }
+    else:
+        external_prompt_passthrough = bool(_ext_passthrough)
 
     def _normalize_prompt(p: str) -> str:
         return " ".join((p or "").split()).strip()
@@ -423,6 +434,7 @@ def main() -> None:
             critic_value_head_hidden_dim=iac_cfg.get("critic_value_head_hidden_dim"),
             value_head_hidden_dim=iac_cfg.get("value_head_hidden_dim"),
             discount=iac_cfg.get("discount", 0.9),
+            external_prompt_passthrough=external_prompt_passthrough,
             early_termination_threshold=iac_cfg.get(
                 "early_termination_threshold", -0.2
             ),

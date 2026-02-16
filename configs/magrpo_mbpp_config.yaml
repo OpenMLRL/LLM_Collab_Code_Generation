@@ -23,6 +23,7 @@ output:
 external:
   mode: level_feedback
   sandbox_slice: 1
+  external_prompt_passthrough: false
 magrpo:
   parallel_training: none
   agent_devices: ["cuda:0"]

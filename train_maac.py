@@ -248,6 +248,18 @@ def main() -> None:
         config.save(config_save_path)
 
     external_cfg = config.get_section("external") if hasattr(config, "get_section") else {}
+    _ext_passthrough = external_cfg.get("external_prompt_passthrough", False)
+    if isinstance(_ext_passthrough, str):
+        external_prompt_passthrough = _ext_passthrough.strip().lower() in {
+            "1",
+            "true",
+            "yes",
+            "y",
+            "on",
+        }
+    else:
+        external_prompt_passthrough = bool(_ext_passthrough)
+
     def _normalize_prompt(p: str) -> str:
         return " ".join((p or "").split()).strip()
 
@@ -415,6 +427,7 @@ def main() -> None:
             agent_devices=maac_cfg.get("agent_devices", ["cuda:0"]),
             critic_devices=maac_cfg.get("critic_devices", ["cuda:0"]),
             discount=discount,
+            external_prompt_passthrough=external_prompt_passthrough,
             critic_type=maac_cfg.get("critic_type", "v"),
             early_termination_threshold=maac_cfg.get(
                 "early_termination_threshold", -0.2
