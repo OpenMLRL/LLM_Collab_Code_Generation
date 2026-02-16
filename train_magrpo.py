@@ -408,7 +408,7 @@ def main():
         {
             "num_agents": num_agents,
             "parallel_training": str(
-                magrpo_config.get("parallel_training", "auto")
+                magrpo_config.get("parallel_training", "mp")
             ).strip().lower(),
             "agent_devices": magrpo_config.get("agent_devices", None),
             "discount": magrpo_config.get("discount", 0.9),

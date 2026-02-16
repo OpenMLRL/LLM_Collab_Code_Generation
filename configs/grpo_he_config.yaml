@@ -22,7 +22,7 @@ external:
   mode: level_feedback
   sandbox_slice: 1
 grpo:
-  parallel_training: auto
+  parallel_training: mp
   num_turns: 2
   num_train_epochs: 6
   agent_learning_rate: 2.0e-05
