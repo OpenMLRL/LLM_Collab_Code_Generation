@@ -1,27 +1,27 @@
 agent_model:
-  name: "Qwen/Qwen2.5-Coder-3B"
-  type: "qwen"
+  name: Qwen/Qwen2.5-Coder-3B
+  type: qwen
   temperature: 0.6
   top_p: 0.6
   top_k: null
   max_length: 2048
-  torch_dtype: "bfloat16"
+  torch_dtype: bfloat16
 
 agents: null
 
 critic_model:
-  name: "Qwen/Qwen2.5-Coder-3B"
-  type: "qwen"
+  name: Qwen/Qwen2.5-Coder-3B
+  type: qwen
   max_length: 2048
-  torch_dtype: "bfloat16"
+  torch_dtype: bfloat16
 
 critics: null
 
 dataset:
-  name: "OpenMLRL/CoopHumanEval"
-  type: "coophumaneval"
-  train_split: "train[16:]"
-  eval_split: "train[:16]"
+  name: OpenMLRL/CoopHumanEval
+  type: coophumaneval
+  train_split: train[16:]
+  eval_split: train[:16]
 
 output:
   base_dir: output_iac_che
@@ -30,20 +30,22 @@ output:
   save_path: output_iac_che
 
 external:
-  mode: "level_feedback"
+  mode: level_feedback
   sandbox_slice: 1
   external_prompt_passthrough: false
 
 iac:
   parallel_training: none
-  agent_devices: ["cuda:0"]
-  critic_devices: ["cuda:0"]
+  agent_devices:
+  - cuda:0
+  critic_devices:
+  - cuda:0
   num_agents: 2
   num_turns: 2
   use_separate_critic: true
   num_train_epochs: 80
-  agent_learning_rate: 5.0e-6
-  critic_learning_rate: 5.0e-6
+  agent_learning_rate: 5.0e-06
+  critic_learning_rate: 5.0e-06
   value_loss_coef: 0.6
   value_clip_range: 0.2
   rollout_buffer_size: 4
@@ -58,8 +60,12 @@ iac:
   reward_shift: -4
 
 wandb:
-  project: "comlrl"
-  entity: "OpenMLRL"
-  name: "iac_coophumaneval"
+  project: comlrl
+  entity: OpenMLRL
+  name: iac_coophumaneval
   dir: output_iac_che
-  tags: ["iac", "coophumaneval", "multi-agent", "turns_2"]
+  tags:
+  - iac
+  - coophumaneval
+  - multi-agent
+  - turns_2
