@@ -1,4 +1,5 @@
 import signal
+import math
 
  
 
@@ -135,7 +136,7 @@ def code_reward_logger(
 
         try:
             # Load code definitions
-            exec_globals = {}
+            exec_globals = {"math": math}
             exec(combined_code, exec_globals)
 
             # Run individual test cases
