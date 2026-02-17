@@ -242,9 +242,9 @@ def main():
     )
     print("Model loaded successfully!")
 
-    temperature = grpo_config.get("temperature", model_config.temperature)
-    top_p = grpo_config.get("top_p", model_config.top_p)
-    top_k = grpo_config.get("top_k")
+    temperature = model_config.temperature
+    top_p = model_config.top_p
+    top_k = model_config.top_k
     external_cfg = config.get_section("external") if hasattr(config, "get_section") else {}
 
     # Register external context resolver using dataset items (for external modes)
@@ -337,6 +337,8 @@ def main():
         temperature=temperature,
         top_p=top_p,
         top_k=top_k,
+        parallel_training=str(grpo_config.get("parallel_training", "none")).strip().lower(),
+        agent_devices=grpo_config.get("agent_devices", None),
         discount=grpo_config.get("discount", 0.9),
         joint_mode=grpo_config.get("joint_mode", "aligned"),
         early_termination_threshold=grpo_config.get(

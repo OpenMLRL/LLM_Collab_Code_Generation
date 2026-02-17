@@ -1,11 +1,12 @@
 agent_model:
-  name: "Qwen/Qwen2.5-Coder-3B"
-  type: "qwen"
-  temperature: 0.7
-  top_p: 0.9
+  name: Qwen/Qwen2.5-Coder-3B
+  type: qwen
+  temperature: 0.6
+  top_p: 0.6
+  top_k: null
   max_length: 2048
-  torch_dtype: "bfloat16"
   special_tokens: {}
+  torch_dtype: bfloat16
 
 agents: null
 
@@ -14,33 +15,34 @@ critic_model: null
 critics: null
 
 dataset:
-  name: "OpenMLRL/CoopHumanEval"
-  type: "coophumaneval"
-  train_split: "train[16:]"
-  eval_split: "train[:16]"
+  name: OpenMLRL/CoopHumanEval
+  type: coophumaneval
+  train_split: train[16:]
+  eval_split: train[:16]
 
 seed: 42
 
 output:
-  base_dir: "output"
-  save_final_model: false
+  base_dir: output_magrpo_che
   verbose: false
+  save_final_model: false
 
 external:
-  mode: "level_feedback"
+  mode: level_feedback
   sandbox_slice: 1
+  external_prompt_passthrough: false
 
 magrpo:
+  parallel_training: none
+  agent_devices:
+  - cuda:0
   num_agents: 2
   num_turns: 2
   num_train_epochs: 8
-  agent_learning_rate: 2.0e-5
+  agent_learning_rate: 2.0e-05
   logging_steps: 50
   num_generations: 4
   max_new_tokens: 256
-  temperature: 0.6
-  top_p: 0.6
-  top_k: null
   discount: 0.9
   joint_mode: aligned
   early_termination_threshold: -0.2
@@ -57,8 +59,12 @@ reward_processor:
   shift: -4
 
 wandb:
-  project: "comlrl"
-  entity: "OpenMLRL"
-  name: "magrpo_coophumaneval"
-  dir: "output"
-  tags: ["magrpo", "coophumaneval", "multi-agent", "turns_2"]
+  project: comlrl
+  entity: OpenMLRL
+  name: magrpo_coophumaneval
+  dir: output_magrpo_che
+  tags:
+  - magrpo
+  - coophumaneval
+  - multi-agent
+  - turns_2

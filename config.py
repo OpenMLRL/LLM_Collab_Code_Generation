@@ -4,11 +4,19 @@ Handles YAML loading and model configuration.
 """
 
 import argparse
+import os
+import sys
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Dict, Optional
 
 import yaml
+
+
+REPO_ROOT = os.path.dirname(os.path.abspath(__file__))
+COMLRL_ROOT = os.path.join(os.path.dirname(REPO_ROOT), "CoMLRL")
+if COMLRL_ROOT not in sys.path:
+    sys.path.insert(0, COMLRL_ROOT)
 
 
 @dataclass(frozen=True)
@@ -17,20 +25,62 @@ class ModelConfig:
 
     name: str
     type: str = "qwen"
-    temperature: float = 0.7
-    top_p: float = 0.9
+    temperature: Optional[float] = None
+    top_p: Optional[float] = None
+    top_k: Optional[int] = None
     max_length: int = 2048
     special_tokens: Dict[str, str] = field(default_factory=dict)
     torch_dtype: Optional[str] = None
 
     @classmethod
-    def from_dict(cls, config_dict: Dict[str, Any]) -> "ModelConfig":
+    def from_dict(
+        cls,
+        config_dict: Dict[str, Any],
+        *,
+        require_sampling: bool = True,
+    ) -> "ModelConfig":
         """Create ModelConfig from dictionary."""
+        if require_sampling:
+            missing = [
+                key
+                for key in ("temperature", "top_p", "top_k")
+                if key not in config_dict
+            ]
+            if missing:
+                raise ValueError(
+                    f"agent_model is missing required sampling fields: {', '.join(missing)}"
+                )
+
+        def _as_optional_float(value: Any) -> Optional[float]:
+            if value is None:
+                return None
+            try:
+                return float(value)
+            except (TypeError, ValueError) as exc:
+                raise ValueError(f"Invalid float value: {value}") from exc
+
+        def _as_optional_int(value: Any) -> Optional[int]:
+            if value is None:
+                return None
+            if isinstance(value, str) and value.strip().lower() in ("none", "null", ""):
+                return None
+            try:
+                return int(float(value))
+            except (TypeError, ValueError) as exc:
+                raise ValueError(f"Invalid int value: {value}") from exc
+
+        temperature = _as_optional_float(config_dict.get("temperature"))
+        top_p = _as_optional_float(config_dict.get("top_p"))
+        top_k = _as_optional_int(config_dict.get("top_k"))
+        if require_sampling and (temperature is None or top_p is None):
+            raise ValueError("agent_model.temperature and agent_model.top_p must be non-null.")
+
         return cls(
             name=config_dict.get("name", ""),
             type=config_dict.get("type", "qwen"),
-            temperature=config_dict.get("temperature", 0.7),
-            top_p=config_dict.get("top_p", 0.9),
+            temperature=temperature,
+            top_p=top_p,
+            top_k=top_k,
             max_length=config_dict.get("max_length", 2048),
             special_tokens=config_dict.get("special_tokens", {}),
             torch_dtype=(
@@ -74,7 +124,7 @@ class Config:
         model_section = self.get_section("agent_model")
         if not model_section:
             raise ValueError("No 'agent_model' section found in configuration")
-        return ModelConfig.from_dict(model_section)
+        return ModelConfig.from_dict(model_section, require_sampling=True)
 
     def get_critic_model_config(self, required: bool = True) -> Optional[ModelConfig]:
         """Get critic model configuration as ModelConfig object."""
@@ -83,7 +133,7 @@ class Config:
             if required:
                 raise ValueError("No 'critic_model' section found in configuration")
             return None
-        return ModelConfig.from_dict(critic_section)
+        return ModelConfig.from_dict(critic_section, require_sampling=False)
 
     def update(self, updates: Dict[str, Any]):
         """Update configuration with new values (deep merge)."""

@@ -248,6 +248,18 @@ def main() -> None:
         config.save(config_save_path)
 
     external_cfg = config.get_section("external") if hasattr(config, "get_section") else {}
+    _ext_passthrough = external_cfg.get("external_prompt_passthrough", False)
+    if isinstance(_ext_passthrough, str):
+        external_prompt_passthrough = _ext_passthrough.strip().lower() in {
+            "1",
+            "true",
+            "yes",
+            "y",
+            "on",
+        }
+    else:
+        external_prompt_passthrough = bool(_ext_passthrough)
+
     def _normalize_prompt(p: str) -> str:
         return " ".join((p or "").split()).strip()
 
@@ -342,9 +354,9 @@ def main() -> None:
         if shift_val_f is not None:
             reward_processor = RewardProcessors.shift(value=shift_val_f)
 
-    top_k = maac_cfg.get("top_k")
-    temperature = maac_cfg.get("temperature", 0.6)
-    top_p = maac_cfg.get("top_p", 0.6)
+    top_k = model_config.top_k
+    temperature = model_config.temperature
+    top_p = model_config.top_p
     model_kwargs: Dict[str, Any] = {}
     if model_config.torch_dtype is not None:
         model_kwargs["torch_dtype"] = model_config.torch_dtype
@@ -400,26 +412,30 @@ def main() -> None:
         external_transition=external_transition_fn,
         args=MAACConfig(
             num_turns=num_turns,
-            num_train_epochs=maac_cfg.get("num_train_epochs", 40),
+            num_train_epochs=maac_cfg.get("num_train_epochs", 80),
             agent_learning_rate=maac_cfg.get("agent_learning_rate", 5e-6),
             critic_learning_rate=maac_cfg.get("critic_learning_rate", 5e-6),
             value_loss_coef=maac_cfg.get("value_loss_coef", 0.6),
-            rollout_buffer_size=maac_cfg.get("rollout_buffer_size", 8),
+            rollout_buffer_size=maac_cfg.get("rollout_buffer_size", 4),
             max_new_tokens=maac_cfg.get("max_new_tokens", 256),
             temperature=temperature,
             top_p=top_p,
             top_k=top_k,
             num_agents=num_agents,
             num_generations=maac_cfg.get("num_generations", 1),
+            parallel_training=str(maac_cfg.get("parallel_training", "none")).strip().lower(),
+            agent_devices=maac_cfg.get("agent_devices", ["cuda:0"]),
+            critic_devices=maac_cfg.get("critic_devices", ["cuda:0"]),
             discount=discount,
+            external_prompt_passthrough=external_prompt_passthrough,
             critic_type=maac_cfg.get("critic_type", "v"),
             early_termination_threshold=maac_cfg.get(
                 "early_termination_threshold", -0.2
             ),
-            eval_interval=maac_cfg.get("eval_interval", 16),
+            eval_interval=maac_cfg.get("eval_interval", 40),
             eval_num_samples=maac_cfg.get("eval_num_samples", 4),
             eval_batch_size=maac_cfg.get("eval_batch_size", 1),
-            logging_steps=maac_cfg.get("logging_steps", 1),
+            logging_steps=maac_cfg.get("logging_steps", 10),
         ),
         train_dataset=train_dataset,
         eval_dataset=eval_dataset,
@@ -463,6 +479,9 @@ def _build_wandb_config(
 ):
     wandb_section = config.get_section("wandb") if hasattr(config, "get_section") else {}
     maac_section = config.get_section("maac") if hasattr(config, "get_section") else {}
+    model_section = (
+        config.get_section("agent_model") if hasattr(config, "get_section") else {}
+    )
     output_section = (
         config.get_section("output") if hasattr(config, "get_section") else {}
     )
@@ -490,9 +509,9 @@ def _build_wandb_config(
             "trainer": {
                 "num_turns": maac_section.get("num_turns", 2),
                 "max_new_tokens": maac_section.get("max_new_tokens", 256),
-                "temperature": maac_section.get("temperature", 0.6),
-                "top_p": maac_section.get("top_p", 0.6),
-                "top_k": maac_section.get("top_k"),
+                "temperature": model_section.get("temperature"),
+                "top_p": model_section.get("top_p"),
+                "top_k": model_section.get("top_k"),
                 "discount": maac_section.get("discount", 0.9),
                 "critic_type": maac_section.get("critic_type", "v"),
             },

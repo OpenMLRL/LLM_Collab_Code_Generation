@@ -17,7 +17,7 @@ from typing import Any, Dict
 from config import Config, add_config_args, parse_overrides
 from datasets import load_dataset
 import torch
-from transformers import AutoModelForCausalLM, AutoTokenizer
+from transformers import AutoTokenizer
 
 from loggers.mt_code_logger import (
     aggregate_mt_humaneval_metrics_for_logging,
@@ -300,9 +300,21 @@ def main():
                 )
     tokenizer = tokenizers[0]
 
-    temperature = magrpo_config.get("temperature", 0.6)
-    top_p = magrpo_config.get("top_p", 0.6)
+    temperature = model_config.temperature
+    top_p = model_config.top_p
+    top_k = model_config.top_k
     external_cfg = config.get_section("external") if hasattr(config, "get_section") else {}
+    _ext_passthrough = external_cfg.get("external_prompt_passthrough", False)
+    if isinstance(_ext_passthrough, str):
+        external_prompt_passthrough = _ext_passthrough.strip().lower() in {
+            "1",
+            "true",
+            "yes",
+            "y",
+            "on",
+        }
+    else:
+        external_prompt_passthrough = bool(_ext_passthrough)
 
     # Register external context resolver using dataset items
     def _normalize_prompt(p: str) -> str:
@@ -394,33 +406,36 @@ def main():
 
     magrpo_args_kwargs = {
         "num_turns": num_turns,
-        "num_train_epochs": magrpo_config.get("num_train_epochs", 20),
-        "agent_learning_rate": magrpo_config.get("agent_learning_rate", 5e-6),
+        "num_train_epochs": magrpo_config.get("num_train_epochs", 8),
+        "agent_learning_rate": magrpo_config.get("agent_learning_rate", 2e-5),
         "logging_steps": magrpo_config.get("logging_steps", 50),
         "num_generations": magrpo_config.get("num_generations", 4),
         "max_new_tokens": magrpo_config.get("max_new_tokens", 256),
         "temperature": temperature,
         "top_p": top_p,
+        "top_k": top_k,
     }
-    if "top_k" in magrpo_config:
-        magrpo_args_kwargs["top_k"] = magrpo_config.get("top_k")
     magrpo_args_kwargs.update(
         {
             "num_agents": num_agents,
+            "parallel_training": str(
+                magrpo_config.get("parallel_training", "none")
+            ).strip().lower(),
+            "agent_devices": magrpo_config.get("agent_devices", ["cuda:0"]),
             "discount": magrpo_config.get("discount", 0.9),
             "joint_mode": magrpo_config.get("joint_mode", "aligned"),
             "early_termination_threshold": magrpo_config.get(
                 "early_termination_threshold", -0.2
             ),
-            "rollout_buffer_size": magrpo_config.get("rollout_buffer_size", 2),
-            "train_batch_size": magrpo_config.get("train_batch_size", None),
+            "rollout_buffer_size": magrpo_config.get("rollout_buffer_size", 4),
+            "train_batch_size": magrpo_config.get("train_batch_size", 4),
             "advantage_normalization": magrpo_config.get(
                 "advantage_normalization", True
             ),
-            "eval_interval": magrpo_config.get("eval_interval", 16),
+            "eval_interval": magrpo_config.get("eval_interval", 4),
             "eval_num_samples": magrpo_config.get("eval_num_samples", 4),
             "eval_batch_size": magrpo_config.get("eval_batch_size", 1),
-            "external_prompt_passthrough": True,
+            "external_prompt_passthrough": external_prompt_passthrough,
         }
     )
     magrpo_args = MAGRPOConfig(**magrpo_args_kwargs)
@@ -475,26 +490,6 @@ def main():
     code_rewards.VERBOSE = bool(output_verbose)
     import external as external_mod
     external_mod.VERBOSE = bool(output_verbose)
-    model_kwargs: Dict[str, Any] = {}
-    if model_config.torch_dtype is not None:
-        model_kwargs["torch_dtype"] = model_config.torch_dtype
-    if agent_names:
-        agents = [
-            AutoModelForCausalLM.from_pretrained(
-                name,
-                **model_kwargs,
-            )
-            for name in agent_names
-        ]
-    else:
-        agents = [
-            AutoModelForCausalLM.from_pretrained(
-                model_name,
-                **model_kwargs,
-            )
-            for _ in range(num_agents)
-        ]
-
     reward_processor = None
     if config.get("reward_processor.enabled", True):
         scale_factor = config.get("reward_processor.scale_factor", 1.0)
@@ -510,11 +505,17 @@ def main():
                 prev = reward_processor
                 reward_processor = (lambda p=prev, s=shift_proc: (lambda x: s(p(x))))()
     # Build trainer kwargs (grouped: model/data, reward/formatting, logging, args)
+    model_arg = model_name or None
+    agents_arg = agent_names
     trainer_kwargs = {
-        "agent_model": model_name or None,
-        "agents": agents,
+        "agent_model": model_arg,
+        "agents": agents_arg,
         "num_agents": num_agents,
         "tokenizer": tokenizers if agent_names else tokenizer,
+        "model_config": {
+            "torch_dtype": model_config.torch_dtype,
+            "special_tokens": model_config.special_tokens,
+        },
         "train_dataset": train_dataset,
         "eval_dataset": eval_dataset,
         "reward_func": reward_func,

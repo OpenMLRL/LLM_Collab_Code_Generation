@@ -257,6 +257,17 @@ def main() -> None:
         config.save(config_save_path)
 
     external_cfg = config.get_section("external") if hasattr(config, "get_section") else {}
+    _ext_passthrough = external_cfg.get("external_prompt_passthrough", False)
+    if isinstance(_ext_passthrough, str):
+        external_prompt_passthrough = _ext_passthrough.strip().lower() in {
+            "1",
+            "true",
+            "yes",
+            "y",
+            "on",
+        }
+    else:
+        external_prompt_passthrough = bool(_ext_passthrough)
 
     def _normalize_prompt(p: str) -> str:
         return " ".join((p or "").split()).strip()
@@ -352,9 +363,9 @@ def main() -> None:
         if shift_val_f is not None:
             reward_processor = RewardProcessors.shift(value=shift_val_f)
 
-    top_k = iac_cfg.get("top_k")
-    temperature = iac_cfg.get("temperature", 0.6)
-    top_p = iac_cfg.get("top_p", 0.6)
+    top_k = model_config.top_k
+    temperature = model_config.temperature
+    top_p = model_config.top_p
     use_separate_critic = bool(iac_cfg.get("use_separate_critic", True))
     model_kwargs: Dict[str, Any] = {}
     if model_config.torch_dtype is not None:
@@ -365,9 +376,9 @@ def main() -> None:
     critic_model_kwargs = dict(model_kwargs)
     if critic_config is not None and critic_config.torch_dtype is not None:
         critic_model_kwargs["torch_dtype"] = critic_config.torch_dtype
-    num_turns = iac_cfg.get("num_turns", 1)
+    num_turns = iac_cfg.get("num_turns", 2)
 
-    rollout_buffer_size = iac_cfg.get("rollout_buffer_size", 8)
+    rollout_buffer_size = iac_cfg.get("rollout_buffer_size", 4)
 
     external_transition_fn = None
     if num_turns > 1:
@@ -404,7 +415,7 @@ def main() -> None:
         external_transition=external_transition_fn,
         args=IACConfig(
             num_turns=num_turns,
-            num_train_epochs=iac_cfg.get("num_train_epochs", 40),
+            num_train_epochs=iac_cfg.get("num_train_epochs", 80),
             agent_learning_rate=iac_cfg.get("agent_learning_rate", 5e-6),
             critic_learning_rate=iac_cfg.get("critic_learning_rate", 5e-6),
             value_loss_coef=iac_cfg.get("value_loss_coef", 0.6),
@@ -417,16 +428,20 @@ def main() -> None:
             num_agents=num_agents,
             num_generations=iac_cfg.get("num_generations", 1),
             use_separate_critic=use_separate_critic,
+            parallel_training=str(iac_cfg.get("parallel_training", "none")).strip().lower(),
+            agent_devices=iac_cfg.get("agent_devices", ["cuda:0"]),
+            critic_devices=iac_cfg.get("critic_devices", ["cuda:0"]),
             critic_value_head_hidden_dim=iac_cfg.get("critic_value_head_hidden_dim"),
             value_head_hidden_dim=iac_cfg.get("value_head_hidden_dim"),
             discount=iac_cfg.get("discount", 0.9),
+            external_prompt_passthrough=external_prompt_passthrough,
             early_termination_threshold=iac_cfg.get(
                 "early_termination_threshold", -0.2
             ),
-            eval_interval=iac_cfg.get("eval_interval", 16),
+            eval_interval=iac_cfg.get("eval_interval", 40),
             eval_num_samples=iac_cfg.get("eval_num_samples", 4),
             eval_batch_size=iac_cfg.get("eval_batch_size", 1),
-            logging_steps=iac_cfg.get("logging_steps", 1),
+            logging_steps=iac_cfg.get("logging_steps", 10),
         ),
         train_dataset=train_dataset,
         eval_dataset=eval_dataset,
@@ -474,6 +489,9 @@ def _build_wandb_config(
 ):
     wandb_section = config.get_section("wandb") if hasattr(config, "get_section") else {}
     iac_section = config.get_section("iac") if hasattr(config, "get_section") else {}
+    model_section = (
+        config.get_section("agent_model") if hasattr(config, "get_section") else {}
+    )
     output_section = (
         config.get_section("output") if hasattr(config, "get_section") else {}
     )
@@ -501,9 +519,9 @@ def _build_wandb_config(
             "trainer": {
                 "num_turns": iac_section.get("num_turns", 1),
                 "max_new_tokens": iac_section.get("max_new_tokens", 256),
-                "temperature": iac_section.get("temperature", 0.6),
-                "top_p": iac_section.get("top_p", 0.6),
-                "top_k": iac_section.get("top_k"),
+                "temperature": model_section.get("temperature"),
+                "top_p": model_section.get("top_p"),
+                "top_k": model_section.get("top_k"),
                 "use_separate_critic": iac_section.get(
                     "use_separate_critic", False
                 ),

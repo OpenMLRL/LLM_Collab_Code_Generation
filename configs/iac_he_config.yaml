@@ -1,54 +1,56 @@
 agent_model:
-  name: "Qwen/Qwen2.5-Coder-3B"
-  type: "qwen"
-  temperature: 0.7
-  top_p: 0.9
+  name: Qwen/Qwen2.5-Coder-3B
+  type: qwen
+  temperature: 0.6
+  top_p: 0.6
+  top_k: null
   max_length: 2048
-  torch_dtype: "bfloat16"
+  torch_dtype: bfloat16
 
 agents: null
 
 critic_model:
-  name: "Qwen/Qwen2.5-Coder-3B"
-  type: "qwen"
-  temperature: 0.7
-  top_p: 0.9
+  name: Qwen/Qwen2.5-Coder-3B
+  type: qwen
   max_length: 2048
-  torch_dtype: "bfloat16"
+  torch_dtype: bfloat16
 
 critics: null
 
 dataset:
-  name: "openai/openai_humaneval"
-  type: "humaneval"
-  train_split: "test[33:163]"
-  eval_split: "test[:32]"
+  name: openai/openai_humaneval
+  type: humaneval
+  train_split: test[33:163]
+  eval_split: test[:32]
 
 output:
-  base_dir: "output"
+  base_dir: output_iac_he
   verbose: false
   save_final_model: false
-  save_path: "output/maac_final"
+  save_path: output_iac_he
 
 external:
-  mode: "level_feedback"
+  mode: level_feedback
   sandbox_slice: 1
+  external_prompt_passthrough: false
 
 iac:
+  parallel_training: none
+  agent_devices:
+  - cuda:0
+  critic_devices:
+  - cuda:0
   num_agents: 2
   num_turns: 2
   use_separate_critic: true
   num_train_epochs: 80
-  agent_learning_rate: 5.0e-6
-  critic_learning_rate: 5.0e-6
+  agent_learning_rate: 5.0e-06
+  critic_learning_rate: 5.0e-06
   value_loss_coef: 0.6
   value_clip_range: 0.2
   rollout_buffer_size: 4
   train_batch_size: 4
   max_new_tokens: 256
-  temperature: 0.6
-  top_p: 0.6
-  top_k: null
   discount: 0.9
   early_termination_threshold: -0.2
   eval_interval: 40
@@ -58,8 +60,12 @@ iac:
   reward_shift: -4
 
 wandb:
-  project: "comlrl"
-  entity: "OpenMLRL"
-  name: "iac_humaneval"
-  dir: "output"
-  tags: ["iac", "humaneval", "multi-agent", "turns_2"]
+  project: comlrl
+  entity: OpenMLRL
+  name: iac_humaneval
+  dir: output_iac_he
+  tags:
+  - iac
+  - humaneval
+  - multi-agent
+  - turns_2

@@ -1,5 +1,6 @@
 import re
 import signal
+import math
 from typing import List
 import builtins
 
@@ -188,7 +189,7 @@ def execution_reward_aux(
 
         try:
             # Create execution environment (no timeout needed for function definitions)
-            exec_globals = {}
+            exec_globals = {"math": math}
             exec(combined_code, exec_globals)
             print("✅ Code definitions loaded successfully")
 

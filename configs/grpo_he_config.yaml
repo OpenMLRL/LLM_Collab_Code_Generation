@@ -1,10 +1,11 @@
 agent_model:
-  name: "Qwen/Qwen2.5-Coder-3B"
-  type: "qwen"
-  temperature: 0.7
-  top_p: 0.9
+  name: Qwen/Qwen2.5-Coder-3B
+  type: qwen
+  temperature: 0.8
+  top_p: 0.95
+  top_k: null
   max_length: 2048
-  torch_dtype: "bfloat16"
+  torch_dtype: bfloat16
 
 agents: null
 
@@ -13,31 +14,30 @@ critic_model: null
 critics: null
 
 dataset:
-  name: "openai/openai_humaneval"
-  type: "humaneval"
-  train_split: "test[33:163]"
-  eval_split: "test[:32]"
+  name: openai/openai_humaneval
+  type: humaneval
+  train_split: test[33:163]
+  eval_split: test[:32]
 
 output:
-  base_dir: "output"
-  save_final_model: false
+  base_dir: output_grpo_he
   verbose: false
+  save_final_model: false
 
 external:
-  mode: "level_feedback"
+  mode: level_feedback
   sandbox_slice: 1
 
 grpo:
+  parallel_training: none
   num_turns: 2
   num_train_epochs: 6
-  agent_learning_rate: 2.0e-5
+  agent_learning_rate: 2.0e-05
   logging_steps: 50
   num_generations: 4
   max_new_tokens: 256
-  temperature: 0.8
-  top_p: 0.95
-  top_k: null
   discount: 0.9
+  joint_mode: aligned
   early_termination_threshold: -0.1
   rollout_buffer_size: 2
   train_batch_size: 2
@@ -45,12 +45,13 @@ grpo:
   eval_interval: 4
   eval_num_samples: 4
   eval_batch_size: 1
-  joint_mode: aligned
   reward_shift: -2.1
 
 wandb:
-  project: "comlrl"
-  entity: "OpenMLRL"
-  name: "grpo_humaneval"
-  dir: "output"
-  tags: ["grpo", "humaneval"]
+  project: comlrl
+  entity: OpenMLRL
+  name: grpo_humaneval
+  dir: output_grpo_he
+  tags:
+  - grpo
+  - humaneval

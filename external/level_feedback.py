@@ -1,5 +1,6 @@
 import ast
 import signal
+import math
 from typing import Dict, List, Tuple, Optional
 
 from rewards.code_utils import (
@@ -36,7 +37,7 @@ def _run_tests(
     MAX_TIMEOUTS = 3
 
     # Prepare execution environment
-    exec_globals: Dict[str, object] = {}
+    exec_globals: Dict[str, object] = {"math": math}
     try:
         exec(combined_code, exec_globals)
     except Exception as e:
