@@ -15,13 +15,61 @@ from config import Config, add_config_args, parse_overrides
 from rewards.code_rewards import BradleyTerryRewardFunction
 
 
+FIELDNAMES = [
+    "metric",
+    "index",
+    "value",
+    "task_id",
+    "sample_id",
+    "oracle_reward",
+    "model_reward",
+    "chosen",
+    "rejected",
+    "chosen_oracle_reward",
+    "rejected_oracle_reward",
+    "chosen_model_reward",
+    "rejected_model_reward",
+    "oracle_gap",
+]
+
+
 def _load_records(path: Path) -> List[Dict[str, Any]]:
     with path.open() as f:
         return [json.loads(line) for line in f if line.strip()]
 
 
+def _empty_row(metric: str, index: int, value: float, task_id: str) -> Dict[str, Any]:
+    row = {field: "" for field in FIELDNAMES}
+    row.update(
+        {
+            "metric": metric,
+            "index": index,
+            "value": value,
+            "task_id": task_id,
+        }
+    )
+    return row
+
+
+def _plot_metric(ax, rows: List[Dict[str, Any]], metric: str, ylabel: str) -> None:
+    values = [float(row["value"]) for row in rows if row["metric"] == metric]
+    if not values:
+        ax.text(0.5, 0.5, "no data", ha="center", va="center")
+        ax.set_title(metric)
+        return
+
+    ax.plot(range(len(values)), values, linewidth=1.2)
+    ax.set_xlabel("index")
+    ax.set_ylabel(ylabel)
+    ax.set_title(f"{metric} mean={sum(values) / len(values):.4f}")
+    if metric == "reward_value_error":
+        ax.axhline(0.0, color="black", linewidth=1.0, linestyle="--")
+    else:
+        ax.set_ylim(-0.05, 1.05)
+
+
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Compare reward model scores to oracle rewards.")
+    parser = argparse.ArgumentParser(description="Evaluate reward model value and preference errors.")
     add_config_args(parser)
     args = parser.parse_args()
 
@@ -47,9 +95,15 @@ def main() -> None:
 
     scorer = BradleyTerryRewardFunction.from_config(config)
     records = _load_records(Path(buffer_path))
-    rows = []
-    sample_index = 0
+    rows: List[Dict[str, Any]] = []
+    indices = {
+        "reward_value_error": 0,
+        "pair_error": 0,
+        "ranking_error": 0,
+    }
+
     for record in records:
+        task_id = str(record.get("task_id", ""))
         samples = record["joint_samples"]
         aux_outputs = [sample.get("aux", "") for sample in samples]
         main_outputs = [sample.get("main", "") for sample in samples]
@@ -58,56 +112,113 @@ def main() -> None:
             main_outputs,
             batch_items=[record] * len(samples),
         )
-        for sample, model_reward in zip(samples, scores):
-            oracle_reward = float(sample["oracle_reward"])
-            rows.append(
+        by_id = {
+            int(sample["sample_id"]): {
+                "oracle": float(sample["oracle_reward"]),
+                "model": float(score),
+            }
+            for sample, score in zip(samples, scores)
+        }
+
+        for sample in samples:
+            sample_id = int(sample["sample_id"])
+            oracle_reward = by_id[sample_id]["oracle"]
+            model_reward = by_id[sample_id]["model"]
+            row = _empty_row(
+                "reward_value_error",
+                indices["reward_value_error"],
+                model_reward - oracle_reward,
+                task_id,
+            )
+            row.update(
                 {
-                    "index": sample_index,
-                    "task_id": record.get("task_id", ""),
-                    "sample_id": int(sample["sample_id"]),
+                    "sample_id": sample_id,
                     "oracle_reward": oracle_reward,
-                    "model_reward": float(model_reward),
-                    "diff": float(model_reward) - oracle_reward,
+                    "model_reward": model_reward,
                 }
             )
-            sample_index += 1
+            rows.append(row)
+            indices["reward_value_error"] += 1
 
-    jsonl_path = output_dir / "reward_diffs.jsonl"
-    with jsonl_path.open("w") as f:
-        for row in rows:
-            f.write(json.dumps(row) + "\n")
+        for pref in record["pair_preferences"]:
+            chosen = int(pref["chosen"])
+            rejected = int(pref["rejected"])
+            error = float(by_id[chosen]["model"] <= by_id[rejected]["model"])
+            row = _empty_row("pair_error", indices["pair_error"], error, task_id)
+            row.update(
+                {
+                    "chosen": chosen,
+                    "rejected": rejected,
+                    "chosen_oracle_reward": by_id[chosen]["oracle"],
+                    "rejected_oracle_reward": by_id[rejected]["oracle"],
+                    "chosen_model_reward": by_id[chosen]["model"],
+                    "rejected_model_reward": by_id[rejected]["model"],
+                    "oracle_gap": by_id[chosen]["oracle"] - by_id[rejected]["oracle"],
+                }
+            )
+            rows.append(row)
+            indices["pair_error"] += 1
 
-    csv_path = output_dir / "reward_diffs.csv"
+        ranking = [
+            (int(item["sample_id"]), float(item["score"]))
+            for item in record["ranking_preferences"]
+        ]
+        for better_idx in range(len(ranking)):
+            for worse_idx in range(better_idx + 1, len(ranking)):
+                better, better_oracle = ranking[better_idx]
+                worse, worse_oracle = ranking[worse_idx]
+                if better_oracle == worse_oracle:
+                    continue
+                error = float(by_id[better]["model"] <= by_id[worse]["model"])
+                row = _empty_row(
+                    "ranking_error",
+                    indices["ranking_error"],
+                    error,
+                    task_id,
+                )
+                row.update(
+                    {
+                        "chosen": better,
+                        "rejected": worse,
+                        "chosen_oracle_reward": by_id[better]["oracle"],
+                        "rejected_oracle_reward": by_id[worse]["oracle"],
+                        "chosen_model_reward": by_id[better]["model"],
+                        "rejected_model_reward": by_id[worse]["model"],
+                        "oracle_gap": by_id[better]["oracle"] - by_id[worse]["oracle"],
+                    }
+                )
+                rows.append(row)
+                indices["ranking_error"] += 1
+
+    csv_path = output_dir / "reward_model_eval.csv"
     with csv_path.open("w", newline="") as f:
-        writer = csv.DictWriter(f, fieldnames=list(rows[0].keys()))
+        writer = csv.DictWriter(f, fieldnames=FIELDNAMES)
         writer.writeheader()
         writer.writerows(rows)
 
-    x = [row["index"] for row in rows]
-    y = [row["diff"] for row in rows]
-    plt.figure(figsize=(12, 4))
-    plt.plot(x, y, linewidth=1.5)
-    plt.axhline(0.0, color="black", linewidth=1.0, linestyle="--")
-    plt.xlabel("sample index")
-    plt.ylabel("tilde reward - oracle reward")
-    plt.title("Reward model error")
-    plt.tight_layout()
-    plot_path = output_dir / "reward_diff_curve.png"
-    plt.savefig(plot_path, dpi=200)
+    fig, axes = plt.subplots(3, 1, figsize=(12, 9), sharex=False)
+    _plot_metric(axes[0], rows, "reward_value_error", "tilde reward - oracle")
+    _plot_metric(axes[1], rows, "pair_error", "0/1 error")
+    _plot_metric(axes[2], rows, "ranking_error", "0/1 error")
+    fig.tight_layout()
+    plot_path = output_dir / "reward_model_eval.png"
+    fig.savefig(plot_path, dpi=200)
 
-    mean_diff = sum(y) / len(y)
-    mean_abs_diff = sum(abs(v) for v in y) / len(y)
-    summary = {
-        "num_samples": len(rows),
-        "mean_diff": mean_diff,
-        "mean_abs_diff": mean_abs_diff,
-        "jsonl_path": str(jsonl_path),
-        "csv_path": str(csv_path),
-        "plot_path": str(plot_path),
-    }
-    summary_path = output_dir / "reward_diff_summary.json"
-    summary_path.write_text(json.dumps(summary, indent=2) + "\n")
-    print(json.dumps(summary, indent=2))
+    metrics = {}
+    for metric in indices:
+        values = [float(row["value"]) for row in rows if row["metric"] == metric]
+        if values:
+            metrics[metric] = sum(values) / len(values)
+    print(
+        json.dumps(
+            {
+                "csv_path": str(csv_path),
+                "plot_path": str(plot_path),
+                "metrics": metrics,
+            },
+            indent=2,
+        )
+    )
 
 
 if __name__ == "__main__":

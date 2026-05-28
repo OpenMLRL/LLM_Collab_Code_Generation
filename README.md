@@ -112,6 +112,15 @@ python LLM_Collab_Code_Generation/preferences/train_reward_model.py \
     reward_model.output_dir=output_reward_model/he_pair
 ```
 
+Evaluate a reward model with one CSV and one plot:
+
+```bash
+python LLM_Collab_Code_Generation/preferences/evaluate_reward_model.py \
+  --config LLM_Collab_Code_Generation/configs/magrpo_he_config.yaml \
+  --override reward_model.buffer_path=output_preferences/he_s4.jsonl \
+    reward_model.path=output_reward_model/he_pair
+```
+
 Use the trained reward model in MAGRPO, IAC, or MAAC:
 
 ```bash
