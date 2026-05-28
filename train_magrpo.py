@@ -24,7 +24,7 @@ from loggers.mt_code_logger import (
     mt_humaneval_logger,
 )
 
-from rewards.code_rewards import execution_reward_aux
+from rewards.code_rewards import make_code_reward_function
 from comlrl.utils.reward_processor import RewardProcessors
 from comlrl.trainers.reinforce import MAGRPOConfig, MAGRPOTrainer
 import external as external_ctx
@@ -136,53 +136,6 @@ def get_logger_and_aggregator(dataset_type: str, is_multi_turn: bool = False):
         return mt_humaneval_logger, aggregate_mt_humaneval_metrics_for_logging
 
     return None, None
-
-
-def get_reward_function(dataset_type: str, num_agents: int):
-    """Get a reward function compatible with variable number of agents (single-turn).
-
-    For code tasks, map N-agent completions to the existing aux/main reward by
-    using the first agent as aux and the last agent as main.
-    """
-    if dataset_type is None:
-        raise ValueError(
-            "dataset.type not specified in config. Please add 'type: humaneval/coophumaneval' to the dataset section."
-        )
-
-    if dataset_type.lower() in ["humaneval", "coophumaneval", "mbpp"]:
-
-        def reward_wrapper(*agent_completions, batch_items=None, prompts=None):
-            # agent_completions: tuple of lists (one list per agent), each list contains strings per completion
-            if not agent_completions or len(agent_completions) < 1:
-                return []
-
-            # Choose aux from first agent if available when >=2, otherwise empty list
-            if len(agent_completions) >= 2:
-                completion1 = agent_completions[0]
-                completion2 = agent_completions[-1]
-            else:
-                completion1 = [""] * len(agent_completions[0])
-                completion2 = agent_completions[0]
-
-            test_cases = []
-            entry_points = []
-            original_prompts = []
-
-            if batch_items is not None:
-                for item in batch_items:
-                    test_cases.append(item["test"])
-                    entry_points.append(item["entry_point"])
-                    original_prompts.append(item.get("prompt", ""))
-            else:
-                raise ValueError("batch_items must be provided for reward calculation")
-
-            return execution_reward_aux(
-                completion1, completion2, test_cases, entry_points, original_prompts
-            )
-
-        return reward_wrapper
-
-    raise ValueError(f"Unknown dataset type: {dataset_type}")
 
 
 def main():
@@ -440,7 +393,7 @@ def main():
     )
     magrpo_args = MAGRPOConfig(**magrpo_args_kwargs)
     formatters = get_formatters(dataset_type, num_agents)
-    reward_func = get_reward_function(dataset_type, num_agents)
+    reward_func = make_code_reward_function(dataset_type, num_agents, config)
     eval_logger, eval_aggregator = get_logger_and_aggregator(
         dataset_type, is_multi_turn
     )

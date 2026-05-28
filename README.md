@@ -84,6 +84,43 @@ Each agent receives its own full history at every turn: all of its past prompts 
 2. **Syntax**: Both functions are concatenated with any imports extracted from the prompt; a clean syntax check yields +0.5 and allows execution.
 3. **Execution**: Prompt-derived tests (10 s timeout per assert, up to three timeouts) run inside a sandbox. Passing assertions earn up to +1.0, with +0.5 bonus when the main function uses the aux function, +1.0 when the main is not a thin wrapper, and −0.5 if the aux return value is ignored. These same rewards back evaluation during logging.
 
+## Preference Reward Model
+
+Collect a buffer of oracle-labeled joint responses:
+
+```bash
+python LLM_Collab_Code_Generation/preferences/collect_preferences.py \
+  --config LLM_Collab_Code_Generation/configs/magrpo_he_config.yaml \
+  --override preference.num_sets=64 preference.set_size=4 \
+    preference.output_path=output_preferences/he_s4.jsonl
+```
+
+Each JSONL record stores three preference views over the same samples:
+
+- `joint_samples[].oracle_reward`: direct oracle reward scores.
+- `score_preferences`: sample id and oracle reward pairs.
+- `pair_preferences`: chosen/rejected pairs for Bradley-Terry training.
+- `ranking_preferences`: full sample ranking by oracle reward for listwise training.
+
+Train the reward model from one view:
+
+```bash
+python LLM_Collab_Code_Generation/preferences/train_reward_model.py \
+  --config LLM_Collab_Code_Generation/configs/magrpo_he_config.yaml \
+  --override reward_model.buffer_path=output_preferences/he_s4.jsonl \
+    reward_model.preference_type=pair \
+    reward_model.output_dir=output_reward_model/he_pair
+```
+
+Use the trained reward model in MAGRPO, IAC, or MAAC:
+
+```bash
+python LLM_Collab_Code_Generation/train_magrpo.py \
+  --config LLM_Collab_Code_Generation/configs/magrpo_he_config.yaml \
+  --override reward.type=model reward_model.path=output_reward_model/he_pair \
+    reward_processor.shift=0
+```
+
 ## Logging
 
 `loggers/` adapt the shared `MAGRPOTrainer` utilities to emit pass rates, syntax success, reward decomposition, termination statistics, and aux-usage diagnostics. Configure Weights & Biases by setting `wandb.project`, `wandb.entity`, and `wandb.name` in YAML or through overrides. `output.save_final_model` stays `false` by default to avoid storing large checkpoints, while `output.verbose` toggles the detailed per-episode traces used when debugging on a cluster.

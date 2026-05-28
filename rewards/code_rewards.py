@@ -1,7 +1,7 @@
 import re
 import signal
 import math
-from typing import List
+from typing import Any, Dict, List, Optional, Sequence
 import builtins
 
 # Verbose toggle (can be set by training scripts)
@@ -370,3 +370,178 @@ def execution_reward_aux(
         rewards.append(reward)
 
     return rewards
+
+
+CODE_DATASETS = {"humaneval", "coophumaneval", "mbpp"}
+
+
+def format_reward_model_input(prompt: str, aux: str, main: str) -> str:
+    return (
+        "Problem:\n"
+        f"{prompt}\n\n"
+        "Agent 1 auxiliary code:\n"
+        f"{aux}\n\n"
+        "Agent 2 main code:\n"
+        f"{main}"
+    )
+
+
+def _config_get(config: Any, key: str, default: Any = None) -> Any:
+    if config is None:
+        return default
+    if hasattr(config, "get"):
+        return config.get(key, default)
+    value = config
+    for part in key.split("."):
+        if not isinstance(value, dict) or part not in value:
+            return default
+        value = value[part]
+    return value
+
+
+def _required_config(config: Any, key: str) -> Any:
+    value = _config_get(config, key)
+    if value is None:
+        raise ValueError(f"{key} must be set.")
+    return value
+
+
+def _select_item(items: Optional[Sequence[Dict[str, Any]]], idx: int) -> Dict[str, Any]:
+    if not items:
+        raise ValueError("batch_items must be provided for code rewards.")
+    return items[idx] if idx < len(items) else items[0]
+
+
+def make_code_oracle_reward_function(num_agents: int = 2):
+    def _reward(*agent_outputs: List[str], batch_items=None, prompts=None) -> List[float]:
+        if not agent_outputs:
+            return []
+
+        count = min(len(outputs) for outputs in agent_outputs)
+        if count == 0:
+            return []
+
+        aux_outputs = (
+            agent_outputs[0][:count] if num_agents > 1 else [""] * count
+        )
+        main_outputs = agent_outputs[-1][:count]
+        items = list(batch_items or [])
+        test_cases = [_select_item(items, i).get("test", "") for i in range(count)]
+        entry_points = [
+            _select_item(items, i).get("entry_point", "") for i in range(count)
+        ]
+        raw_prompts = [_select_item(items, i).get("prompt", "") for i in range(count)]
+
+        return execution_reward_aux(
+            aux_outputs,
+            main_outputs,
+            test_cases,
+            entry_points,
+            raw_prompts,
+        )
+
+    return _reward
+
+
+class BradleyTerryRewardFunction:
+    def __init__(
+        self,
+        model_path: str,
+        *,
+        tokenizer_path: Optional[str] = None,
+        device: Optional[str] = None,
+        max_length: int = 2048,
+        torch_dtype: Optional[str] = None,
+        batch_size: int = 8,
+    ) -> None:
+        import torch
+        from transformers import AutoModelForSequenceClassification, AutoTokenizer
+
+        dtype = None
+        if torch_dtype:
+            dtype = getattr(torch, str(torch_dtype))
+
+        self.torch = torch
+        self.device = torch.device(
+            device or ("cuda" if torch.cuda.is_available() else "cpu")
+        )
+        self.max_length = int(max_length)
+        self.batch_size = int(batch_size)
+        self.tokenizer = AutoTokenizer.from_pretrained(tokenizer_path or model_path)
+        if self.tokenizer.pad_token is None:
+            self.tokenizer.pad_token = self.tokenizer.eos_token
+        self.model = AutoModelForSequenceClassification.from_pretrained(
+            model_path,
+            num_labels=1,
+            torch_dtype=dtype,
+        ).to(self.device)
+        if self.model.config.pad_token_id is None:
+            self.model.config.pad_token_id = self.tokenizer.pad_token_id
+        self.model.eval()
+
+    @classmethod
+    def from_config(cls, config: Any) -> "BradleyTerryRewardFunction":
+        return cls(
+            str(_required_config(config, "reward_model.path")),
+            tokenizer_path=_config_get(config, "reward_model.tokenizer_path"),
+            device=_config_get(config, "reward_model.device"),
+            max_length=int(_config_get(config, "reward_model.max_length", 2048)),
+            torch_dtype=_config_get(config, "reward_model.torch_dtype"),
+            batch_size=int(_config_get(config, "reward_model.batch_size", 8)),
+        )
+
+    def _score_texts(self, texts: List[str]) -> List[float]:
+        scores: List[float] = []
+        with self.torch.no_grad():
+            for start in range(0, len(texts), self.batch_size):
+                batch = texts[start : start + self.batch_size]
+                inputs = self.tokenizer(
+                    batch,
+                    padding=True,
+                    truncation=True,
+                    max_length=self.max_length,
+                    return_tensors="pt",
+                ).to(self.device)
+                logits = self.model(**inputs).logits.view(-1)
+                scores.extend(float(x) for x in logits.detach().cpu())
+        return scores
+
+    def __call__(
+        self,
+        *agent_outputs: List[str],
+        batch_items=None,
+        prompts=None,
+    ) -> List[float]:
+        if not agent_outputs:
+            return []
+        count = min(len(outputs) for outputs in agent_outputs)
+        if count == 0:
+            return []
+
+        items = list(batch_items or [])
+        if not items and prompts is None:
+            raise ValueError("batch_items or prompts must be provided for reward model scoring.")
+
+        texts = []
+        for idx in range(count):
+            prompt = (
+                _select_item(items, idx).get("prompt", "")
+                if items
+                else prompts[idx if idx < len(prompts) else 0]
+            )
+            aux = agent_outputs[0][idx] if len(agent_outputs) > 1 else ""
+            main = agent_outputs[-1][idx]
+            texts.append(format_reward_model_input(prompt, aux, main))
+        return self._score_texts(texts)
+
+
+def make_code_reward_function(dataset_type: str, num_agents: int = 2, config: Any = None):
+    if dataset_type is None or dataset_type.lower() not in CODE_DATASETS:
+        raise ValueError(f"Unknown code dataset type: {dataset_type}")
+
+    reward_type = str(_config_get(config, "reward.type", "function")).lower()
+    if reward_type == "function":
+        return make_code_oracle_reward_function(num_agents=num_agents)
+    if reward_type == "model":
+        return BradleyTerryRewardFunction.from_config(config)
+    raise ValueError("reward.type must be 'function' or 'model'.")
