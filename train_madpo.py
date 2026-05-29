@@ -22,7 +22,7 @@ from comlrl.utils.reward_processor import RewardProcessors
 from config import Config, add_config_args, parse_overrides
 import external as external_ctx
 from external import get_external_transition
-from rewards.code_rewards import make_code_reward_function
+from rewards.code_rewards import make_code_oracle_reward_function
 from train_magrpo import get_formatters, get_logger_and_aggregator
 
 
@@ -177,6 +177,13 @@ def main() -> None:
     )
     trainer_section = dict(magrpo_section)
     trainer_section.update(madpo_section)
+    preference_source = str(trainer_section.get("preference_source", "online")).lower()
+    if preference_source == "offline" and not trainer_section.get(
+        "preference_buffer_path"
+    ):
+        buffer_path = config.get("preference.output_path")
+        if buffer_path:
+            trainer_section["preference_buffer_path"] = buffer_path
 
     seed_value = int(config.get("seed", trainer_section.get("seed", 42)))
     num_turns = int(trainer_section.get("num_turns", 2))
@@ -246,7 +253,7 @@ def main() -> None:
     madpo_args = MADPOConfig(**madpo_kwargs)
 
     formatters = get_formatters(dataset_type, num_agents)
-    reward_func = make_code_reward_function(dataset_type, num_agents, config)
+    reward_func = make_code_oracle_reward_function(num_agents)
     eval_logger, eval_aggregator = get_logger_and_aggregator(
         dataset_type, is_multi_turn
     )
@@ -266,6 +273,9 @@ def main() -> None:
     tags = list(tags_from_cfg) if isinstance(tags_from_cfg, list) else default_tags
     if "madpo" not in tags:
         tags.insert(0, "madpo")
+    source_tag = f"pref_{preference_source}"
+    if source_tag not in tags:
+        tags.append(source_tag)
     if external_mode == "level_feedback" and "self-evolved" not in tags:
         tags.append("self-evolved")
 
