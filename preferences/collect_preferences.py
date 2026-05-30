@@ -13,6 +13,7 @@ if str(PROJECT_ROOT) not in sys.path:
 
 import torch
 from datasets import load_dataset
+from tqdm import tqdm
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
 from config import Config, add_config_args, parse_overrides
@@ -229,8 +230,16 @@ def main() -> None:
     total_samples = 0
     with output_path.open("w") as f:
         selected = dataset.select(range(num_sets))
+        progress = tqdm(
+            total=num_passes * num_sets,
+            desc="collect preferences",
+            dynamic_ncols=True,
+        )
         for pass_idx in range(num_passes):
             for idx, item in enumerate(selected):
+                progress.set_description(
+                    f"pass {pass_idx + 1}/{num_passes} task {idx + 1}/{num_sets}"
+                )
                 aux_prompt = _aux_function_formatter(item)
                 main_prompt = _main_function_formatter(item)
 
@@ -284,6 +293,13 @@ def main() -> None:
                 f.write(json.dumps(record) + "\n")
                 total_pairs += len(pair_preferences)
                 total_samples += len(joint_samples)
+                progress.update(1)
+                progress.set_postfix(
+                    joint_samples=total_samples,
+                    pair_preferences=total_pairs,
+                    refresh=False,
+                )
+        progress.close()
 
     summary_path = output_path.with_suffix(output_path.suffix + ".summary.json")
     summary = {
