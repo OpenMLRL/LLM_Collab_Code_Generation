@@ -207,6 +207,10 @@ def main() -> None:
             f"preference_buffers/{config.get('dataset.type')}_s{set_size}.jsonl",
         )
     )
+    if output_path.exists() and not bool(config.get("preference.overwrite", True)):
+        raise FileExistsError(
+            f"{output_path} already exists. Set preference.overwrite=true to replace it."
+        )
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
     device = str(config.get("preference.device", "cuda" if torch.cuda.is_available() else "cpu"))
