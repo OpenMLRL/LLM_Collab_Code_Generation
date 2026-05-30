@@ -188,6 +188,9 @@ def main() -> None:
     set_size = int(config.get("preference.set_size", 2))
     if set_size < 2:
         raise ValueError("preference.set_size must be >= 2.")
+    num_passes = int(config.get("preference.num_passes", 1))
+    if num_passes < 1:
+        raise ValueError("preference.num_passes must be >= 1.")
 
     split = config.get("preference.split", config.get("dataset.train_split"))
     dataset = load_dataset(config.get("dataset.name"), split=split)
@@ -225,59 +228,62 @@ def main() -> None:
     total_pairs = 0
     total_samples = 0
     with output_path.open("w") as f:
-        for idx, item in enumerate(dataset.select(range(num_sets))):
-            aux_prompt = _aux_function_formatter(item)
-            main_prompt = _main_function_formatter(item)
+        selected = dataset.select(range(num_sets))
+        for pass_idx in range(num_passes):
+            for idx, item in enumerate(selected):
+                aux_prompt = _aux_function_formatter(item)
+                main_prompt = _main_function_formatter(item)
 
-            aux_outputs = _generate(
-                agents[0][0],
-                agents[0][1],
-                aux_prompt,
-                set_size,
-                device,
-                generation_kwargs,
-            )
-            main_outputs = _generate(
-                agents[1][0],
-                agents[1][1],
-                main_prompt,
-                set_size,
-                device,
-                generation_kwargs,
-            )
+                aux_outputs = _generate(
+                    agents[0][0],
+                    agents[0][1],
+                    aux_prompt,
+                    set_size,
+                    device,
+                    generation_kwargs,
+                )
+                main_outputs = _generate(
+                    agents[1][0],
+                    agents[1][1],
+                    main_prompt,
+                    set_size,
+                    device,
+                    generation_kwargs,
+                )
 
-            rewards = execution_reward_aux(
-                aux_outputs,
-                main_outputs,
-                [item.get("test", "")] * set_size,
-                [item.get("entry_point", "")] * set_size,
-                [item.get("prompt", "")] * set_size,
-            )
-            joint_samples = [
-                {
-                    "sample_id": sample_id,
-                    "aux": aux_outputs[sample_id],
-                    "main": main_outputs[sample_id],
-                    "oracle_reward": float(rewards[sample_id]),
+                rewards = execution_reward_aux(
+                    aux_outputs,
+                    main_outputs,
+                    [item.get("test", "")] * set_size,
+                    [item.get("entry_point", "")] * set_size,
+                    [item.get("prompt", "")] * set_size,
+                )
+                joint_samples = [
+                    {
+                        "sample_id": sample_id,
+                        "aux": aux_outputs[sample_id],
+                        "main": main_outputs[sample_id],
+                        "oracle_reward": float(rewards[sample_id]),
+                    }
+                    for sample_id in range(set_size)
+                ]
+                score_preferences, pair_preferences, ranking_preferences = (
+                    _preference_views(joint_samples)
+                )
+                record = {
+                    "task_id": _task_id(item, idx),
+                    "pass_id": pass_idx,
+                    "prompt": item.get("prompt", ""),
+                    "entry_point": item.get("entry_point", ""),
+                    "test": item.get("test", ""),
+                    "joint_samples": joint_samples,
+                    "score_preferences": score_preferences,
+                    "pair_preferences": pair_preferences,
+                    "ranking_preferences": ranking_preferences,
                 }
-                for sample_id in range(set_size)
-            ]
-            score_preferences, pair_preferences, ranking_preferences = _preference_views(
-                joint_samples
-            )
-            record = {
-                "task_id": _task_id(item, idx),
-                "prompt": item.get("prompt", ""),
-                "entry_point": item.get("entry_point", ""),
-                "test": item.get("test", ""),
-                "joint_samples": joint_samples,
-                "score_preferences": score_preferences,
-                "pair_preferences": pair_preferences,
-                "ranking_preferences": ranking_preferences,
-            }
-            f.write(json.dumps(record) + "\n")
-            total_pairs += len(pair_preferences)
-            total_samples += len(joint_samples)
+                f.write(json.dumps(record) + "\n")
+                total_pairs += len(pair_preferences)
+                total_samples += len(joint_samples)
 
     summary_path = output_path.with_suffix(output_path.suffix + ".summary.json")
     summary = {
@@ -285,6 +291,7 @@ def main() -> None:
         "dataset": config.get("dataset.name"),
         "split": split,
         "num_sets": num_sets,
+        "num_passes": num_passes,
         "set_size": set_size,
         "joint_samples": total_samples,
         "pair_preferences": total_pairs,
