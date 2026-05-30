@@ -295,6 +295,7 @@ def main() -> None:
                     "ranking_preferences": ranking_preferences,
                 }
                 f.write(json.dumps(record) + "\n")
+                f.flush()
                 total_pairs += len(pair_preferences)
                 total_samples += len(joint_samples)
                 progress.update(1)
