@@ -434,6 +434,8 @@ def main() -> None:
             eval_num_samples=maac_cfg.get("eval_num_samples", 4),
             eval_batch_size=maac_cfg.get("eval_batch_size", 1),
             logging_steps=maac_cfg.get("logging_steps", 10),
+            reference_kl_enabled=maac_cfg.get("reference_kl_enabled", False),
+            reference_kl_coef=maac_cfg.get("reference_kl_coef", 0.1),
         ),
         train_dataset=train_dataset,
         eval_dataset=eval_dataset,

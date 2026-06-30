@@ -434,6 +434,10 @@ def main():
             "eval_num_samples": magrpo_config.get("eval_num_samples", 4),
             "eval_batch_size": magrpo_config.get("eval_batch_size", 1),
             "external_prompt_passthrough": external_prompt_passthrough,
+            "reference_kl_enabled": magrpo_config.get(
+                "reference_kl_enabled", False
+            ),
+            "reference_kl_coef": magrpo_config.get("reference_kl_coef", 0.1),
         }
     )
     magrpo_args = MAGRPOConfig(**magrpo_args_kwargs)

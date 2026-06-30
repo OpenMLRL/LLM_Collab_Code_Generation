@@ -346,6 +346,8 @@ def main():
         eval_batch_size=grpo_config.get("eval_batch_size", 1),
         train_batch_size=grpo_config.get("train_batch_size"),
         advantage_normalization=grpo_config.get("advantage_normalization", True),
+        reference_kl_enabled=grpo_config.get("reference_kl_enabled", False),
+        reference_kl_coef=grpo_config.get("reference_kl_coef", 0.1),
     )
     formatter = get_formatter(dataset_type)
     reward_func = get_reward_function(dataset_type)
