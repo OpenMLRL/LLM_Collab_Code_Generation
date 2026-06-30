@@ -64,13 +64,12 @@ def get_formatter(dataset_type: str):
     """Get the appropriate formatter based on dataset type."""
     if dataset_type is None:
         raise ValueError(
-            "dataset.type not specified in config. Please add 'type: humaneval/coophumaneval/mbpp' to the dataset section."
+            "dataset.type not specified in config. Please add 'type: humaneval/coophumaneval' to the dataset section."
         )
 
     formatters_map = {
         "humaneval": complete_function_formatter,
         "coophumaneval": complete_function_formatter,
-        "mbpp": complete_function_formatter,
     }
     return formatters_map.get(dataset_type.lower(), complete_function_formatter)
 
@@ -154,8 +153,6 @@ def main() -> None:
             dataset_type = "humaneval"
         elif "coophumaneval" in dataset_name.lower() or "coop" in dataset_name.lower():
             dataset_type = "coophumaneval"
-        elif "mbpp" in dataset_name.lower():
-            dataset_type = "mbpp"
     if dataset_type is None:
         raise ValueError("dataset.type must be specified or inferrable from dataset.name")
 
@@ -396,6 +393,9 @@ def main() -> None:
             eval_interval=ac_cfg.get("eval_interval", 16),
             eval_num_samples=ac_cfg.get("eval_num_samples", 4),
             eval_batch_size=ac_cfg.get("eval_batch_size", 1),
+            reference_kl_enabled=ac_cfg.get("reference_kl_enabled", False),
+            reference_kl_coef=ac_cfg.get("reference_kl_coef", 0.1),
+            reference_devices=ac_cfg.get("reference_devices", None),
         ),
         train_dataset=train_dataset,
         eval_dataset=eval_dataset,

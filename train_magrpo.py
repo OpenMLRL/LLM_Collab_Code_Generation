@@ -117,7 +117,7 @@ def get_formatters(dataset_type: str, num_agents: int):
 
     For code tasks, use aux formatters for all agents except the last, which uses main.
     """
-    if dataset_type.lower() in ["humaneval", "coophumaneval", "mbpp"] and num_agents == 2:
+    if dataset_type.lower() in ["humaneval", "coophumaneval"] and num_agents == 2:
         return [aux_function_formatter, main_function_formatter]
 
     raise NotImplementedError("Other number of agents have not been implemented yet")
@@ -132,7 +132,7 @@ def get_logger_and_aggregator(dataset_type: str, is_multi_turn: bool = False):
         return None, None
 
     # Use unified multi-turn compatible logger/aggregator for code datasets
-    if dataset_type.lower() in ["humaneval", "coophumaneval", "mbpp"]:
+    if dataset_type.lower() in ["humaneval", "coophumaneval"]:
         return mt_humaneval_logger, aggregate_mt_humaneval_metrics_for_logging
 
     return None, None
@@ -149,7 +149,7 @@ def get_reward_function(dataset_type: str, num_agents: int):
             "dataset.type not specified in config. Please add 'type: humaneval/coophumaneval' to the dataset section."
         )
 
-    if dataset_type.lower() in ["humaneval", "coophumaneval", "mbpp"]:
+    if dataset_type.lower() in ["humaneval", "coophumaneval"]:
 
         def reward_wrapper(*agent_completions, batch_items=None, prompts=None):
             # agent_completions: tuple of lists (one list per agent), each list contains strings per completion
@@ -216,8 +216,6 @@ def main():
             dataset_type = "humaneval"
         elif "coophumaneval" in dataset_name.lower() or "coop" in dataset_name.lower():
             dataset_type = "coophumaneval"
-        elif "mbpp" in dataset_name.lower():
-            dataset_type = "mbpp"
         else:
             raise ValueError(
                 f"Could not infer dataset type from dataset name '{dataset_name}'. Please specify 'type' in dataset config."
@@ -436,6 +434,11 @@ def main():
             "eval_num_samples": magrpo_config.get("eval_num_samples", 4),
             "eval_batch_size": magrpo_config.get("eval_batch_size", 1),
             "external_prompt_passthrough": external_prompt_passthrough,
+            "reference_kl_enabled": magrpo_config.get(
+                "reference_kl_enabled", False
+            ),
+            "reference_kl_coef": magrpo_config.get("reference_kl_coef", 0.1),
+            "reference_devices": magrpo_config.get("reference_devices", None),
         }
     )
     magrpo_args = MAGRPOConfig(**magrpo_args_kwargs)
@@ -534,7 +537,7 @@ def main():
     if (
         is_multi_turn
         and dataset_type
-        and dataset_type.lower() in ["humaneval", "coophumaneval", "mbpp"]
+        and dataset_type.lower() in ["humaneval", "coophumaneval"]
     ):
         expert_model = external_cfg.get("expert_model", "deepseek-coder")
 
