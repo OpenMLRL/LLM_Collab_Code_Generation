@@ -55,7 +55,6 @@ magrpo:
 
 madpo:
   num_iterations: 1
-  updates_per_iteration: null
   preference_pairs_per_item: 4
   dpo_epochs_per_iteration: 4
   use_reference_model: true
