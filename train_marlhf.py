@@ -65,6 +65,11 @@ def _run_name(config: Config, algorithm: str) -> str:
     )
 
 
+def _wandb_id(algorithm: str, run_id: str) -> str:
+    raw = f"marlhf_{algorithm}_{run_id}"
+    return "".join(ch if ch.isalnum() or ch in "._-" else "_" for ch in raw)
+
+
 def _rl_steps_per_iteration(config: Config, algorithm: str, train_items: int) -> int:
     if algorithm not in RL_SCRIPTS:
         return 0
@@ -126,9 +131,7 @@ def main() -> None:
     )
     rl_steps_per_iteration = _rl_steps_per_iteration(config, algorithm, train_items)
     wandb_name = _run_name(config, algorithm)
-    wandb_run_id = "".join(
-        ch if ch.isalnum() or ch in "._-" else "_" for ch in f"{wandb_name}_{run_id}"
-    )
+    wandb_run_id = _wandb_id(algorithm, run_id)
 
     current_agents: Optional[List[str]] = None
     if config.get("agents") is not None:
@@ -168,7 +171,7 @@ def main() -> None:
             _as_override("output.save_path", str(policy_dir)),
             _as_override("wandb.name", wandb_name),
             _as_override("wandb.id", wandb_run_id),
-            _as_override("wandb.resume", "allow"),
+            _as_override("wandb.resume", "allow" if iteration == 0 else "must"),
         ]
         if algorithm in RL_SCRIPTS:
             train_overrides.extend(
@@ -183,6 +186,14 @@ def main() -> None:
             )
         if algorithm in {"grpo", "maac", "iac"}:
             train_overrides.append(_as_override(f"{algorithm}.reward_shift", 0))
+        print(
+            "MARLHF iteration "
+            f"{iteration + 1}/{num_iterations}: "
+            f"wandb_id={wandb_run_id} "
+            f"resume={'allow' if iteration == 0 else 'must'} "
+            f"initial_env_step={iteration * rl_steps_per_iteration}",
+            flush=True,
+        )
         _run(RL_SCRIPTS[algorithm], effective_config_path, train_overrides)
         current_agents = _saved_agent_paths(policy_dir, num_agents)
 

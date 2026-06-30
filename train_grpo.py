@@ -18,6 +18,7 @@ from typing import Any, Dict
 from config import Config, add_config_args, make_run_id, parse_overrides
 from datasets import load_dataset
 from transformers import AutoModelForCausalLM, AutoTokenizer
+import wandb
 
 from rewards.code_rewards import execution_reward_aux, make_code_reward_function
 from comlrl.utils.reward_processor import RewardProcessors
@@ -494,6 +495,9 @@ def main():
         )
         trainer.save_model(save_path)
         print(f"Model saved to: {save_path}")
+
+    if wandb.run is not None:
+        wandb.finish()
 
 
 if __name__ == "__main__":

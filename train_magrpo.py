@@ -17,6 +17,7 @@ from typing import Any, Dict
 from config import Config, add_config_args, make_run_id, parse_overrides
 from datasets import load_dataset
 import torch
+import wandb
 from transformers import AutoTokenizer
 
 from loggers.mt_code_logger import (
@@ -526,6 +527,9 @@ def main():
         )
         trainer.save_model(save_path)
         print(f"Model saved to: {save_path}")
+
+    if wandb.run is not None:
+        wandb.finish()
 
 
 if __name__ == "__main__":

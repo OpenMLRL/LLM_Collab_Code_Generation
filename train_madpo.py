@@ -16,6 +16,7 @@ for path in (WORKSPACE_ROOT, COMLRL_ROOT):
         sys.path.insert(0, path)
 
 import torch
+import wandb
 from datasets import load_dataset
 from transformers import AutoTokenizer
 
@@ -421,6 +422,9 @@ def main() -> None:
         )
         trainer.save_model(save_path)
         print(f"Model saved to: {save_path}")
+
+    if wandb.run is not None:
+        wandb.finish()
 
 
 if __name__ == "__main__":
