@@ -395,6 +395,7 @@ def main() -> None:
             eval_batch_size=ac_cfg.get("eval_batch_size", 1),
             reference_kl_enabled=ac_cfg.get("reference_kl_enabled", False),
             reference_kl_coef=ac_cfg.get("reference_kl_coef", 0.1),
+            reference_devices=ac_cfg.get("reference_devices", None),
         ),
         train_dataset=train_dataset,
         eval_dataset=eval_dataset,

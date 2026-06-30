@@ -436,6 +436,7 @@ def main() -> None:
             logging_steps=maac_cfg.get("logging_steps", 10),
             reference_kl_enabled=maac_cfg.get("reference_kl_enabled", False),
             reference_kl_coef=maac_cfg.get("reference_kl_coef", 0.1),
+            reference_devices=maac_cfg.get("reference_devices", None),
         ),
         train_dataset=train_dataset,
         eval_dataset=eval_dataset,

@@ -438,6 +438,7 @@ def main():
                 "reference_kl_enabled", False
             ),
             "reference_kl_coef": magrpo_config.get("reference_kl_coef", 0.1),
+            "reference_devices": magrpo_config.get("reference_devices", None),
         }
     )
     magrpo_args = MAGRPOConfig(**magrpo_args_kwargs)

@@ -348,6 +348,7 @@ def main():
         advantage_normalization=grpo_config.get("advantage_normalization", True),
         reference_kl_enabled=grpo_config.get("reference_kl_enabled", False),
         reference_kl_coef=grpo_config.get("reference_kl_coef", 0.1),
+        reference_devices=grpo_config.get("reference_devices", None),
     )
     formatter = get_formatter(dataset_type)
     reward_func = get_reward_function(dataset_type)

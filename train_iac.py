@@ -442,6 +442,7 @@ def main() -> None:
             logging_steps=iac_cfg.get("logging_steps", 10),
             reference_kl_enabled=iac_cfg.get("reference_kl_enabled", False),
             reference_kl_coef=iac_cfg.get("reference_kl_coef", 0.1),
+            reference_devices=iac_cfg.get("reference_devices", None),
         ),
         train_dataset=train_dataset,
         eval_dataset=eval_dataset,
