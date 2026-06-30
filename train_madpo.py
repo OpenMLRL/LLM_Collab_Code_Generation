@@ -1,7 +1,4 @@
-"""
-Train MADPO with the same data, reward, formatter, and external-transition setup
-used by train_magrpo.py.
-"""
+"""Train MADPO from an algorithm-specific configuration."""
 
 import argparse
 import os
@@ -162,7 +159,7 @@ def _make_api_comparator(config: Config):
     model = comparator_cfg.get("model")
     if not provider or not model:
         raise ValueError("api comparator requires preference.comparator.provider and .model.")
-    max_tokens = int(config.get("madpo.max_new_tokens", config.get("magrpo.max_new_tokens", 256)))
+    max_tokens = int(config.get("madpo.max_new_tokens", 256))
     temperature = float(config.get("preference.temperature", config.get("agent_model.temperature", 0.3)))
 
     if provider == "anthropic":
@@ -227,14 +224,10 @@ def main() -> None:
     output_base_dir = config.get("output.base_dir", "output_madpo")
     output_verbose = bool(config.get("output.verbose", False))
 
-    magrpo_section = (
-        config.get_section("magrpo") if hasattr(config, "get_section") else {}
-    )
     madpo_section = (
         config.get_section("madpo") if hasattr(config, "get_section") else {}
     )
-    trainer_section = dict(magrpo_section)
-    trainer_section.update(madpo_section)
+    trainer_section = dict(madpo_section)
     preference_section = (
         config.get_section("preference") if hasattr(config, "get_section") else {}
     )
@@ -244,7 +237,7 @@ def main() -> None:
     )
 
     seed_value = int(config.get("seed", trainer_section.get("seed", 42)))
-    num_turns = int(trainer_section.get("num_turns", 2))
+    num_turns = int(trainer_section.get("num_turns", 1))
     num_agents = int(trainer_section.get("num_agents", 2))
     is_multi_turn = num_turns > 1
 

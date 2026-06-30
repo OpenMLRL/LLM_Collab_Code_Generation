@@ -53,12 +53,6 @@ magrpo:
   eval_num_samples: 4
   eval_batch_size: 1
 
-madpo:
-  num_iterations: 1
-  preference_pairs_per_item: 4
-  dpo_epochs_per_iteration: 4
-  use_reference_model: true
-
 reward_processor:
   enabled: true
   scale_factor: 1.0

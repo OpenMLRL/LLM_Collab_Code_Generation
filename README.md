@@ -36,6 +36,9 @@ python LLM_Collab_Code_Generation/train_grpo.py \
 
 python LLM_Collab_Code_Generation/train_magrpo.py \
   --config LLM_Collab_Code_Generation/configs/magrpo_che_config.yaml
+
+python LLM_Collab_Code_Generation/train_madpo.py \
+  --config LLM_Collab_Code_Generation/configs/madpo_che_config.yaml
 ```
 
 Override any configuration value inline with `--override`:
