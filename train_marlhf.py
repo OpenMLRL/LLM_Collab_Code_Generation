@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from config import Config, add_config_args, make_run_id, parse_overrides
+from datasets import load_dataset
 
 
 PROJECT_ROOT = Path(__file__).resolve().parent
@@ -55,14 +56,25 @@ def _num_agents(config: Config, algorithm: str) -> int:
     return int(_section(config, algorithm).get("num_agents", 2))
 
 
-def _run_name(config: Config, algorithm: str, iteration: int) -> str:
+def _run_name(config: Config, algorithm: str) -> str:
     wandb_section = _section(config, "wandb")
-    base = (
+    return (
         wandb_section.get("name")
         or wandb_section.get("run_name")
         or f"marlhf_{algorithm}_{config.get('dataset.type', 'code')}"
     )
-    return f"{base}_iter_{iteration + 1}"
+
+
+def _rl_steps_per_iteration(config: Config, algorithm: str, train_items: int) -> int:
+    if algorithm not in RL_SCRIPTS:
+        return 0
+    section = _section(config, algorithm)
+    return (
+        int(train_items)
+        * int(section.get("num_train_epochs", 1))
+        * int(section.get("num_generations", 1))
+        * int(section.get("num_turns", 1))
+    )
 
 
 def _saved_agent_paths(policy_dir: Path, num_agents: int) -> List[str]:
@@ -109,6 +121,14 @@ def main() -> None:
         config.save(str(effective_config_path))
     else:
         effective_config_path = config_path
+    train_items = len(
+        load_dataset(config.get("dataset.name"), split=config.get("dataset.train_split"))
+    )
+    rl_steps_per_iteration = _rl_steps_per_iteration(config, algorithm, train_items)
+    wandb_name = _run_name(config, algorithm)
+    wandb_run_id = "".join(
+        ch if ch.isalnum() or ch in "._-" else "_" for ch in f"{wandb_name}_{run_id}"
+    )
 
     current_agents: Optional[List[str]] = None
     if config.get("agents") is not None:
@@ -146,8 +166,21 @@ def main() -> None:
             _as_override("reward_processor.shift", 0),
             _as_override("output.save_final_model", True),
             _as_override("output.save_path", str(policy_dir)),
-            _as_override("wandb.name", _run_name(config, algorithm, iteration)),
+            _as_override("wandb.name", wandb_name),
+            _as_override("wandb.id", wandb_run_id),
+            _as_override("wandb.resume", "allow"),
         ]
+        if algorithm in RL_SCRIPTS:
+            train_overrides.extend(
+                [
+                    _as_override(
+                        f"{algorithm}.initial_env_step",
+                        iteration * rl_steps_per_iteration,
+                    ),
+                    _as_override(f"{algorithm}.iteration_index", iteration + 1),
+                    _as_override(f"{algorithm}.iteration_total", num_iterations),
+                ]
+            )
         if algorithm in {"grpo", "maac", "iac"}:
             train_overrides.append(_as_override(f"{algorithm}.reward_shift", 0))
         _run(RL_SCRIPTS[algorithm], effective_config_path, train_overrides)

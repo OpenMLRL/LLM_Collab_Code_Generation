@@ -348,6 +348,8 @@ def main() -> None:
         "project": wandb_section.get("project", "comlrl"),
         "entity": wandb_section.get("entity", "OpenMLRL"),
         "name": wandb_name,
+        "id": wandb_section.get("id"),
+        "resume": wandb_section.get("resume"),
         "dir": wandb_section.get("dir", output_base_dir),
         "tags": tags,
         "config_sections": {

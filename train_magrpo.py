@@ -389,6 +389,9 @@ def main():
             "eval_num_samples": magrpo_config.get("eval_num_samples", 4),
             "eval_batch_size": magrpo_config.get("eval_batch_size", 1),
             "external_prompt_passthrough": external_prompt_passthrough,
+            "initial_env_step": magrpo_config.get("initial_env_step", 0),
+            "iteration_index": magrpo_config.get("iteration_index"),
+            "iteration_total": magrpo_config.get("iteration_total"),
         }
     )
     magrpo_args = MAGRPOConfig(**magrpo_args_kwargs)
@@ -426,6 +429,8 @@ def main():
         "project": wandb_section.get("project", "comlrl"),
         "entity": wandb_section.get("entity", "OpenMLRL"),
         "name": f"{wandb_name}",
+        "id": wandb_section.get("id"),
+        "resume": wandb_section.get("resume"),
         "dir": wandb_section.get("dir", "../../../projects/bepg/sliu30"),
         "tags": tags,
         # Provide full sections for the trainer to log cleanly

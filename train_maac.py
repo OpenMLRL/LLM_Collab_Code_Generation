@@ -404,6 +404,9 @@ def main() -> None:
             eval_num_samples=maac_cfg.get("eval_num_samples", 4),
             eval_batch_size=maac_cfg.get("eval_batch_size", 1),
             logging_steps=maac_cfg.get("logging_steps", 10),
+            initial_env_step=maac_cfg.get("initial_env_step", 0),
+            iteration_index=maac_cfg.get("iteration_index"),
+            iteration_total=maac_cfg.get("iteration_total"),
         ),
         train_dataset=train_dataset,
         eval_dataset=eval_dataset,
@@ -463,6 +466,8 @@ def _build_wandb_config(
         "project": wandb_section.get("project", "maac"),
         "entity": wandb_section.get("entity"),
         "name": wandb_name,
+        "id": wandb_section.get("id"),
+        "resume": wandb_section.get("resume"),
         "dir": wandb_section.get("dir"),
         "tags": tags,
         "config_sections": {

@@ -355,6 +355,9 @@ def main():
         eval_batch_size=grpo_config.get("eval_batch_size", 1),
         train_batch_size=grpo_config.get("train_batch_size"),
         advantage_normalization=grpo_config.get("advantage_normalization", True),
+        initial_env_step=grpo_config.get("initial_env_step", 0),
+        iteration_index=grpo_config.get("iteration_index"),
+        iteration_total=grpo_config.get("iteration_total"),
     )
     formatter = get_formatter(dataset_type)
     reward_func = make_code_reward_function(dataset_type, 1, config)
@@ -393,6 +396,8 @@ def main():
         "project": wandb_section.get("project", "comlrl"),
         "entity": wandb_section.get("entity", "OpenMLRL"),
         "name": f"{wandb_name}",
+        "id": wandb_section.get("id"),
+        "resume": wandb_section.get("resume"),
         "dir": wandb_section.get("dir", "../../../projects/bepg/sliu30"),
         "tags": tags,
         "config_sections": {
