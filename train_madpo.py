@@ -11,13 +11,18 @@ import sys
 from dataclasses import fields
 from typing import Any, Dict
 
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+REPO_ROOT = os.path.dirname(os.path.abspath(__file__))
+WORKSPACE_ROOT = os.path.dirname(REPO_ROOT)
+COMLRL_ROOT = os.path.join(WORKSPACE_ROOT, "CoMLRL")
+for path in (WORKSPACE_ROOT, COMLRL_ROOT):
+    if path not in sys.path:
+        sys.path.insert(0, path)
 
 import torch
 from datasets import load_dataset
 from transformers import AutoTokenizer
 
-from comlrl.trainers.reinforce import MADPOConfig, MADPOTrainer
+from comlrl.trainers.direct_preference import MADPOConfig, MADPOTrainer
 from comlrl.utils.reward_processor import RewardProcessors
 from config import Config, add_config_args, parse_overrides
 import external as external_ctx
@@ -151,6 +156,59 @@ def _build_reward_processor(config: Config):
     return (lambda p=prev, s=shift_proc: (lambda x: s(p(x))))()
 
 
+def _make_api_comparator(config: Config):
+    comparator_cfg = config.get("preference.comparator", {}) or {}
+    provider = str(comparator_cfg.get("provider") or "").lower()
+    model = comparator_cfg.get("model")
+    if not provider or not model:
+        raise ValueError("api comparator requires preference.comparator.provider and .model.")
+    max_tokens = int(config.get("madpo.max_new_tokens", config.get("magrpo.max_new_tokens", 256)))
+    temperature = float(config.get("preference.temperature", config.get("agent_model.temperature", 0.3)))
+
+    if provider == "anthropic":
+        from anthropic import Anthropic
+
+        api_key_env = comparator_cfg.get("api_key_env", "ANTHROPIC_API_KEY")
+        client = Anthropic(api_key=os.getenv(api_key_env))
+
+        def _call(prompt: str, batch_item=None, agent_idx: int = 0):
+            response = client.messages.create(
+                model=str(model),
+                max_tokens=max_tokens,
+                temperature=temperature,
+                messages=[{"role": "user", "content": prompt}],
+            )
+            return response.content[0].text
+
+        return _call
+
+    if provider in {"openai", "deepseek"}:
+        from openai import OpenAI
+
+        api_key_env = comparator_cfg.get(
+            "api_key_env",
+            "DEEPSEEK_API_KEY" if provider == "deepseek" else "OPENAI_API_KEY",
+        )
+        base_url = comparator_cfg.get(
+            "base_url",
+            "https://api.deepseek.com" if provider == "deepseek" else None,
+        )
+        client = OpenAI(api_key=os.getenv(api_key_env), base_url=base_url)
+
+        def _call(prompt: str, batch_item=None, agent_idx: int = 0):
+            response = client.chat.completions.create(
+                model=str(model),
+                messages=[{"role": "user", "content": prompt}],
+                max_tokens=max_tokens,
+                temperature=temperature,
+            )
+            return response.choices[0].message.content
+
+        return _call
+
+    raise ValueError(f"Unsupported comparator provider: {provider}")
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Train MADPO.")
     add_config_args(parser)
@@ -177,13 +235,13 @@ def main() -> None:
     )
     trainer_section = dict(magrpo_section)
     trainer_section.update(madpo_section)
-    preference_source = str(trainer_section.get("preference_source", "online")).lower()
-    if preference_source == "offline" and not trainer_section.get(
-        "preference_buffer_path"
-    ):
-        buffer_path = config.get("preference.output_path")
-        if buffer_path:
-            trainer_section["preference_buffer_path"] = buffer_path
+    preference_section = (
+        config.get_section("preference") if hasattr(config, "get_section") else {}
+    )
+    comparator_cfg = preference_section.get("comparator", {}) or {}
+    trainer_section.setdefault(
+        "comparator_policy", comparator_cfg.get("type", "self")
+    )
 
     seed_value = int(config.get("seed", trainer_section.get("seed", 42)))
     num_turns = int(trainer_section.get("num_turns", 2))
@@ -193,9 +251,9 @@ def main() -> None:
     train_dataset = load_dataset(dataset_name, split=config.get("dataset.train_split"))
     eval_dataset = load_dataset(dataset_name, split=config.get("dataset.eval_split"))
 
-    slurm_job_id = os.environ.get("SLURM_JOB_ID", "no_job_id")
+    run_id = os.environ.get("JOB_ID", "local")
     output_dir = os.path.join(
-        output_base_dir, f"{'mt_' if is_multi_turn else ''}madpo_job_{slurm_job_id}"
+        output_base_dir, f"{'mt_' if is_multi_turn else ''}madpo_job_{run_id}"
     )
     os.makedirs(output_dir, exist_ok=True)
     if hasattr(config, "save"):
@@ -273,9 +331,9 @@ def main() -> None:
     tags = list(tags_from_cfg) if isinstance(tags_from_cfg, list) else default_tags
     if "madpo" not in tags:
         tags.insert(0, "madpo")
-    source_tag = f"pref_{preference_source}"
-    if source_tag not in tags:
-        tags.append(source_tag)
+    comparator_tag = f"comparator_{trainer_section.get('comparator_policy', 'self')}"
+    if comparator_tag not in tags:
+        tags.append(comparator_tag)
     if external_mode == "level_feedback" and "self-evolved" not in tags:
         tags.append("self-evolved")
 
@@ -328,6 +386,9 @@ def main() -> None:
         "dataset_type": dataset_type,
         "args": madpo_args,
     }
+
+    if str(getattr(madpo_args, "comparator_policy", "self")).lower() == "api":
+        trainer_kwargs["comparator_func"] = _make_api_comparator(config)
 
     if (
         is_multi_turn

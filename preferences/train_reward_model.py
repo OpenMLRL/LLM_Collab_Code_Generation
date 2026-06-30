@@ -35,49 +35,22 @@ def _sample_text(record: Dict[str, Any], sample_id: int) -> str:
     )
 
 
-def _score_examples(records: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-    examples = []
-    for record in records:
-        for pref in record["score_preferences"]:
-            examples.append(
-                {
-                    "text": _sample_text(record, int(pref["sample_id"])),
-                    "score": float(pref["score"]),
-                }
-            )
-    return examples
-
-
 def _pair_examples(records: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     examples = []
     for record in records:
-        for pref in record["pair_preferences"]:
-            examples.append(
-                {
-                    "chosen": _sample_text(record, int(pref["chosen"])),
-                    "rejected": _sample_text(record, int(pref["rejected"])),
-                }
-            )
-    return examples
-
-
-def _ranking_examples(records: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-    examples = []
-    for record in records:
-        ranking = [
-            (int(item["sample_id"]), float(item["score"]))
-            for item in record["ranking_preferences"]
-        ]
+        pref = record.get("pair_preference")
+        if pref is None:
+            continue
         examples.append(
             {
-                "texts": [_sample_text(record, sample_id) for sample_id, _ in ranking],
-                "scores": [score for _, score in ranking],
+                "chosen": _sample_text(record, int(pref["chosen"])),
+                "rejected": _sample_text(record, int(pref["rejected"])),
             }
         )
     return examples
 
 
-def _score_texts(model, tokenizer, texts: List[str], device: torch.device, max_length: int):
+def _reward_values(model, tokenizer, texts: List[str], device: torch.device, max_length: int):
     inputs = tokenizer(
         texts,
         padding=True,
@@ -93,32 +66,8 @@ def _iter_batches(examples: List[Dict[str, Any]], batch_size: int):
         yield examples[start : start + batch_size]
 
 
-def _ranking_loss(model, tokenizer, batch, device: torch.device, max_length: int):
-    losses = []
-    for item in batch:
-        texts = item["texts"]
-        oracle_scores = item["scores"]
-        model_scores = _score_texts(model, tokenizer, texts, device, max_length)
-        start = 0
-        while start < len(texts):
-            end = start + 1
-            while end < len(texts) and oracle_scores[end] == oracle_scores[start]:
-                end += 1
-            if end == len(texts):
-                break
-            remaining_scores = model_scores[start:]
-            tied_count = end - start
-            chosen_logsum = torch.logsumexp(remaining_scores[:tied_count], dim=0)
-            all_logsum = torch.logsumexp(remaining_scores, dim=0)
-            losses.append(-(chosen_logsum - all_logsum))
-            start = end
-    if not losses:
-        return torch.zeros((), device=device, requires_grad=True)
-    return torch.stack(losses).mean()
-
-
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Train a preference reward model.")
+    parser = argparse.ArgumentParser(description="Train a pairwise preference reward model.")
     add_config_args(parser)
     args = parser.parse_args()
 
@@ -132,28 +81,20 @@ def main() -> None:
     random.seed(seed)
     torch.manual_seed(seed)
 
-    preference_type = str(config.get("reward_model.preference_type", "pair")).lower()
     buffer_path = config.get("reward_model.buffer_path", config.get("preference.output_path"))
     if not buffer_path:
         raise ValueError("reward_model.buffer_path or preference.output_path must be set.")
     records = _load_records(Path(buffer_path))
 
-    if preference_type == "score":
-        examples = _score_examples(records)
-    elif preference_type == "pair":
-        examples = _pair_examples(records)
-    elif preference_type == "ranking":
-        examples = _ranking_examples(records)
-    else:
-        raise ValueError("reward_model.preference_type must be score, pair, or ranking.")
+    examples = _pair_examples(records)
     if not examples:
-        raise ValueError("No reward model training examples were found.")
+        raise ValueError("No pair preference examples were found.")
 
     base_model = config.get("reward_model.base_model", config.get("agent_model.name"))
     output_dir = Path(
         config.get(
             "reward_model.output_dir",
-            f"output_reward_model/{config.get('dataset.type')}_{preference_type}",
+            f"output_reward_model/{config.get('dataset.type')}_pair",
         )
     )
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -165,7 +106,9 @@ def main() -> None:
     batch_size = int(config.get("reward_model.train_batch_size", 2))
     epochs = int(config.get("reward_model.num_train_epochs", 1))
     learning_rate = float(config.get("reward_model.learning_rate", 1e-5))
-    dtype = _torch_dtype(config.get("reward_model.torch_dtype", config.get("agent_model.torch_dtype")))
+    dtype = _torch_dtype(
+        config.get("reward_model.torch_dtype", config.get("agent_model.torch_dtype"))
+    )
 
     tokenizer = AutoTokenizer.from_pretrained(base_model)
     if tokenizer.pad_token is None:
@@ -186,38 +129,21 @@ def main() -> None:
         losses = []
         for batch in _iter_batches(examples, batch_size):
             optimizer.zero_grad()
-            if preference_type == "score":
-                scores = _score_texts(
-                    model,
-                    tokenizer,
-                    [item["text"] for item in batch],
-                    device,
-                    max_length,
-                )
-                targets = torch.tensor(
-                    [item["score"] for item in batch],
-                    dtype=scores.dtype,
-                    device=device,
-                )
-                loss = F.mse_loss(scores, targets)
-            elif preference_type == "pair":
-                chosen_scores = _score_texts(
-                    model,
-                    tokenizer,
-                    [item["chosen"] for item in batch],
-                    device,
-                    max_length,
-                )
-                rejected_scores = _score_texts(
-                    model,
-                    tokenizer,
-                    [item["rejected"] for item in batch],
-                    device,
-                    max_length,
-                )
-                loss = -F.logsigmoid(chosen_scores - rejected_scores).mean()
-            else:
-                loss = _ranking_loss(model, tokenizer, batch, device, max_length)
+            chosen_values = _reward_values(
+                model,
+                tokenizer,
+                [item["chosen"] for item in batch],
+                device,
+                max_length,
+            )
+            rejected_values = _reward_values(
+                model,
+                tokenizer,
+                [item["rejected"] for item in batch],
+                device,
+                max_length,
+            )
+            loss = -F.logsigmoid(chosen_values - rejected_values).mean()
             loss.backward()
             optimizer.step()
             losses.append(float(loss.detach().cpu()))
@@ -229,8 +155,8 @@ def main() -> None:
     metadata = {
         "base_model": base_model,
         "buffer_path": str(buffer_path),
-        "preference_type": preference_type,
         "num_examples": len(examples),
+        "loss": "bradley_terry_pair",
     }
     (output_dir / "reward_model_metadata.json").write_text(
         json.dumps(metadata, indent=2) + "\n"

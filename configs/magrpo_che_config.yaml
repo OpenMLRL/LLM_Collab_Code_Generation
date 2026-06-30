@@ -53,10 +53,25 @@ magrpo:
   eval_num_samples: 4
   eval_batch_size: 1
 
+madpo:
+  num_iterations: 1
+  updates_per_iteration: null
+  use_reference_model: true
+
 reward_processor:
   enabled: true
   scale_factor: 1.0
   shift: -4
+
+preference:
+  num_passes: 1
+  comparator:
+    type: self
+    agents: null
+    provider: null
+    model: null
+    api_key_env: null
+    base_url: null
 
 wandb:
   project: comlrl

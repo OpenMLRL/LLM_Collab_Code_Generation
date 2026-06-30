@@ -168,8 +168,8 @@ def main() -> None:
             raise ValueError("critics must be a list of model names.")
         critic_names = [str(x) for x in critics_field]
 
-    slurm_job_id = os.environ.get("SLURM_JOB_ID", "no_job_id")
-    output_dir = os.path.join(output_base_dir, f"iac_job_{slurm_job_id}")
+    run_id = os.environ.get("JOB_ID", "local")
+    output_dir = os.path.join(output_base_dir, f"iac_job_{run_id}")
     os.makedirs(output_dir, exist_ok=True)
     config_save_path = os.path.join(output_dir, "config.yaml")
 

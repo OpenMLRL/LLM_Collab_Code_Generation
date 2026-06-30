@@ -91,34 +91,23 @@ Collect a buffer of oracle-labeled joint responses:
 ```bash
 python LLM_Collab_Code_Generation/preferences/collect_preferences.py \
   --config LLM_Collab_Code_Generation/configs/magrpo_he_config.yaml \
-  --override preference.num_sets=64 preference.set_size=4 \
-    preference.output_path=output_preferences/he_s4.jsonl
+  --override preference.num_sets=64 preference.num_passes=1 \
+    preference.comparator.type=self \
+    preference.output_path=output_preferences/he_pairs.jsonl
 ```
 
-Each JSONL record stores three preference views over the same samples:
+Each JSONL record stores one pairwise preference:
 
-- `joint_samples[].oracle_reward`: direct oracle reward scores.
-- `score_preferences`: sample id and oracle reward pairs.
-- `pair_preferences`: chosen/rejected pairs for Bradley-Terry training.
-- `ranking_preferences`: full sample ranking by oracle reward for listwise training.
+- `joint_samples`: two joint responses, one from the policy and one from the configured comparator.
+- `pair_preference`: the chosen/rejected pair induced by the oracle reward, or `null` when the oracle scores tie.
 
-Train the reward model from one view:
+Train the pairwise Bradley-Terry reward model:
 
 ```bash
 python LLM_Collab_Code_Generation/preferences/train_reward_model.py \
   --config LLM_Collab_Code_Generation/configs/magrpo_he_config.yaml \
-  --override reward_model.buffer_path=output_preferences/he_s4.jsonl \
-    reward_model.preference_type=pair \
+  --override reward_model.buffer_path=output_preferences/he_pairs.jsonl \
     reward_model.output_dir=output_reward_model/he_pair
-```
-
-Evaluate a reward model with one CSV and one plot:
-
-```bash
-python LLM_Collab_Code_Generation/preferences/evaluate_reward_model.py \
-  --config LLM_Collab_Code_Generation/configs/magrpo_he_config.yaml \
-  --override reward_model.buffer_path=output_preferences/he_s4.jsonl \
-    reward_model.path=output_reward_model/he_pair
 ```
 
 Use the trained reward model in MAGRPO, IAC, or MAAC:
