@@ -119,7 +119,7 @@ def aggregate_mt_humaneval_metrics_for_logging(
     if not metrics_list:
         return {}
 
-    aggregated = {}
+    aggregated: Dict[str, float] = {}
 
     # No overall early termination or num_turns aggregation
 
@@ -127,29 +127,43 @@ def aggregate_mt_humaneval_metrics_for_logging(
     for turn in range(1, num_turns + 1):
         turn_prefix = f"turn_{turn}"
 
-        # Metrics to aggregate per turn
-        turn_metrics = [
-            "level_1_reward",
-            "level_2_reward",
-            "level_3_reward",
-            "total_reward",
-            "test_reward",
-            "passed_tests",
-            "total_tests",
-            "passed_rate",
-            "timeout_num",
-            "bonus_reward",
-            "aux_usage_bonus",
-            "anti_wrapper_bonus",
-            "called_wo_used_deduction",
-            "gated_total_reward",
-        ]
-
-        for metric in turn_metrics:
-            key = f"{turn_prefix}/{metric}"
+        def _mean(raw_key: str):
+            key = f"{turn_prefix}/{raw_key}"
             values = [sample[key] for sample in metrics_list if key in sample]
-            if values:
-                aggregated[f"{turn_prefix}/avg_{metric}"] = np.mean(values)
+            if not values:
+                return None
+            return float(np.mean(values))
+
+        syntax_rewards = [
+            sample[f"{turn_prefix}/level_2_reward"]
+            for sample in metrics_list
+            if f"{turn_prefix}/level_2_reward" in sample
+        ]
+        if syntax_rewards:
+            aggregated[f"{turn_prefix}/code/syntax_valid_rate"] = float(
+                np.mean([1.0 if value > 0 else 0.0 for value in syntax_rewards])
+            )
+
+        metric_map = {
+            "definition_reward": "level_1_reward",
+            "syntax_reward": "level_2_reward",
+            "execution_reward": "test_reward",
+            "tests_passed": "passed_tests",
+            "tests_total": "total_tests",
+            "test_pass_rate": "passed_rate",
+            "timeouts": "timeout_num",
+            "bonus_reward": "bonus_reward",
+            "collab_aux_usage": "aux_usage_bonus",
+            "collab_non_wrapper": "anti_wrapper_bonus",
+            "collab_ignored_aux_call_penalty": "called_wo_used_deduction",
+            "total_reward": "total_reward",
+            "gated_total_reward": "gated_total_reward",
+        }
+
+        for clean_key, raw_key in metric_map.items():
+            value = _mean(raw_key)
+            if value is not None:
+                aggregated[f"{turn_prefix}/code/{clean_key}"] = value
 
         # No improvement metrics
 
