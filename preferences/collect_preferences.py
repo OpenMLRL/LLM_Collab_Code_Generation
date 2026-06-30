@@ -96,6 +96,31 @@ Your output should follow this format:
 def {entry_point}({params_str}):\n # your function code here\nreturn result\n"""
 
 
+def _complete_function_formatter(example: Dict[str, Any]) -> str:
+    prompt = example.get("prompt", "")
+    entry_point = example.get("entry_point", "")
+    params = _extract_function_params(prompt)
+    if not params or not entry_point:
+        return "Error: Could not extract function information from prompt."
+    params_str = ", ".join(params)
+    return f"""Solve this coding problem by implementing the required function.
+
+Problem:
+{prompt}
+
+IMPORTANT INSTRUCTIONS:
+- Output ONLY the function code, no explanations or examples
+- Do NOT include markdown code blocks (```python)
+- Do NOT include any text before or after the function
+- Do NOT include test cases or example usage
+- Implement ONLY the '{entry_point}' function as specified
+- Make sure your solution is complete and handles all cases
+
+Your output should follow this format:
+
+def {entry_point}({params_str}):\n # your function code here\nreturn result\n"""
+
+
 def _generation_kwargs(config: Config) -> Dict[str, Any]:
     max_new_tokens = int(config.get("preference.max_new_tokens", 256))
     temperature = config.get(
@@ -178,26 +203,34 @@ def _generate_api(prompt: str, config: Config) -> str:
     raise ValueError(f"Unsupported API comparator provider: {provider}")
 
 
-def _agent_names(config: Config, key: str) -> List[str] | None:
+def _agent_names(config: Config, key: str, expected_count: int) -> List[str] | None:
     names = config.get(key)
     if names is None:
         return None
-    if not isinstance(names, Sequence) or isinstance(names, str) or len(names) != 2:
-        raise ValueError(f"{key} must be a list of exactly two model names.")
+    if (
+        not isinstance(names, Sequence)
+        or isinstance(names, str)
+        or len(names) != expected_count
+    ):
+        raise ValueError(f"{key} must be a list of exactly {expected_count} model names.")
     return [str(name) for name in names]
 
 
-def _policy_agent_names(config: Config) -> List[str]:
-    names = _agent_names(config, "preference.policy_agents")
+def _policy_agent_names(config: Config, num_agents: int) -> List[str]:
+    names = _agent_names(config, "preference.policy_agents", num_agents)
     if names is not None:
         return names
     names = config.get("agents")
     if names is not None:
-        if not isinstance(names, Sequence) or isinstance(names, str) or len(names) != 2:
-            raise ValueError("agents must be a list of exactly two model names.")
+        if (
+            not isinstance(names, Sequence)
+            or isinstance(names, str)
+            or len(names) != num_agents
+        ):
+            raise ValueError(f"agents must be a list of exactly {num_agents} model names.")
         return [str(name) for name in names]
     model_name = str(config.get("agent_model.name"))
-    return [model_name, model_name]
+    return [model_name] * num_agents
 
 
 def _load_agent_group(
@@ -267,11 +300,9 @@ def main() -> None:
 
     split = config.get("preference.split", config.get("dataset.train_split"))
     dataset = load_dataset(config.get("dataset.name"), split=split)
-    num_sets = int(config.get("preference.num_sets", len(dataset)))
-    if num_sets > len(dataset):
-        raise ValueError("preference.num_sets cannot exceed the selected dataset split size.")
     if bool(config.get("preference.shuffle", True)):
         dataset = dataset.shuffle(seed=seed)
+    num_items = len(dataset)
 
     output_path = Path(
         config.get(
@@ -287,19 +318,24 @@ def main() -> None:
 
     device = str(config.get("preference.device", "cuda" if torch.cuda.is_available() else "cpu"))
     torch_dtype = config.get("preference.torch_dtype", config.get("agent_model.torch_dtype"))
-    policy_names = _policy_agent_names(config)
     comparator_type = str(config.get("preference.comparator.type", "self")).lower()
     if comparator_type not in {"self", "ref", "api"}:
         raise ValueError("preference.comparator.type must be one of: self, ref, api.")
+    num_agents = int(config.get("preference.num_agents", 2))
+    if num_agents not in {1, 2}:
+        raise ValueError("preference.num_agents must be 1 or 2.")
 
     loaded = {}
+    policy_names = _policy_agent_names(config, num_agents)
     policy_agents = _load_agent_group(policy_names, loaded, device, torch_dtype)
     comparator_agents = None
     if comparator_type == "self":
         comparator_agents = policy_agents
     elif comparator_type == "ref":
-        ref_names = _agent_names(config, "preference.comparator.agents") or _agent_names(
-            config, "preference.reference_agents"
+        ref_names = _agent_names(
+            config, "preference.comparator.agents", num_agents
+        ) or _agent_names(
+            config, "preference.reference_agents", num_agents
         )
         if ref_names is None:
             raise ValueError("ref comparator requires preference.comparator.agents.")
@@ -308,35 +344,55 @@ def main() -> None:
     generation_kwargs = _generation_kwargs(config)
     total_pairs = 0
     total_samples = 0
-    selected = dataset.select(range(num_sets))
     with output_path.open("w") as f:
         progress = tqdm(
-            total=num_passes * num_sets,
+            total=num_passes * num_items,
             desc="collect preference pairs",
             dynamic_ncols=True,
         )
         for pass_idx in range(num_passes):
-            for idx, item in enumerate(selected):
+            for idx, item in enumerate(dataset):
                 progress.set_description(
-                    f"pass {pass_idx + 1}/{num_passes} task {idx + 1}/{num_sets}"
+                    f"pass {pass_idx + 1}/{num_passes} task {idx + 1}/{num_items}"
                 )
-                aux_prompt = _aux_function_formatter(item)
-                main_prompt = _main_function_formatter(item)
-
-                policy_aux, policy_main = _generate_joint_local(
-                    policy_agents, aux_prompt, main_prompt, device, generation_kwargs
-                )
-                if comparator_type == "api":
-                    comparator_aux = _generate_api(aux_prompt, config)
-                    comparator_main = _generate_api(main_prompt, config)
-                else:
-                    comparator_aux, comparator_main = _generate_joint_local(
-                        comparator_agents,
-                        aux_prompt,
-                        main_prompt,
+                if num_agents == 1:
+                    prompt = _complete_function_formatter(item)
+                    policy_main = _generate_local(
+                        policy_agents[0][0],
+                        policy_agents[0][1],
+                        prompt,
                         device,
                         generation_kwargs,
                     )
+                    if comparator_type == "api":
+                        comparator_main = _generate_api(prompt, config)
+                    else:
+                        comparator_main = _generate_local(
+                            comparator_agents[0][0],
+                            comparator_agents[0][1],
+                            prompt,
+                            device,
+                            generation_kwargs,
+                        )
+                    policy_aux = ""
+                    comparator_aux = ""
+                else:
+                    aux_prompt = _aux_function_formatter(item)
+                    main_prompt = _main_function_formatter(item)
+                    policy_aux, policy_main = _generate_joint_local(
+                        policy_agents, aux_prompt, main_prompt, device, generation_kwargs
+                    )
+                    if comparator_type == "api":
+                        comparator_aux = _generate_api(aux_prompt, config)
+                        comparator_main = _generate_api(main_prompt, config)
+                    else:
+                        comparator_aux, comparator_main = _generate_joint_local(
+                            comparator_agents,
+                            aux_prompt,
+                            main_prompt,
+                            device,
+                            generation_kwargs,
+                        )
 
                 aux_outputs = [policy_aux, comparator_aux]
                 main_outputs = [policy_main, comparator_main]
@@ -371,6 +427,7 @@ def main() -> None:
                     "entry_point": item.get("entry_point", ""),
                     "test": item.get("test", ""),
                     "policy_agents": policy_names,
+                    "num_agents": num_agents,
                     "comparator_type": comparator_type,
                     "joint_samples": joint_samples,
                     "pair_preference": pair_preference,
@@ -393,7 +450,7 @@ def main() -> None:
         "buffer_path": str(output_path),
         "dataset": config.get("dataset.name"),
         "split": split,
-        "num_sets": num_sets,
+        "num_items": num_items,
         "num_passes": num_passes,
         "joint_samples": total_samples,
         "pair_preferences": total_pairs,

@@ -39,6 +39,10 @@ python LLM_Collab_Code_Generation/train_magrpo.py \
 
 python LLM_Collab_Code_Generation/train_madpo.py \
   --config LLM_Collab_Code_Generation/configs/madpo_che_config.yaml
+
+python LLM_Collab_Code_Generation/train_marlhf.py \
+  --config LLM_Collab_Code_Generation/configs/marlhf_che_config.yaml \
+  --override marlhf.algorithm=magrpo marlhf.num_iterations=1
 ```
 
 Override any configuration value inline with `--override`:
@@ -87,39 +91,35 @@ Each agent receives its own full history at every turn: all of its past prompts 
 2. **Syntax**: Both functions are concatenated with any imports extracted from the prompt; a clean syntax check yields +0.5 and allows execution.
 3. **Execution**: Prompt-derived tests (10 s timeout per assert, up to three timeouts) run inside a sandbox. Passing assertions earn up to +1.0, with +0.5 bonus when the main function uses the aux function, +1.0 when the main is not a thin wrapper, and −0.5 if the aux return value is ignored. These same rewards back evaluation during logging.
 
-## Preference Reward Model
-
-Collect a buffer of oracle-labeled joint responses:
+## MARLHF
 
 ```bash
-python LLM_Collab_Code_Generation/preferences/collect_preferences.py \
-  --config LLM_Collab_Code_Generation/configs/magrpo_he_config.yaml \
-  --override preference.num_sets=64 preference.num_passes=1 \
-    preference.comparator.type=self \
-    preference.output_path=output_preferences/he_pairs.jsonl
+python LLM_Collab_Code_Generation/train_marlhf.py \
+  --config LLM_Collab_Code_Generation/configs/marlhf_he_config.yaml \
+  --override marlhf.algorithm=magrpo marlhf.num_iterations=1 \
+    preference.num_passes=4
 ```
 
-Each JSONL record stores one pairwise preference:
+`train_marlhf.py` collects pairwise oracle preferences, trains a Bradley-Terry
+reward model, then runs the selected RL trainer with that learned reward.
+`marlhf.num_iterations=1` is the offline setting; larger values recollect a
+fresh preference dataset from the current policy before each training stage.
 
-- `joint_samples`: two joint responses, one from the policy and one from the configured comparator.
-- `pair_preference`: the chosen/rejected pair induced by the oracle reward, or `null` when the oracle scores tie.
-
-Train the pairwise Bradley-Terry reward model:
+Supported RL backends are configured by `marlhf.algorithm`:
 
 ```bash
-python LLM_Collab_Code_Generation/preferences/train_reward_model.py \
-  --config LLM_Collab_Code_Generation/configs/magrpo_he_config.yaml \
-  --override reward_model.buffer_path=output_preferences/he_pairs.jsonl \
-    reward_model.output_dir=output_reward_model/he_pair
+python LLM_Collab_Code_Generation/train_marlhf.py \
+  --config LLM_Collab_Code_Generation/configs/marlhf_he_config.yaml \
+  --override marlhf.algorithm=grpo marlhf.num_iterations=4 \
+    preference.num_passes=4
 ```
 
-Use the trained reward model in MAGRPO, IAC, or MAAC:
+Pairwise DPO is trained separately with MADPO:
 
 ```bash
-python LLM_Collab_Code_Generation/train_magrpo.py \
-  --config LLM_Collab_Code_Generation/configs/magrpo_he_config.yaml \
-  --override reward.type=model reward_model.path=output_reward_model/he_pair \
-    reward_processor.shift=0
+python LLM_Collab_Code_Generation/train_madpo.py \
+  --config LLM_Collab_Code_Generation/configs/madpo_he_config.yaml \
+  --override madpo.num_iterations=4 madpo.preference_pairs_per_item=4
 ```
 
 ## Logging

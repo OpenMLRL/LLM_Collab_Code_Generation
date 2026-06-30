@@ -19,7 +19,7 @@ from config import Config, add_config_args, parse_overrides
 from datasets import load_dataset
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
-from rewards.code_rewards import execution_reward_aux
+from rewards.code_rewards import execution_reward_aux, make_code_reward_function
 from comlrl.utils.reward_processor import RewardProcessors
 from comlrl.trainers.reinforce import MAGRPOConfig, MAGRPOTrainer
 import external as external_ctx
@@ -158,6 +158,12 @@ def main():
         config.update(overrides)
     model_config = config.get_agent_model_config()
     model_name = model_config.name
+    agent_names = config.get("agents")
+    if agent_names is not None:
+        if not isinstance(agent_names, (list, tuple)) or len(agent_names) != 1:
+            raise ValueError("GRPO expects agents to be a list with exactly one model.")
+        agent_names = [str(agent_names[0])]
+    model_source = agent_names[0] if agent_names else model_name
     dataset_name = config.get("dataset.name")
     dataset_type = config.get("dataset.type")
     output_base_dir = config.get("output.base_dir")
@@ -209,12 +215,12 @@ def main():
         print(f"Error loading dataset: {e}")
         return
 
-    print(f"\nUsing model: {model_name}")
+    print(f"\nUsing model: {model_source}")
     print(f"Model type: {model_config.type}")
     print(f"Max context window: {model_config.max_length} tokens")
 
     print("\nLoading tokenizer...")
-    tokenizer = AutoTokenizer.from_pretrained(model_name)
+    tokenizer = AutoTokenizer.from_pretrained(model_source)
 
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
@@ -235,9 +241,9 @@ def main():
     if model_config.torch_dtype is not None:
         model_kwargs["torch_dtype"] = model_config.torch_dtype
 
-    print(f"\nLoading model {model_name}...")
+    print(f"\nLoading model {model_source}...")
     model = AutoModelForCausalLM.from_pretrained(
-        model_name,
+        model_source,
         **model_kwargs,
     )
     print("Model loaded successfully!")
@@ -351,7 +357,7 @@ def main():
         advantage_normalization=grpo_config.get("advantage_normalization", True),
     )
     formatter = get_formatter(dataset_type)
-    reward_func = get_reward_function(dataset_type)
+    reward_func = make_code_reward_function(dataset_type, 1, config)
     wandb_section = (
         config.get_section("wandb") if hasattr(config, "get_section") else {}
     )
