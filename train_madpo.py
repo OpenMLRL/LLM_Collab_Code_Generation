@@ -21,7 +21,7 @@ from transformers import AutoTokenizer
 
 from comlrl.trainers.direct_preference import MADPOConfig, MADPOTrainer
 from comlrl.utils.reward_processor import RewardProcessors
-from config import Config, add_config_args, parse_overrides
+from config import Config, add_config_args, make_run_id, parse_overrides
 import external as external_ctx
 from external import get_external_transition
 from rewards.code_rewards import make_code_oracle_reward_function
@@ -244,7 +244,7 @@ def main() -> None:
     train_dataset = load_dataset(dataset_name, split=config.get("dataset.train_split"))
     eval_dataset = load_dataset(dataset_name, split=config.get("dataset.eval_split"))
 
-    run_id = os.environ.get("JOB_ID", "local")
+    run_id = make_run_id()
     output_dir = os.path.join(
         output_base_dir, f"{'mt_' if is_multi_turn else ''}madpo_job_{run_id}"
     )

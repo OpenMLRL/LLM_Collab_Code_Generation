@@ -5,8 +5,10 @@ Handles YAML loading and model configuration.
 
 import argparse
 import os
+import re
 import sys
 from dataclasses import dataclass, field
+from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, Optional
 
@@ -163,6 +165,13 @@ def add_config_args(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
         "--override", nargs="*", help="Override config values (format: key=value)"
     )
     return parser
+
+
+def make_run_id() -> str:
+    explicit = os.environ.get("RUN_ID") or os.environ.get("JOB_ID")
+    if explicit:
+        return re.sub(r"[^A-Za-z0-9_.-]", "_", str(explicit))
+    return f"{datetime.now().strftime('%Y%m%d_%H%M%S')}_{os.getpid()}"
 
 
 def _parse_override_value(raw: str) -> Any:

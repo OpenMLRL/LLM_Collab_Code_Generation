@@ -10,7 +10,7 @@ import wandb
 from datasets import load_dataset
 from transformers import AutoTokenizer
 
-from config import Config, add_config_args, parse_overrides
+from config import Config, add_config_args, make_run_id, parse_overrides
 from comlrl.trainers.actor_critic import IACConfig, IACTrainer
 from comlrl.utils.reward_processor import RewardProcessors
 from rewards.code_rewards import make_code_reward_function
@@ -168,7 +168,7 @@ def main() -> None:
             raise ValueError("critics must be a list of model names.")
         critic_names = [str(x) for x in critics_field]
 
-    run_id = os.environ.get("JOB_ID", "local")
+    run_id = make_run_id()
     output_dir = os.path.join(output_base_dir, f"iac_job_{run_id}")
     os.makedirs(output_dir, exist_ok=True)
     config_save_path = os.path.join(output_dir, "config.yaml")

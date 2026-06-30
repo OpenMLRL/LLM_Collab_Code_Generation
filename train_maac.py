@@ -10,7 +10,7 @@ import wandb
 from datasets import load_dataset
 from transformers import AutoTokenizer
 
-from config import Config, add_config_args, parse_overrides
+from config import Config, add_config_args, make_run_id, parse_overrides
 from comlrl.trainers.actor_critic import MAACConfig, MAACTrainer
 from comlrl.utils.reward_processor import RewardProcessors
 from rewards.code_rewards import make_code_reward_function
@@ -159,7 +159,7 @@ def main() -> None:
             raise ValueError("agents must be a list of model names.")
         agent_names = [str(x) for x in agent_names]
 
-    run_id = os.environ.get("JOB_ID", "local")
+    run_id = make_run_id()
     output_dir = os.path.join(output_base_dir, f"maac_job_{run_id}")
     os.makedirs(output_dir, exist_ok=True)
     config_save_path = os.path.join(output_dir, "config.yaml")

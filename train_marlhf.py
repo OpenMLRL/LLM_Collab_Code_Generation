@@ -7,7 +7,7 @@ import sys
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from config import Config, add_config_args, parse_overrides
+from config import Config, add_config_args, make_run_id, parse_overrides
 
 
 PROJECT_ROOT = Path(__file__).resolve().parent
@@ -98,7 +98,7 @@ def main() -> None:
         raise ValueError("marlhf.num_iterations must be >= 1.")
 
     num_agents = _num_agents(config, algorithm)
-    run_id = os.environ.get("JOB_ID", "local")
+    run_id = make_run_id()
     output_base = Path(config.get("output.base_dir", "output_marlhf"))
     if not output_base.is_absolute():
         output_base = PROJECT_ROOT / output_base

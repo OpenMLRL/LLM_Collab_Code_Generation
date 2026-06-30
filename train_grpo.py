@@ -15,7 +15,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from pathlib import Path
 from typing import Any, Dict
 
-from config import Config, add_config_args, parse_overrides
+from config import Config, add_config_args, make_run_id, parse_overrides
 from datasets import load_dataset
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
@@ -192,7 +192,7 @@ def main():
             f"Single-turn GRPO: num_turns={num_turns}"
         )
 
-    run_id = os.environ.get("JOB_ID", "local")
+    run_id = make_run_id()
     if is_multi_turn:
         output_dir = os.path.join(output_base_dir, f"mt_job_{run_id}")
     else:
