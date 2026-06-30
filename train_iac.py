@@ -175,8 +175,6 @@ def main() -> None:
             dataset_type = "humaneval"
         elif "coophumaneval" in dataset_name.lower() or "coop" in dataset_name.lower():
             dataset_type = "coophumaneval"
-        elif "mbpp" in dataset_name.lower():
-            dataset_type = "mbpp"
     if dataset_type is None:
         raise ValueError("dataset.type must be specified or inferrable from dataset.name")
 

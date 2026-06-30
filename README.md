@@ -24,7 +24,6 @@ conda install -c conda-forge comlrl
 
 ## Benchmarks
 
-- MBPP: 427 problems on split `sanitized`
 - HumanEval: 164 problems on split `test`
 - CoopHumanEval: 82 problems on split `test`
 
