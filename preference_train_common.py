@@ -12,6 +12,7 @@ from transformers import AutoTokenizer
 
 from config import Config
 from comlrl.utils.reward_processor import RewardProcessors
+from loggers.ac_code_metrics import build_ac_code_metrics_callback
 from train_magrpo import (
     get_formatters,
     get_logger_and_aggregator,
@@ -132,6 +133,12 @@ def run_preference_training(
         dataset_type,
         bool(getattr(args, "num_turns", 1) > 1),
     )
+    metrics_callback = None
+    if algorithm_name.lower() == "marlhf":
+        metrics_callback = build_ac_code_metrics_callback(
+            num_agents,
+            int(getattr(args, "num_turns", 1)),
+        )
 
     wandb_section = config.get_section("wandb")
     default_name = f"{dataset_type}-{algorithm_name.lower()}"
@@ -187,6 +194,8 @@ def run_preference_training(
         "dataset_type": dataset_type,
         "args": args,
     }
+    if metrics_callback is not None:
+        trainer_kwargs["metrics_callback"] = metrics_callback
 
     reward_processor = build_reward_processor(config)
     if reward_processor is not None:
