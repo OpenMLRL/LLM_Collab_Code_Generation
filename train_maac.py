@@ -13,6 +13,7 @@ from transformers import AutoTokenizer
 from config import Config, add_config_args, parse_overrides
 from comlrl.trainers.actor_critic import MAACConfig, MAACTrainer
 from comlrl.utils.reward_processor import RewardProcessors
+from loggers.ac_code_metrics import build_ac_code_metrics_callback
 from rewards.code_rewards import execution_reward_aux
 import external as external_ctx
 from external import get_external_transition
@@ -341,6 +342,8 @@ def main() -> None:
     external_mod.VERBOSE = bool(output_verbose)
     formatters = build_prompt_formatters()
     reward_fn = make_prompt_reward_fn()
+    num_turns = maac_cfg.get("num_turns", 2)
+    metrics_callback = build_ac_code_metrics_callback(num_agents, num_turns)
 
     reward_processor = None
     shift_val = maac_cfg.get("reward_shift", -4)
@@ -372,7 +375,6 @@ def main() -> None:
     critic_model_kwargs: Dict[str, Any] = dict(model_kwargs)
     if critic_config is not None and critic_config.torch_dtype is not None:
         critic_model_kwargs["torch_dtype"] = critic_config.torch_dtype
-    num_turns = maac_cfg.get("num_turns", 2)
     discount = maac_cfg.get("discount", 0.9)
 
     external_transition_fn = None
@@ -406,7 +408,7 @@ def main() -> None:
         reward_func=reward_fn,
         reward_processor=reward_processor,
         formatters=formatters,
-        metrics_callback=None,
+        metrics_callback=metrics_callback,
         external_transition=external_transition_fn,
         args=MAACConfig(
             num_turns=num_turns,

@@ -43,7 +43,7 @@ magrpo:
   logging_steps: 50
   num_generations: 4
   max_new_tokens: 256
-  discount: 0.9
+  discount: 1.0
   joint_mode: aligned
   early_termination_threshold: -0.2
   rollout_buffer_size: 2
