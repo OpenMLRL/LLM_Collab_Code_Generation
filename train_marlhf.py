@@ -5,7 +5,7 @@ os.environ.setdefault("USE_TF", "0")
 os.environ.setdefault("TRANSFORMERS_NO_TF", "1")
 
 from config import Config, add_config_args, parse_overrides
-from comlrl.trainers.reinforce import MARLHFConfig, MARLHFTrainer
+from comlrl.trainers.preference import MARLHFConfig, MARLHFTrainer
 from preference_train_common import run_preference_training
 
 

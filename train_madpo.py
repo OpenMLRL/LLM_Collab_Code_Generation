@@ -5,7 +5,7 @@ os.environ.setdefault("USE_TF", "0")
 os.environ.setdefault("TRANSFORMERS_NO_TF", "1")
 
 from config import Config, add_config_args, parse_overrides
-from comlrl.trainers.reinforce import MADPOConfig, MADPOTrainer
+from comlrl.trainers.preference import MADPOConfig, MADPOTrainer
 from preference_train_common import run_preference_training
 
 
