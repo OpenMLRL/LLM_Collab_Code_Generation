@@ -35,6 +35,12 @@ python LLM_Collab_Code_Generation/train_grpo.py \
 
 python LLM_Collab_Code_Generation/train_magrpo.py \
   --config LLM_Collab_Code_Generation/configs/magrpo_che_config.yaml
+
+python LLM_Collab_Code_Generation/train_madpo.py \
+  --config LLM_Collab_Code_Generation/configs/madpo_he_config.yaml
+
+python LLM_Collab_Code_Generation/train_marlhf.py \
+  --config LLM_Collab_Code_Generation/configs/marlhf_he_config.yaml
 ```
 
 Override any configuration value inline with `--override`:
@@ -46,6 +52,21 @@ python LLM_Collab_Code_Generation/train_magrpo.py \
 ```
 
 ## Settings
+
+### Preference-Based Algorithms
+
+`train_madpo.py` first builds a single-turn offline joint preference dataset
+from task rewards, then optimizes a joint-factorized DPO loss. Gradients remain
+agent-local: each agent only backpropagates through its own winner/loser
+sequence log probabilities. The default `madpo.preference_num_candidates: 5`
+samples five aligned joint candidates per task item and
+`madpo.preference_pairs_per_sample: 2` keeps the largest reward-gap pairs,
+counting `2 * pairs` as environment steps through
+`madpo.use_environment_step`.
+
+`train_marlhf.py` uses the same offline joint preferences to train a fixed
+joint reward model, then runs online RL with `marlhf.rl_algorithm: magrpo` by
+default. Other RL algorithm names are reserved in config for future dispatch.
 
 ### Joint Action Modes
 

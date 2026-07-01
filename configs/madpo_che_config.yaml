@@ -1,0 +1,73 @@
+agent_model:
+  name: Qwen/Qwen2.5-Coder-3B
+  type: qwen
+  temperature: 0.6
+  top_p: 0.6
+  top_k: null
+  max_length: 2048
+  special_tokens: {}
+  torch_dtype: bfloat16
+
+agents: null
+
+dataset:
+  name: OpenMLRL/CoopHumanEval
+  type: coophumaneval
+  train_split: train[16:]
+  eval_split: train[:16]
+
+seed: 42
+
+output:
+  base_dir: output_madpo_che
+  verbose: false
+  save_final_model: false
+
+external:
+  mode: level_feedback
+  sandbox_slice: 1
+
+madpo:
+  parallel_training: none
+  agent_devices:
+  - cuda:0
+  num_agents: 2
+  num_turns: 1
+  num_train_epochs: 8
+  agent_learning_rate: 2.0e-05
+  logging_steps: 50
+  num_generations: 4
+  preference_num_candidates: 5
+  preference_pairs_per_sample: 2
+  pair_selection: reward_gap
+  dpo_beta: 0.1
+  dpo_reference_enabled: false
+  use_environment_step: true
+  environment_steps_per_pair: 2
+  max_new_tokens: 256
+  discount: 1.0
+  joint_mode: aligned
+  early_termination_threshold: null
+  rollout_buffer_size: 4
+  train_batch_size: 4
+  advantage_normalization: true
+  eval_interval: 4
+  eval_num_samples: 4
+  eval_batch_size: 1
+
+reward_processor:
+  enabled: true
+  scale_factor: 1.0
+  shift: -4
+
+wandb:
+  project: comlrl
+  entity: OpenMLRL
+  name: madpo_coophumaneval
+  dir: output_madpo_che
+  tags:
+  - madpo
+  - coophumaneval
+  - multi-agent
+  - turns_1
+
