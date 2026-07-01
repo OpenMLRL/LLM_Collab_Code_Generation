@@ -41,7 +41,6 @@ madpo:
   preference_pairs_per_sample: 2
   pair_selection: reward_gap
   dpo_beta: 0.1
-  dpo_reference_enabled: false
   use_environment_step: true
   environment_steps_per_pair: 2
   max_new_tokens: 256
@@ -70,4 +69,3 @@ wandb:
   - coophumaneval
   - multi-agent
   - turns_1
-
