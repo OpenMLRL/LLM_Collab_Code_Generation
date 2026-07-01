@@ -342,6 +342,7 @@ def main() -> None:
     external_mod.VERBOSE = bool(output_verbose)
     formatters = build_prompt_formatters()
     reward_fn = make_prompt_reward_fn()
+    num_turns = maac_cfg.get("num_turns", 2)
     metrics_callback = build_ac_code_metrics_callback(num_agents, num_turns)
 
     reward_processor = None
@@ -374,7 +375,6 @@ def main() -> None:
     critic_model_kwargs: Dict[str, Any] = dict(model_kwargs)
     if critic_config is not None and critic_config.torch_dtype is not None:
         critic_model_kwargs["torch_dtype"] = critic_config.torch_dtype
-    num_turns = maac_cfg.get("num_turns", 2)
     discount = maac_cfg.get("discount", 0.9)
 
     external_transition_fn = None
