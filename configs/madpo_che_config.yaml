@@ -37,8 +37,8 @@ madpo:
   agent_learning_rate: 2.0e-05
   logging_steps: 50
   num_generations: 4
-  preference_num_candidates: 5
-  preference_pairs_per_sample: 2
+  preference_num_candidates: 80
+  preference_pairs_per_sample: 16
   pair_selection: reward_gap
   dpo_beta: 0.1
   use_environment_step: true

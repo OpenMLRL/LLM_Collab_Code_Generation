@@ -58,11 +58,11 @@ python LLM_Collab_Code_Generation/train_magrpo.py \
 `train_madpo.py` first builds a single-turn offline joint preference dataset
 from task rewards, then optimizes a joint-factorized DPO loss. Gradients remain
 agent-local: each agent only backpropagates through its own winner/loser
-sequence log probabilities. The default `madpo.preference_num_candidates: 5`
-samples five aligned joint candidates per task item and
-`madpo.preference_pairs_per_sample: 2` keeps the largest reward-gap pairs,
-counting `2 * pairs` as environment steps through
-`madpo.use_environment_step`.
+sequence log probabilities. CoopHumanEval defaults to
+`madpo.preference_num_candidates: 80`, which samples eighty aligned joint
+candidates per task item, and `madpo.preference_pairs_per_sample: 16`, which
+keeps the largest reward-gap pairs, counting `2 * pairs` as environment steps
+through `madpo.use_environment_step`.
 
 `train_marlhf.py` uses the same offline joint preferences to train a fixed
 joint reward model, then runs online RL with `marlhf.rl_algorithm: magrpo` by
