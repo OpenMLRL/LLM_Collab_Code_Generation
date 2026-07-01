@@ -140,7 +140,7 @@ def aggregate_mt_humaneval_metrics_for_logging(
             if f"{turn_prefix}/level_2_reward" in sample
         ]
         if syntax_rewards:
-            aggregated[f"{turn_prefix}/code/syntax_valid_rate"] = float(
+            aggregated[f"{turn_prefix}/syntax_valid_rate"] = float(
                 np.mean([1.0 if value > 0 else 0.0 for value in syntax_rewards])
             )
 
@@ -163,7 +163,7 @@ def aggregate_mt_humaneval_metrics_for_logging(
         for clean_key, raw_key in metric_map.items():
             value = _mean(raw_key)
             if value is not None:
-                aggregated[f"{turn_prefix}/code/{clean_key}"] = value
+                aggregated[f"{turn_prefix}/{clean_key}"] = value
 
         # No improvement metrics
 
