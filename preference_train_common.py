@@ -159,6 +159,7 @@ def run_preference_training(
         "entity": wandb_section.get("entity", "OpenMLRL"),
         "name": f"{wandb_name}",
         "dir": wandb_section.get("dir", output_base_dir),
+        "output_dir": output_dir,
         "tags": tags,
         "config_sections": {
             "dataset": config.get_section("dataset"),
