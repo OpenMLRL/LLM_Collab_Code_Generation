@@ -87,8 +87,8 @@ def run_preference_training(
             raise ValueError("agents must be a list of model names.")
         agent_names = [str(item) for item in agent_names]
 
-    slurm_job_id = os.environ.get("SLURM_JOB_ID", "no_job_id")
-    output_dir = os.path.join(output_base_dir, f"job_{slurm_job_id}")
+    job_id = os.environ.get("SLURM_JOB_ID", "no_job_id")
+    output_dir = os.path.join(output_base_dir, f"job_{job_id}")
     os.makedirs(output_dir, exist_ok=True)
     config.save(os.path.join(output_dir, "config.yaml"))
 
