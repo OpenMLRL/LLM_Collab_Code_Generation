@@ -34,17 +34,17 @@ marlhf_iter:
   num_agents: 2
   num_turns: 1
   num_iterations: 3
-  num_train_epochs: 6
+  num_train_epochs: 8
   agent_learning_rate: 2.0e-05
   logging_steps: 50
   num_generations: 4
-  preference_num_candidates: 5
+  preference_num_candidates: 80
   comparator_policy: current
   comparator_model_name: null
   comparator_agents: null
   comparator_devices: null
   comparator_num_candidates: null
-  preference_pairs_per_sample: null
+  preference_pairs_per_sample: 16
   pair_selection: reward_gap
   dpo_beta: 0.1
   use_environment_step: true
