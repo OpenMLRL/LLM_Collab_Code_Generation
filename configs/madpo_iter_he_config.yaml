@@ -44,6 +44,10 @@ madpo_iter:
   comparator_agents: null
   comparator_devices: null
   comparator_num_candidates: null
+  comparator_api_url: null
+  comparator_api_format: generic
+  comparator_api_model: null
+  comparator_api_key_env: null
   preference_pairs_per_sample: 16
   pair_selection: reward_gap
   dpo_beta: 0.1
