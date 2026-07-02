@@ -35,9 +35,6 @@ marlhf_iter:
   num_turns: 1
   num_iterations: 3
   preference_replay_mode: current
-  preference_replay_k: 1
-  preference_replay_lambda: 0.8
-  preference_replay_sample_size: null
   num_train_epochs: 8
   agent_learning_rate: 2.0e-05
   logging_steps: 50
