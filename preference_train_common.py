@@ -134,7 +134,7 @@ def run_preference_training(
         bool(getattr(args, "num_turns", 1) > 1),
     )
     metrics_callback = None
-    if algorithm_name.lower() == "marlhf":
+    if algorithm_name.lower() in {"marlhf", "marlhfiter", "marlhf_iter"}:
         metrics_callback = build_ac_code_metrics_callback(
             num_agents,
             int(getattr(args, "num_turns", 1)),
