@@ -33,14 +33,14 @@ madpo_iter:
   - cuda:0
   num_agents: 2
   num_turns: 1
-  num_iterations: 3
+  num_iterations: 6
   preference_replay_mode: current
   policy_checkpoint_dir: null
   num_train_epochs: 1
   agent_learning_rate: 2.0e-05
   logging_steps: 50
   num_generations: 4
-  preference_num_candidates: 80
+  preference_num_candidates: 20
   comparator_policy: current
   comparator_model_name: null
   comparator_agents: null
@@ -51,8 +51,8 @@ madpo_iter:
   comparator_api_format: generic
   comparator_api_model: null
   comparator_api_key_env: null
-  preference_pairs_per_sample: 16
-  pair_selection: reward_gap
+  preference_pairs_per_sample: 4
+  pair_selection: comparator_reward
   dpo_beta: 0.1
   use_environment_step: true
   environment_steps_per_pair: 2

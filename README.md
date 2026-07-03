@@ -37,10 +37,16 @@ python LLM_Collab_Code_Generation/train_magrpo.py \
   --config LLM_Collab_Code_Generation/configs/magrpo_che_config.yaml
 
 python LLM_Collab_Code_Generation/train_madpo.py \
-  --config LLM_Collab_Code_Generation/configs/madpo_he_config.yaml
+  --config LLM_Collab_Code_Generation/configs/madpo_che_config.yaml
 
 python LLM_Collab_Code_Generation/train_marlhf.py \
-  --config LLM_Collab_Code_Generation/configs/marlhf_he_config.yaml
+  --config LLM_Collab_Code_Generation/configs/marlhf_che_config.yaml
+
+python LLM_Collab_Code_Generation/train_madpo_iter.py \
+  --config LLM_Collab_Code_Generation/configs/madpo_iter_che_config.yaml
+
+python LLM_Collab_Code_Generation/train_marlhf_iter.py \
+  --config LLM_Collab_Code_Generation/configs/marlhf_iter_che_config.yaml
 ```
 
 Override any configuration value inline with `--override`:
@@ -58,15 +64,21 @@ python LLM_Collab_Code_Generation/train_magrpo.py \
 `train_madpo.py` first builds a single-turn offline joint preference dataset
 from task rewards, then optimizes a joint-factorized DPO loss. Gradients remain
 agent-local: each agent only backpropagates through its own winner/loser
-sequence log probabilities. CoopHumanEval defaults to
-`madpo.preference_num_candidates: 80`, which samples eighty aligned joint
-candidates per task item, and `madpo.preference_pairs_per_sample: 16`, which
-keeps the largest reward-gap pairs, counting `2 * pairs` as environment steps
-through `madpo.use_environment_step`.
+sequence log probabilities.
 
 `train_marlhf.py` uses the same offline joint preferences to train a fixed
 joint reward model, then runs online RL with `marlhf.rl_algorithm: magrpo` by
-default. Other RL algorithm names are reserved in config for future dispatch.
+default.
+
+`train_madpo_iter.py` refreshes a preference dataset at each iteration by
+comparing target-policy completions against a comparator policy, then optimizes
+a joint-factorized DPO loss. Set `madpo_iter.num_iterations: 1` to run a single
+preference-refresh/update cycle.
+
+`train_marlhf_iter.py` uses the iterative preferences to train a joint reward
+model, then runs online RL with `marlhf_iter.rl_algorithm: magrpo` by default.
+Set `marlhf_iter.num_iterations: 1` to run a single preference-refresh/reward
+model/RL cycle.
 
 ### Joint Action Modes
 
