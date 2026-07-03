@@ -33,7 +33,7 @@ marlhf_iter:
   - cuda:0
   num_agents: 2
   num_turns: 1
-  num_iterations: 6
+  num_iterations: 4
   preference_replay_mode: current
   preference_scoring_reward: task
   policy_checkpoint_dir: null
