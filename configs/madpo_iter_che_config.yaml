@@ -35,6 +35,7 @@ madpo_iter:
   num_turns: 1
   num_iterations: 3
   preference_replay_mode: current
+  policy_checkpoint_dir: null
   num_train_epochs: 1
   agent_learning_rate: 2.0e-05
   logging_steps: 50
@@ -45,6 +46,7 @@ madpo_iter:
   comparator_agents: null
   comparator_devices: null
   comparator_num_candidates: null
+  comparator_history_k: null
   comparator_api_url: null
   comparator_api_format: generic
   comparator_api_model: null
