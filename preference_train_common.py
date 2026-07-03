@@ -87,8 +87,8 @@ def run_preference_training(
             raise ValueError("agents must be a list of model names.")
         agent_names = [str(item) for item in agent_names]
 
-    slurm_job_id = os.environ.get("SLURM_JOB_ID", "no_job_id")
-    output_dir = os.path.join(output_base_dir, f"job_{slurm_job_id}")
+    job_id = os.environ.get("SLURM_JOB_ID", "no_job_id")
+    output_dir = os.path.join(output_base_dir, f"job_{job_id}")
     os.makedirs(output_dir, exist_ok=True)
     config.save(os.path.join(output_dir, "config.yaml"))
 
@@ -134,7 +134,7 @@ def run_preference_training(
         bool(getattr(args, "num_turns", 1) > 1),
     )
     metrics_callback = None
-    if algorithm_name.lower() == "marlhf":
+    if algorithm_name.lower() in {"marlhf", "marlhfiter", "marlhf_iter"}:
         metrics_callback = build_ac_code_metrics_callback(
             num_agents,
             int(getattr(args, "num_turns", 1)),
@@ -159,6 +159,7 @@ def run_preference_training(
         "entity": wandb_section.get("entity", "OpenMLRL"),
         "name": f"{wandb_name}",
         "dir": wandb_section.get("dir", output_base_dir),
+        "output_dir": output_dir,
         "tags": tags,
         "config_sections": {
             "dataset": config.get_section("dataset"),

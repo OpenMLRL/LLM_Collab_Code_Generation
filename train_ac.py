@@ -164,8 +164,8 @@ def main() -> None:
     if num_agents != 1:
         raise ValueError("train_ac expects ac.num_agents=1. Use train_iac for multi-agent.")
 
-    slurm_job_id = os.environ.get("SLURM_JOB_ID", "no_job_id")
-    output_dir = os.path.join(output_base_dir, f"ac_job_{slurm_job_id}")
+    job_id = os.environ.get("SLURM_JOB_ID", "no_job_id")
+    output_dir = os.path.join(output_base_dir, f"ac_job_{job_id}")
     os.makedirs(output_dir, exist_ok=True)
     config_save_path = os.path.join(output_dir, "config.yaml")
 

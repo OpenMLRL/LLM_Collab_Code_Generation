@@ -1,0 +1,93 @@
+agent_model:
+  name: Qwen/Qwen2.5-Coder-3B
+  type: qwen
+  temperature: 0.6
+  top_p: 0.6
+  top_k: null
+  max_length: 2048
+  special_tokens: {}
+  torch_dtype: bfloat16
+
+agents: null
+
+dataset:
+  name: OpenMLRL/CoopHumanEval
+  type: coophumaneval
+  train_split: train[16:]
+  eval_split: train[:16]
+
+seed: 42
+
+output:
+  base_dir: output_marlhf_iter_che
+  verbose: false
+  save_final_model: false
+
+external:
+  mode: level_feedback
+  sandbox_slice: 1
+
+marlhf_iter:
+  parallel_training: none
+  agent_devices:
+  - cuda:0
+  num_agents: 2
+  num_turns: 1
+  num_iterations: 3
+  preference_replay_mode: current
+  preference_scoring_reward: task
+  policy_checkpoint_dir: null
+  num_train_epochs: 8
+  agent_learning_rate: 2.0e-05
+  logging_steps: 50
+  num_generations: 4
+  preference_num_candidates: 80
+  comparator_policy: current
+  comparator_model_name: null
+  comparator_agents: null
+  comparator_devices: null
+  comparator_num_candidates: null
+  comparator_history_k: null
+  comparator_api_url: null
+  comparator_api_format: generic
+  comparator_api_model: null
+  comparator_api_key_env: null
+  preference_pairs_per_sample: 16
+  pair_selection: reward_gap
+  dpo_beta: 0.1
+  use_environment_step: true
+  environment_steps_per_pair: 2
+  rl_algorithm: magrpo
+  reward_model_name: null
+  reward_learning_rate: 1.0e-05
+  reward_num_train_epochs: 1
+  reward_train_batch_size: 4
+  reward_max_length: 2048
+  reward_freeze_backbone: false
+  max_new_tokens: 256
+  discount: 1.0
+  joint_mode: aligned
+  early_termination_threshold: null
+  rollout_buffer_size: 4
+  train_batch_size: 4
+  advantage_normalization: true
+  eval_interval: 4
+  eval_num_samples: 4
+  eval_batch_size: 1
+
+reward_processor:
+  enabled: true
+  scale_factor: 1.0
+  shift: -4
+
+wandb:
+  project: comlrl
+  entity: OpenMLRL
+  name: marlhf_iter_coophumaneval
+  dir: output_marlhf_iter_che
+  tags:
+  - marlhf_iter
+  - coophumaneval
+  - multi-agent
+  - turns_1
+  - iterative
