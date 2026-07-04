@@ -34,8 +34,10 @@ madpo_iter:
   num_agents: 2
   num_turns: 1
   num_iterations: 4
-  preference_replay_mode: current
-  log_reward_distribution: false
+  preference_replay_mode: lambda_decay
+  preference_replay_lambda: 0.8
+  preference_replay_sample_size: 264
+  log_reward_distribution: true
   policy_checkpoint_dir: null
   num_train_epochs: 1
   agent_learning_rate: 2.0e-05
