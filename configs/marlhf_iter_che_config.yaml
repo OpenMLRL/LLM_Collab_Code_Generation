@@ -38,6 +38,7 @@ marlhf_iter:
   preference_replay_lambda: 0.8
   preference_replay_sample_size: 264
   log_reward_distribution: true
+  log_comparator_generations: false
   preference_scoring_reward: task
   policy_checkpoint_dir: null
   num_train_epochs: 2
@@ -46,6 +47,8 @@ marlhf_iter:
   num_generations: 4
   preference_num_candidates: 20
   comparator_policy: current
+  comparator_generation_mode: decentralized
+  comparator_centralized_agent_index: 0
   comparator_model_name: null
   comparator_agents: null
   comparator_devices: null
