@@ -54,6 +54,7 @@ marlhf_iter:
   comparator_api_url: null
   comparator_api_format: generic
   comparator_api_model: null
+  comparator_api_max_n_per_request: null
   comparator_api_key_env: null
   preference_pairs_per_sample: 4
   pair_selection: comparator_reward
