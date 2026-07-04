@@ -38,7 +38,6 @@ madpo_iter:
   preference_replay_lambda: 0.8
   preference_replay_sample_size: 264
   log_reward_distribution: true
-  log_comparator_generations: false
   policy_checkpoint_dir: null
   num_train_epochs: 1
   agent_learning_rate: 2.0e-05
