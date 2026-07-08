@@ -4,7 +4,6 @@ agent_model:
   temperature: 0.6
   top_p: 0.6
   top_k: null
-  max_length: 2048
   special_tokens: {}
   torch_dtype: bfloat16
 

@@ -4,7 +4,6 @@ agent_model:
   temperature: 0.6
   top_p: 0.6
   top_k: null
-  max_length: 2048
   torch_dtype: bfloat16
 
 agents: null
@@ -12,7 +11,6 @@ agents: null
 critic_model:
   name: Qwen/Qwen2.5-Coder-3B
   type: qwen
-  max_length: 2048
   torch_dtype: bfloat16
 
 critics: null

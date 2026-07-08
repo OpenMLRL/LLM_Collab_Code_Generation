@@ -273,7 +273,6 @@ def main():
         display_model = (agent_names[0] if agent_names else model_name) or ""
         print(f"\nUsing model: {display_model}")
         print(f"Model type: {model_config.type}")
-        print(f"Max context window: {model_config.max_length} tokens")
 
     tokenizer_source = agent_names[0] if agent_names else model_name
     if not tokenizer_source:

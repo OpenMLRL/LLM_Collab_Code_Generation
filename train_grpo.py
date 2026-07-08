@@ -208,7 +208,6 @@ def main():
 
     print(f"\nUsing model: {model_name}")
     print(f"Model type: {model_config.type}")
-    print(f"Max context window: {model_config.max_length} tokens")
 
     print("\nLoading tokenizer...")
     tokenizer = AutoTokenizer.from_pretrained(model_name)

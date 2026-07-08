@@ -99,7 +99,6 @@ def run_preference_training(
         display_model = (agent_names[0] if agent_names else model_name) or ""
         print(f"\nUsing model: {display_model}")
         print(f"Model type: {model_config.type}")
-        print(f"Max context window: {model_config.max_length} tokens")
         print(f"Train dataset size: {len(train_dataset)}")
         print(f"Eval dataset size: {len(eval_dataset)}")
 
