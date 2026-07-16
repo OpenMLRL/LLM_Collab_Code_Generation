@@ -32,7 +32,7 @@ marlhf:
   - cuda:0
   num_agents: 2
   num_turns: 1
-  num_train_epochs: 8
+  num_train_epochs: 16
   agent_learning_rate: 2.0e-05
   logging_steps: 50
   num_generations: 4
