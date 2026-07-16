@@ -41,7 +41,6 @@ madpo_iter:
   num_train_epochs: 1
   agent_learning_rate: 2.0e-05
   logging_steps: 50
-  num_generations: 4
   preference_num_candidates: 20
   comparator_policy: current
   comparator_generation_mode: decentralized
