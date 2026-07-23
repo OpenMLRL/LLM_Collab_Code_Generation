@@ -34,6 +34,7 @@ madpo_iter:
   num_turns: 1
   num_iterations: 4
   preference_replay_mode: lambda_decay
+  preference_replay_k: null
   preference_replay_lambda: 0.5
   preference_replay_sample_size: 264
   log_reward_distribution: true
