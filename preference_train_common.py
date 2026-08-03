@@ -11,6 +11,7 @@ from datasets import load_dataset
 from transformers import AutoTokenizer
 
 from config import Config
+from centralized_comparator import CoopHECentralizedComparatorAdapter
 from comlrl.utils.reward_processor import RewardProcessors
 from loggers.ac_code_metrics import build_ac_code_metrics_callback
 from train_magrpo import (
@@ -194,6 +195,10 @@ def run_preference_training(
         "dataset_type": dataset_type,
         "args": args,
     }
+    if hasattr(args, "comparator_generation_mode"):
+        trainer_kwargs["centralized_comparator_adapter"] = (
+            CoopHECentralizedComparatorAdapter()
+        )
     if metrics_callback is not None:
         trainer_kwargs["metrics_callback"] = metrics_callback
 
