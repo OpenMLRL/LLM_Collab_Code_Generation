@@ -25,6 +25,7 @@ from loggers.mt_code_logger import (
 )
 
 from rewards.code_rewards import execution_reward_aux
+from comlrl.utils import set_reward_range
 from comlrl.utils.reward_processor import RewardProcessors
 from comlrl.trainers.reinforce import MAGRPOConfig, MAGRPOTrainer
 import external as external_ctx
@@ -180,7 +181,7 @@ def get_reward_function(dataset_type: str, num_agents: int):
                 completion1, completion2, test_cases, entry_points, original_prompts
             )
 
-        return reward_wrapper
+        return set_reward_range(reward_wrapper, 0.0, 4.0)
 
     raise ValueError(f"Unknown dataset type: {dataset_type}")
 
