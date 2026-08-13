@@ -59,6 +59,81 @@ def aux(...):
         auxiliary, main = self._parse_completion(completion, batch_item=batch_item)
         return [auxiliary, main]
 
+    def build_sequential_prompt(
+        self,
+        batch_item: Dict[str, Any],
+        agent_prompts: Sequence[str],
+        agent_index: int,
+        previous_outputs: Sequence[str],
+    ) -> str:
+        if len(agent_prompts) != 2:
+            raise ValueError("CoopHE centralized generation requires exactly 2 agents.")
+        if agent_index not in {0, 1} or len(previous_outputs) != agent_index:
+            raise ValueError(
+                "Sequential CoopHE generation requires ordered Auxiliary then Main."
+            )
+
+        if agent_index == 0:
+            role_instructions = """You are the Auxiliary agent. Produce only a complete helper
+function named aux(...). The Main agent will see this finalized code before writing
+the required entry-point function, so make the helper useful and self-contained."""
+            context = "No earlier code has been generated."
+            tag = "auxiliary"
+            example = "def aux(...):\n    return result"
+        else:
+            role_instructions = f"""You are the Main agent. Produce only the required entry-point
+function ({self._main_signature(batch_item)}). It must solve the task and should use
+the finalized Auxiliary implementation when useful. Do not redefine aux."""
+            context = (
+                "Finalized Auxiliary output:\n"
+                f"<auxiliary>\n{previous_outputs[0]}\n</auxiliary>"
+            )
+            tag = "main"
+            example = f"{self._main_signature(batch_item)}:\n    return result"
+
+        return f"""You are Agent {agent_index} in a centralized sequential code-generation team.
+
+The team is producing one factorized joint solution. You can inspect both original
+assignments and every earlier finalized code output.
+
+Auxiliary agent original prompt:
+{agent_prompts[0]}
+
+Main agent original prompt:
+{agent_prompts[1]}
+
+Centralized context:
+{context}
+
+{role_instructions}
+
+Do not include explanations, examples, tests, markdown fences, or code for the other
+agent. Return exactly this structure:
+<{tag}>
+{example}
+</{tag}>
+"""
+
+    def parse_sequential_completion(
+        self,
+        completion: str,
+        batch_item: Dict[str, Any],
+        agent_index: int,
+    ) -> str:
+        if agent_index not in {0, 1}:
+            raise ValueError("CoopHE sequential agent_index must be 0 or 1.")
+        tag = "auxiliary" if agent_index == 0 else "main"
+        tagged = self._extract_tagged_section(completion, tag)
+        if tagged is not None:
+            return self._clean_section(tagged)
+
+        auxiliary, main = self._extract_function_sections(
+            completion,
+            batch_item=batch_item,
+        )
+        output = auxiliary if agent_index == 0 else main
+        return self._clean_section(output) if output is not None else ""
+
     @staticmethod
     def _main_signature(batch_item: Dict[str, Any]) -> str:
         entry_point = str(batch_item.get("entry_point") or "").strip()

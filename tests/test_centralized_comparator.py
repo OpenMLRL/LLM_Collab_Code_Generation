@@ -22,3 +22,29 @@ def test_coophe_parser_preserves_partial_output_fallback():
         2,
     )
     assert outputs == ["", "def solve(value):\n    return value"]
+
+
+def test_coophe_sequential_main_conditions_on_auxiliary_output():
+    adapter = CoopHECentralizedComparatorAdapter()
+    batch_item = {
+        "entry_point": "solve",
+        "prompt": "def solve(value):\n    pass",
+    }
+    prompt = adapter.build_sequential_prompt(
+        batch_item,
+        ["auxiliary prompt", "main prompt"],
+        1,
+        ["def aux(value):\n    return value + 1"],
+    )
+
+    assert "Finalized Auxiliary output" in prompt
+    assert "def aux(value):" in prompt
+    assert "<main>" in prompt
+    assert (
+        adapter.parse_sequential_completion(
+            "<main>\ndef solve(value):\n    return aux(value)\n</main>",
+            batch_item,
+            1,
+        )
+        == "def solve(value):\n    return aux(value)"
+    )
