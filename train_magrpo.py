@@ -27,7 +27,9 @@ from loggers.mt_code_logger import (
 from rewards.code_rewards import execution_reward_aux
 from comlrl.utils import set_reward_range
 from comlrl.utils.reward_processor import RewardProcessors
-from comlrl.trainers.reinforce import MAGRPOConfig, MAGRPOTrainer
+from comlrl.trainers.reinforce import (
+    MAGRPOConfig, MAGRPOTrainer, CentralizedMAGRPOConfig, CentralizedMAGRPOTrainer,
+)
 import external as external_ctx
 from external import get_external_transition
 
@@ -228,6 +230,12 @@ def main():
     magrpo_config = (
         config.get_section("magrpo") if hasattr(config, "get_section") else {}
     )
+    collaboration_mode = magrpo_config.get("collaboration_mode", "decentralized")
+    if collaboration_mode not in {"decentralized", "centralized"}:
+        raise ValueError("magrpo.collaboration_mode must be decentralized or centralized.")
+    centralized = collaboration_mode == "centralized"
+    args_cls = CentralizedMAGRPOConfig if centralized else MAGRPOConfig
+    trainer_cls = CentralizedMAGRPOTrainer if centralized else MAGRPOTrainer
     seed_value = int(config.get("seed", magrpo_config.get("seed", 42)))
     num_turns = magrpo_config.get("num_turns", 2)
     num_agents = magrpo_config.get("num_agents", 2)
@@ -441,7 +449,7 @@ def main():
             "reference_devices": magrpo_config.get("reference_devices", None),
         }
     )
-    magrpo_args = MAGRPOConfig(**magrpo_args_kwargs)
+    magrpo_args = args_cls(**magrpo_args_kwargs)
     formatters = get_formatters(dataset_type, num_agents)
     reward_func = get_reward_function(dataset_type, num_agents)
     eval_logger, eval_aggregator = get_logger_and_aggregator(
@@ -561,7 +569,11 @@ def main():
 
         trainer_kwargs["external_transition"] = external_transition_wrapper
 
-    trainer = MAGRPOTrainer(**trainer_kwargs)
+    if centralized:
+        from centralized_comparator import CoopHECentralizedComparatorAdapter
+
+        trainer_kwargs["centralized_adapter"] = CoopHECentralizedComparatorAdapter()
+    trainer = trainer_cls(**trainer_kwargs)
     trainer.verbose = bool(output_verbose)
     trainer.train()
     save_final = config.get("output.save_final_model", False)

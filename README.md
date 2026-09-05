@@ -116,6 +116,15 @@ Each agent receives its own full history at every turn: all of its past prompts 
 2. **Syntax**: Both functions are concatenated with any imports extracted from the prompt; a clean syntax check yields +0.5 and allows execution.
 3. **Execution**: Prompt-derived tests (10 s timeout per assert, up to three timeouts) run inside a sandbox. Passing assertions earn up to +1.0, with +0.5 bonus when the main function uses the aux function, +1.0 when the main is not a thin wrapper, and −0.5 if the aux return value is ignored. These same rewards back evaluation during logging.
 
+## Centralized MAGRPO
+
+`train_magrpo.py --config configs/magrpo_che_config.yaml --override magrpo.collaboration_mode=centralized magrpo.num_turns=1`
+trains one joint-input/joint-output actor using the task reward, without a
+comparator, preference dataset, or learned reward model. The existing CoopHE
+adapter splits auxiliary/main outputs for rewards and evaluation.
+`max_new_tokens` is the total joint-response budget. The default remains
+decentralized.
+
 ## Centralized Preference Collaboration
 
 MADPO, MARLHF, and their iterative variants support one trainable model playing

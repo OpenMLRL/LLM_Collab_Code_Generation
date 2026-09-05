@@ -3,6 +3,32 @@ from types import SimpleNamespace
 
 import pytest
 
+
+@pytest.mark.parametrize("mode", ["centralized", "decentralized"])
+def test_magrpo_entrypoint_selects_joint_actor(mode, monkeypatch, tmp_path):
+    import sys
+    import train_magrpo as entrypoint
+
+    observed = {}
+    def capture(**kwargs):
+        observed.update(kwargs)
+        return SimpleNamespace(train=lambda: None)
+
+    monkeypatch.setattr(entrypoint, "MAGRPOTrainer", capture)
+    monkeypatch.setattr(entrypoint, "CentralizedMAGRPOTrainer", capture)
+    item = {"prompt": "def solve(x):", "entry_point": "solve", "test": ""}
+    monkeypatch.setattr(entrypoint, "load_dataset", lambda *a, **kw: [item])
+    monkeypatch.setattr(entrypoint.AutoTokenizer, "from_pretrained", lambda *a, **kw:
+                        SimpleNamespace(pad_token="pad", eos_token="eos"))
+    config = Path(__file__).resolve().parents[1] / "configs/magrpo_che_config.yaml"
+    monkeypatch.setattr(sys, "argv", ["train", "--config", str(config), "--override",
+                        f"magrpo.collaboration_mode={mode}", "magrpo.num_turns=1",
+                        f"output.base_dir={tmp_path}", "output.save_final_model=false"])
+    entrypoint.main()
+    assert observed["num_agents"] == 2
+    assert ("centralized_adapter" in observed) == (mode == "centralized")
+    assert getattr(observed["args"], "collaboration_mode", "decentralized") == mode
+
 import preference_train_common as setup
 from comlrl.trainers import preference
 from comlrl.trainers.preference.collaboration import CentralizedCollaboration
