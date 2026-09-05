@@ -195,7 +195,10 @@ def run_preference_training(
         "dataset_type": dataset_type,
         "args": args,
     }
-    if hasattr(args, "comparator_generation_mode"):
+    if (
+        hasattr(args, "comparator_generation_mode")
+        or args.collaboration_mode == "centralized"
+    ):
         trainer_kwargs["centralized_comparator_adapter"] = (
             CoopHECentralizedComparatorAdapter()
         )
