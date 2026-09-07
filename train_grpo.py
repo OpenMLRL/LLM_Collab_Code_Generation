@@ -137,6 +137,10 @@ def get_reward_function(dataset_type: str):
 
 def main():
     """Main function to run the single agent experiment."""
+    from comlrl.runtime import configure_job_cuda_cache
+
+    configure_job_cuda_cache()
+
     parser = argparse.ArgumentParser(description="Train GRPO with configurable dataset")
     add_config_args(parser)
 

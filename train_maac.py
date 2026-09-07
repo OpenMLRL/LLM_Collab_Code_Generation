@@ -137,6 +137,10 @@ def make_prompt_reward_fn():
 
 
 def main() -> None:
+    from comlrl.runtime import configure_job_cuda_cache
+
+    configure_job_cuda_cache()
+
     parser = argparse.ArgumentParser(
         description="Two-turn MAAC (shared critic) training for cooperative code generation."
     )

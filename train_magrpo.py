@@ -188,6 +188,10 @@ def get_reward_function(dataset_type: str, num_agents: int):
 
 def main():
     """Main function to run the unified MAGRPO training."""
+    from comlrl.runtime import configure_job_cuda_cache
+
+    configure_job_cuda_cache()
+
     parser = argparse.ArgumentParser(
         description="Train MAGRPO with configurable dataset (single-turn or multi-turn)"
     )

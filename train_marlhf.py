@@ -10,6 +10,10 @@ from preference_train_common import run_preference_training
 
 
 def main():
+    from comlrl.runtime import configure_job_cuda_cache
+
+    configure_job_cuda_cache()
+
     parser = argparse.ArgumentParser(
         description="Train MARLHF with configurable code-generation datasets"
     )
