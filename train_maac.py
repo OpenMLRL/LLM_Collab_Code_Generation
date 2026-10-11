@@ -178,7 +178,9 @@ def main() -> None:
         elif "coophumaneval" in dataset_name.lower() or "coop" in dataset_name.lower():
             dataset_type = "coophumaneval"
     if dataset_type is None:
-        raise ValueError("dataset.type must be specified or inferrable from dataset.name")
+        raise ValueError(
+            "dataset.type must be specified or inferrable from dataset.name"
+        )
 
     maac_cfg = config.get_section("maac") if hasattr(config, "get_section") else {}
     seed_value = int(config.get("seed", maac_cfg.get("seed", 42)))
@@ -246,7 +248,9 @@ def main() -> None:
     if hasattr(config, "save"):
         config.save(config_save_path)
 
-    external_cfg = config.get_section("external") if hasattr(config, "get_section") else {}
+    external_cfg = (
+        config.get_section("external") if hasattr(config, "get_section") else {}
+    )
     _ext_passthrough = external_cfg.get("external_prompt_passthrough", False)
     if isinstance(_ext_passthrough, str):
         external_prompt_passthrough = _ext_passthrough.strip().lower() in {
@@ -323,6 +327,7 @@ def main() -> None:
                     "tests_eval": tests_eval,
                     "tests_sandbox": tests_sandbox,
                 }
+
     if train_dataset is not None:
         _register_split(train_dataset)
     if eval_dataset is not None:
@@ -423,7 +428,9 @@ def main() -> None:
             top_k=top_k,
             num_agents=num_agents,
             num_generations=maac_cfg.get("num_generations", 1),
-            parallel_training=str(maac_cfg.get("parallel_training", "none")).strip().lower(),
+            parallel_training=str(maac_cfg.get("parallel_training", "none"))
+            .strip()
+            .lower(),
             agent_devices=maac_cfg.get("agent_devices", ["cuda:0"]),
             critic_devices=maac_cfg.get("critic_devices", ["cuda:0"]),
             discount=discount,
@@ -463,7 +470,9 @@ def main() -> None:
     trainer.train()
 
     if config.get("output.save_final_model", False):
-        save_path = config.get("output.save_path", os.path.join(output_dir, "final_model"))
+        save_path = config.get(
+            "output.save_path", os.path.join(output_dir, "final_model")
+        )
         trainer.save_model(save_path)
         if output_verbose:
             print(f"Model saved to: {save_path}")
@@ -482,7 +491,9 @@ def _build_wandb_config(
     train_size: int,
     eval_size: int | None,
 ):
-    wandb_section = config.get_section("wandb") if hasattr(config, "get_section") else {}
+    wandb_section = (
+        config.get_section("wandb") if hasattr(config, "get_section") else {}
+    )
     maac_section = config.get_section("maac") if hasattr(config, "get_section") else {}
     model_section = (
         config.get_section("agent_model") if hasattr(config, "get_section") else {}

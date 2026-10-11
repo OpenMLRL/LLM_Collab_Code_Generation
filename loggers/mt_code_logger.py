@@ -33,12 +33,21 @@ def mt_humaneval_logger(
     num_agents = len(agent_completions_turns)
     # Use first agent as aux (if available), last agent as main
     aux_per_sample_turns = (
-        agent_completions_turns[0] if num_agents >= 2 else [[""] * len(agent_completions_turns[0][0]) for _ in range(len(agent_completions_turns[0]))]
+        agent_completions_turns[0]
+        if num_agents >= 2
+        else [
+            [""] * len(agent_completions_turns[0][0])
+            for _ in range(len(agent_completions_turns[0]))
+        ]
     )
     main_per_sample_turns = agent_completions_turns[-1]
 
     # Get number of turns from the data (assume consistent across samples)
-    num_turns = len(main_per_sample_turns[0]) if main_per_sample_turns and main_per_sample_turns[0] else 0
+    num_turns = (
+        len(main_per_sample_turns[0])
+        if main_per_sample_turns and main_per_sample_turns[0]
+        else 0
+    )
 
     for i in range(len(test_cases)):
         sample_metrics = {

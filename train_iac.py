@@ -178,7 +178,9 @@ def main() -> None:
         elif "coophumaneval" in dataset_name.lower() or "coop" in dataset_name.lower():
             dataset_type = "coophumaneval"
     if dataset_type is None:
-        raise ValueError("dataset.type must be specified or inferrable from dataset.name")
+        raise ValueError(
+            "dataset.type must be specified or inferrable from dataset.name"
+        )
 
     iac_cfg = config.get_section("iac") if hasattr(config, "get_section") else {}
     seed_value = int(config.get("seed", iac_cfg.get("seed", 42)))
@@ -255,7 +257,9 @@ def main() -> None:
     if hasattr(config, "save"):
         config.save(config_save_path)
 
-    external_cfg = config.get_section("external") if hasattr(config, "get_section") else {}
+    external_cfg = (
+        config.get_section("external") if hasattr(config, "get_section") else {}
+    )
     _ext_passthrough = external_cfg.get("external_prompt_passthrough", False)
     if isinstance(_ext_passthrough, str):
         external_prompt_passthrough = _ext_passthrough.strip().lower() in {
@@ -332,6 +336,7 @@ def main() -> None:
                     "tests_eval": tests_eval,
                     "tests_sandbox": tests_sandbox,
                 }
+
     if train_dataset is not None:
         _register_split(train_dataset)
     if eval_dataset is not None:
@@ -430,7 +435,9 @@ def main() -> None:
             num_agents=num_agents,
             num_generations=iac_cfg.get("num_generations", 1),
             use_separate_critic=use_separate_critic,
-            parallel_training=str(iac_cfg.get("parallel_training", "none")).strip().lower(),
+            parallel_training=str(iac_cfg.get("parallel_training", "none"))
+            .strip()
+            .lower(),
             agent_devices=iac_cfg.get("agent_devices", ["cuda:0"]),
             critic_devices=iac_cfg.get("critic_devices", ["cuda:0"]),
             critic_value_head_hidden_dim=iac_cfg.get("critic_value_head_hidden_dim"),
@@ -453,9 +460,7 @@ def main() -> None:
         model_config={
             "model_kwargs": model_kwargs,
             "critic_model_kwargs": (
-                critic_model_kwargs
-                if critic_config is not None
-                else model_kwargs
+                critic_model_kwargs if critic_config is not None else model_kwargs
             ),
         },
         wandb_config=_build_wandb_config(
@@ -475,7 +480,9 @@ def main() -> None:
     trainer.train()
 
     if config.get("output.save_final_model", False):
-        save_path = config.get("output.save_path", os.path.join(output_dir, "final_model"))
+        save_path = config.get(
+            "output.save_path", os.path.join(output_dir, "final_model")
+        )
         trainer.save_model(save_path)
         if output_verbose:
             print(f"Model saved to: {save_path}")
@@ -494,7 +501,9 @@ def _build_wandb_config(
     train_size: int,
     eval_size: int | None,
 ):
-    wandb_section = config.get_section("wandb") if hasattr(config, "get_section") else {}
+    wandb_section = (
+        config.get_section("wandb") if hasattr(config, "get_section") else {}
+    )
     iac_section = config.get_section("iac") if hasattr(config, "get_section") else {}
     model_section = (
         config.get_section("agent_model") if hasattr(config, "get_section") else {}
@@ -529,9 +538,7 @@ def _build_wandb_config(
                 "temperature": model_section.get("temperature"),
                 "top_p": model_section.get("top_p"),
                 "top_k": model_section.get("top_k"),
-                "use_separate_critic": iac_section.get(
-                    "use_separate_critic", False
-                ),
+                "use_separate_critic": iac_section.get("use_separate_critic", False),
             },
         },
     }

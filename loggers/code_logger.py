@@ -1,7 +1,6 @@
 import signal
 import math
 
- 
 
 from rewards.code_utils import (
     TimeoutException,

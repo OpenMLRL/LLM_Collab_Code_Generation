@@ -171,9 +171,6 @@ def analyze_code(
     }
 
 
- 
-
-
 def format_followup_prompts(
     original_prompt: str,
     aux_completion: str,

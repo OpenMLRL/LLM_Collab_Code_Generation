@@ -64,8 +64,10 @@ def get_external_transition(
     """
     # Local print override
     if not VERBOSE:
+
         def print(*args, **kwargs):  # type: ignore
             return None
+
     else:
         print = builtins.print  # type: ignore
 

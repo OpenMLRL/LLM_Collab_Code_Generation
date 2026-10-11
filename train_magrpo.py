@@ -203,8 +203,6 @@ def main():
     )
     add_config_args(parser)
 
-    
-
     args = parser.parse_args()
     config = Config(args.config or str(DEFAULT_CONFIG))
 
@@ -237,7 +235,9 @@ def main():
     )
     collaboration_mode = magrpo_config.get("collaboration_mode", "decentralized")
     if collaboration_mode not in {"decentralized", "centralized"}:
-        raise ValueError("magrpo.collaboration_mode must be decentralized or centralized.")
+        raise ValueError(
+            "magrpo.collaboration_mode must be decentralized or centralized."
+        )
     centralized = collaboration_mode == "centralized"
     args_cls = CentralizedMAGRPOConfig if centralized else MAGRPOConfig
     trainer_cls = CentralizedMAGRPOTrainer if centralized else MAGRPOTrainer
@@ -254,12 +254,16 @@ def main():
             raise ValueError("agents must be a list of model names.")
         agent_names = [str(x) for x in agent_names]
         if centralized and len(agent_names) != 1:
-            raise ValueError("Centralized collaboration requires exactly one actor model.")
+            raise ValueError(
+                "Centralized collaboration requires exactly one actor model."
+            )
     is_multi_turn = num_turns > 1
     output_verbose = bool(config.get("output.verbose", False))
     if output_verbose:
-        print(f"Multi-turn training enabled: num_turns={num_turns}") if is_multi_turn else print(
-            f"Single-turn training: num_turns={num_turns}"
+        (
+            print(f"Multi-turn training enabled: num_turns={num_turns}")
+            if is_multi_turn
+            else print(f"Single-turn training: num_turns={num_turns}")
         )
 
     output_dir = os.path.join(output_base_dir, run_id())
@@ -312,7 +316,9 @@ def main():
     temperature = model_config.temperature
     top_p = model_config.top_p
     top_k = model_config.top_k
-    external_cfg = config.get_section("external") if hasattr(config, "get_section") else {}
+    external_cfg = (
+        config.get_section("external") if hasattr(config, "get_section") else {}
+    )
     _ext_passthrough = external_cfg.get("external_prompt_passthrough", False)
     if isinstance(_ext_passthrough, str):
         external_prompt_passthrough = _ext_passthrough.strip().lower() in {
@@ -403,6 +409,7 @@ def main():
                     "tests_eval": tests_eval,
                     "tests_sandbox": tests_sandbox,
                 }
+
     if "train_dataset" in locals() and train_dataset is not None:
         _register_split(train_dataset)
     if "eval_dataset" in locals() and eval_dataset is not None:
@@ -427,9 +434,9 @@ def main():
     magrpo_args_kwargs.update(
         {
             "num_agents": num_agents,
-            "parallel_training": str(
-                magrpo_config.get("parallel_training", "none")
-            ).strip().lower(),
+            "parallel_training": str(magrpo_config.get("parallel_training", "none"))
+            .strip()
+            .lower(),
             "agent_devices": magrpo_config.get("agent_devices", ["cuda:0"]),
             "discount": magrpo_config.get("discount", 0.9),
             "joint_mode": magrpo_config.get("joint_mode", "aligned"),
@@ -445,9 +452,7 @@ def main():
             "eval_num_samples": magrpo_config.get("eval_num_samples", 4),
             "eval_batch_size": magrpo_config.get("eval_batch_size", 1),
             "external_prompt_passthrough": external_prompt_passthrough,
-            "reference_kl_enabled": magrpo_config.get(
-                "reference_kl_enabled", False
-            ),
+            "reference_kl_enabled": magrpo_config.get("reference_kl_enabled", False),
             "reference_kl_coef": magrpo_config.get("reference_kl_coef", 0.1),
             "reference_devices": magrpo_config.get("reference_devices", None),
         }
@@ -466,9 +471,7 @@ def main():
     else:
         default_name = f"{dataset_type}-magrpo"
     wandb_name = (
-        wandb_section.get("name")
-        or wandb_section.get("run_name")
-        or default_name
+        wandb_section.get("name") or wandb_section.get("run_name") or default_name
     )
     external_mode = external_cfg.get("mode", "level_feedback")
     default_tags = ["magrpo", dataset_type or "code", f"turns_{num_turns}"]
@@ -477,11 +480,15 @@ def main():
     if external_mode == "level_feedback":
         if "self-evolved" not in tags:
             tags.append("self-evolved")
-    dataset_section = config.get_section("dataset") if hasattr(config, "get_section") else {}
+    dataset_section = (
+        config.get_section("dataset") if hasattr(config, "get_section") else {}
+    )
     model_section = (
         config.get_section("agent_model") if hasattr(config, "get_section") else {}
     )
-    output_section = config.get_section("output") if hasattr(config, "get_section") else {}
+    output_section = (
+        config.get_section("output") if hasattr(config, "get_section") else {}
+    )
 
     wandb_config = {
         "project": wandb_section.get("project"),
@@ -501,8 +508,10 @@ def main():
 
     # Propagate verbosity to reward/external modules
     import rewards.code_rewards as code_rewards
+
     code_rewards.VERBOSE = bool(output_verbose)
     import external as external_mod
+
     external_mod.VERBOSE = bool(output_verbose)
     reward_processor = None
     if config.get("reward_processor.enabled", True):

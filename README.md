@@ -2,7 +2,7 @@
 
 This repo provides the extended environments for [**CoMLRL**](https://github.com/OpenMLRL/CoMLRL).
 
-This repository contains the code-generation experiments in [**[AAAI26]** **_LLM Collaboration with Multi‑Agent Reinforcement Learning_**](https://arxiv.org/abs/2508.04652). 
+This repository contains the code-generation experiments in [**[AAAI26]** **_LLM Collaboration with Multi‑Agent Reinforcement Learning_**](https://arxiv.org/abs/2508.04652).
 
 <img src="./demo_cg.gif" alt="Code generation demo" width="600px">
 

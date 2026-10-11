@@ -80,7 +80,9 @@ def run_preference_training(
     set_seed(seed_value)
 
     num_agents = int(algo_config.get("num_agents", 2))
-    centralized = algo_config.get("collaboration_mode", "decentralized") == "centralized"
+    centralized = (
+        algo_config.get("collaboration_mode", "decentralized") == "centralized"
+    )
     if centralized and num_agents != 2:
         raise ValueError("Centralized code generation requires exactly 2 task roles.")
     agent_names = config.get("agents")
@@ -91,7 +93,9 @@ def run_preference_training(
             raise ValueError("agents must be a list of model names.")
         agent_names = [str(item) for item in agent_names]
         if centralized and len(agent_names) != 1:
-            raise ValueError("Centralized collaboration requires exactly one actor model.")
+            raise ValueError(
+                "Centralized collaboration requires exactly one actor model."
+            )
 
     output_dir = os.path.join(output_base_dir, run_id())
     os.makedirs(output_dir, exist_ok=True)

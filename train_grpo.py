@@ -110,9 +110,6 @@ def execution_reward_single_agent(completions, *, batch_items=None):
     return raw_rewards
 
 
- 
-
-
 def get_formatter(dataset_type: str):
     """Get the appropriate formatter based on dataset type."""
     if dataset_type is None:
@@ -145,8 +142,6 @@ def main():
     parser = argparse.ArgumentParser(description="Train GRPO with configurable dataset")
     add_config_args(parser)
 
-    
-
     args = parser.parse_args()
     config = Config(args.config or str(DEFAULT_CONFIG))
 
@@ -177,8 +172,10 @@ def main():
     is_multi_turn = num_turns > 1
     output_verbose = bool(config.get("output.verbose", False))
     if output_verbose:
-        print(f"Multi-turn GRPO enabled: num_turns={num_turns}") if is_multi_turn else print(
-            f"Single-turn GRPO: num_turns={num_turns}"
+        (
+            print(f"Multi-turn GRPO enabled: num_turns={num_turns}")
+            if is_multi_turn
+            else print(f"Single-turn GRPO: num_turns={num_turns}")
         )
 
     output_dir = os.path.join(output_base_dir, run_id())
@@ -235,7 +232,9 @@ def main():
     temperature = model_config.temperature
     top_p = model_config.top_p
     top_k = model_config.top_k
-    external_cfg = config.get_section("external") if hasattr(config, "get_section") else {}
+    external_cfg = (
+        config.get_section("external") if hasattr(config, "get_section") else {}
+    )
 
     # Register external context resolver using dataset items (for external modes)
     def _normalize_prompt(p: str) -> str:
@@ -260,7 +259,6 @@ def main():
         sandbox_slice = _sandbox_val
     else:
         sandbox_slice = None if _sandbox_val is None else 0
-
 
     def _make_sliced_assert_tests(test_code: str, n: int) -> str:
         if not isinstance(test_code, str) or not test_code.strip():
@@ -308,6 +306,7 @@ def main():
                     "tests_eval": tests_eval,
                     "tests_sandbox": tests_sandbox,
                 }
+
     if "train_dataset" in locals() and train_dataset is not None:
         _register_split(train_dataset)
     if "eval_dataset" in locals() and eval_dataset is not None:
@@ -327,7 +326,9 @@ def main():
         temperature=temperature,
         top_p=top_p,
         top_k=top_k,
-        parallel_training=str(grpo_config.get("parallel_training", "none")).strip().lower(),
+        parallel_training=str(grpo_config.get("parallel_training", "none"))
+        .strip()
+        .lower(),
         agent_devices=grpo_config.get("agent_devices", None),
         discount=grpo_config.get("discount", 0.9),
         joint_mode=grpo_config.get("joint_mode", "aligned"),
@@ -353,9 +354,7 @@ def main():
     else:
         default_name = f"{dataset_type}-grpo"
     wandb_name = (
-        wandb_section.get("name")
-        or wandb_section.get("run_name")
-        or default_name
+        wandb_section.get("name") or wandb_section.get("run_name") or default_name
     )
     external_mode = external_cfg.get("mode", "level_feedback")
     default_tags = ["grpo", dataset_type or "code", f"turns_{num_turns}"]
@@ -370,11 +369,15 @@ def main():
             wandb_name = f"{wandb_name}_slice"
         if "slice" not in tags:
             tags.append("slice")
-    dataset_section = config.get_section("dataset") if hasattr(config, "get_section") else {}
+    dataset_section = (
+        config.get_section("dataset") if hasattr(config, "get_section") else {}
+    )
     model_section = (
         config.get_section("agent_model") if hasattr(config, "get_section") else {}
     )
-    output_section = config.get_section("output") if hasattr(config, "get_section") else {}
+    output_section = (
+        config.get_section("output") if hasattr(config, "get_section") else {}
+    )
 
     wandb_config = {
         "project": wandb_section.get("project"),
@@ -393,8 +396,10 @@ def main():
 
     # Propagate verbosity to reward/external modules
     import rewards.code_rewards as code_rewards
+
     code_rewards.VERBOSE = bool(output_verbose)
     import external as external_mod
+
     external_mod.VERBOSE = bool(output_verbose)
     reward_processor = None
     if config.get("reward_processor.enabled", False):
