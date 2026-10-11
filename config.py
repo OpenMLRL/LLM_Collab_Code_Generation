@@ -6,6 +6,7 @@ Handles YAML loading and model configuration.
 import argparse
 import os
 import sys
+import time
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Dict, Optional
@@ -203,3 +204,8 @@ def parse_overrides(overrides: list) -> Dict[str, Any]:
         current[keys[-1]] = value
 
     return result
+
+
+def run_id() -> str:
+    """Return a time-pid id so concurrent launches write to separate directories."""
+    return f"{time.strftime('%Y%m%d-%H%M%S')}-{os.getpid()}"

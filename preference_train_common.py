@@ -10,7 +10,7 @@ import torch
 from datasets import load_dataset
 from transformers import AutoTokenizer
 
-from config import Config
+from config import Config, run_id
 from centralized_comparator import CoopHECentralizedComparatorAdapter
 from comlrl.utils.reward_processor import RewardProcessors
 from loggers.ac_code_metrics import build_ac_code_metrics_callback
@@ -93,8 +93,7 @@ def run_preference_training(
         if centralized and len(agent_names) != 1:
             raise ValueError("Centralized collaboration requires exactly one actor model.")
 
-    job_id = os.environ.get("SLURM_JOB_ID", "no_job_id")
-    output_dir = os.path.join(output_base_dir, f"job_{job_id}")
+    output_dir = os.path.join(output_base_dir, run_id())
     os.makedirs(output_dir, exist_ok=True)
     config.save(os.path.join(output_dir, "config.yaml"))
 

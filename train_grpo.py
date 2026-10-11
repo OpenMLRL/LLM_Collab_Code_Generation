@@ -15,7 +15,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from pathlib import Path
 from typing import Any, Dict
 
-from config import Config, add_config_args, parse_overrides
+from config import Config, add_config_args, parse_overrides, run_id
 from datasets import load_dataset
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
@@ -137,10 +137,6 @@ def get_reward_function(dataset_type: str):
 
 def main():
     """Main function to run the single agent experiment."""
-    from comlrl.runtime import configure_job_cuda_cache
-
-    configure_job_cuda_cache()
-
     parser = argparse.ArgumentParser(description="Train GRPO with configurable dataset")
     add_config_args(parser)
 
@@ -187,11 +183,11 @@ def main():
             f"Single-turn GRPO: num_turns={num_turns}"
         )
 
-    job_id = os.environ.get("SLURM_JOB_ID", "no_job_id")
+    launch_id = run_id()
     if is_multi_turn:
-        output_dir = os.path.join(output_base_dir, f"mt_job_{job_id}")
+        output_dir = os.path.join(output_base_dir, f"mt_{launch_id}")
     else:
-        output_dir = os.path.join(output_base_dir, f"job_{job_id}")
+        output_dir = os.path.join(output_base_dir, launch_id)
     os.makedirs(output_dir, exist_ok=True)
 
     if hasattr(config, "save"):

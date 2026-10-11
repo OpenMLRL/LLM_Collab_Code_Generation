@@ -154,8 +154,3 @@ unchanged.
 ## Logging
 
 `loggers/` adapt the shared `MAGRPOTrainer` utilities to emit pass rates, syntax success, reward decomposition, termination statistics, and aux-usage diagnostics. Configure Weights & Biases by setting `wandb.project`, `wandb.entity`, and `wandb.name` in YAML or through overrides. `output.save_final_model` stays `false` by default to avoid storing large checkpoints, while `output.verbose` toggles the detailed per-episode traces used when debugging on a cluster.
-
-## Slurm runtime cache
-
-Training launchers isolate unset CUDA JIT caches per job on node-local storage.
-Update CoMLRL alongside this checkout; see the [runtime cache guide](docs/runtime_cache.md).
