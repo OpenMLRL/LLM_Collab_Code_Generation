@@ -71,7 +71,7 @@ def {entry_point}({params_str}):\n    # your function code here\n    return resu
     return prompt_text
 
 
-def execution_reward_single_agent(completions, batch_items=None):
+def execution_reward_single_agent(completions, *, batch_items=None):
     """
     Compute execution-based rewards for single agent completions.
     Adapts to use execution_reward_aux by treating single agent
