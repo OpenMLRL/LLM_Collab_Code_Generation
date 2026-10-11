@@ -159,10 +159,10 @@ def run_preference_training(
     tags = list(tags_from_cfg) if isinstance(tags_from_cfg, list) else default_tags
 
     wandb_config = {
-        "project": wandb_section.get("project", "comlrl"),
+        "project": wandb_section.get("project"),
         "entity": wandb_section.get("entity", "OpenMLRL"),
         "name": f"{wandb_name}",
-        "dir": wandb_section.get("dir", output_base_dir),
+        "dir": wandb_section.get("dir", output_dir),
         "output_dir": output_dir,
         "tags": tags,
         "config_sections": {
@@ -198,7 +198,6 @@ def run_preference_training(
         "wandb_config": wandb_config,
         "eval_logger": eval_logger,
         "eval_aggregator": eval_aggregator,
-        "dataset_type": dataset_type,
         "args": args,
     }
     if (

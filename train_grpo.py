@@ -10,10 +10,15 @@ import os
 import re
 import sys
 
-# Add project root to Python path
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from pathlib import Path
 from typing import Any, Dict
+
+REPO_ROOT = Path(__file__).resolve().parent
+DEFAULT_CONFIG = REPO_ROOT / "configs" / "grpo_he_config.yaml"
+COMLRL_ROOT = REPO_ROOT.parent / "CoMLRL"
+for path in (COMLRL_ROOT, REPO_ROOT):
+    if str(path) not in sys.path:
+        sys.path.insert(0, str(path))
 
 from config import Config, add_config_args, parse_overrides, run_id
 from datasets import load_dataset
@@ -143,14 +148,7 @@ def main():
     
 
     args = parser.parse_args()
-    if args.config:
-        config = Config(args.config)
-    else:
-        default_config_path = Path(__file__).parent / "configs" / "grpo_he_config.yaml"
-        if default_config_path.exists():
-            config = Config(str(default_config_path))
-        else:
-            raise ValueError("Please provide a configuration file using --config")
+    config = Config(args.config or str(DEFAULT_CONFIG))
 
     if args.override:
         overrides = parse_overrides(args.override)
@@ -183,11 +181,7 @@ def main():
             f"Single-turn GRPO: num_turns={num_turns}"
         )
 
-    launch_id = run_id()
-    if is_multi_turn:
-        output_dir = os.path.join(output_base_dir, f"mt_{launch_id}")
-    else:
-        output_dir = os.path.join(output_base_dir, launch_id)
+    output_dir = os.path.join(output_base_dir, run_id())
     os.makedirs(output_dir, exist_ok=True)
 
     if hasattr(config, "save"):
@@ -383,10 +377,10 @@ def main():
     output_section = config.get_section("output") if hasattr(config, "get_section") else {}
 
     wandb_config = {
-        "project": wandb_section.get("project", "comlrl"),
+        "project": wandb_section.get("project"),
         "entity": wandb_section.get("entity", "OpenMLRL"),
         "name": f"{wandb_name}",
-        "dir": wandb_section.get("dir", "../../../projects/bepg/sliu30"),
+        "dir": wandb_section.get("dir", output_dir),
         "tags": tags,
         "config_sections": {
             "dataset": dataset_section,
@@ -430,7 +424,6 @@ def main():
         "reward_func": reward_func,
         "formatters": formatter,
         "wandb_config": wandb_config,
-        "dataset_type": dataset_type,
         "args": grpo_args,
     }
 

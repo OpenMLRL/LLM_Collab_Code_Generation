@@ -9,10 +9,15 @@ import os
 import random
 import re
 import sys
-
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
- 
+from pathlib import Path
 from typing import Any, Dict
+
+REPO_ROOT = Path(__file__).resolve().parent
+DEFAULT_CONFIG = REPO_ROOT / "configs" / "magrpo_che_config.yaml"
+COMLRL_ROOT = REPO_ROOT.parent / "CoMLRL"
+for path in (COMLRL_ROOT, REPO_ROOT):
+    if str(path) not in sys.path:
+        sys.path.insert(0, str(path))
 
 from config import Config, add_config_args, parse_overrides, run_id
 from datasets import load_dataset
@@ -21,7 +26,7 @@ from transformers import AutoTokenizer
 
 from loggers.mt_code_logger import (
     aggregate_mt_humaneval_metrics_for_logging,
-    mt_humaneval_logger,
+    mt_humaneval_eval_logger,
 )
 
 from rewards.code_rewards import execution_reward_aux
@@ -139,7 +144,7 @@ def get_logger_and_aggregator(dataset_type: str, is_multi_turn: bool = False):
 
     # Use unified multi-turn compatible logger/aggregator for code datasets
     if dataset_type.lower() in ["humaneval", "coophumaneval"]:
-        return mt_humaneval_logger, aggregate_mt_humaneval_metrics_for_logging
+        return mt_humaneval_eval_logger, aggregate_mt_humaneval_metrics_for_logging
 
     return None, None
 
@@ -201,10 +206,7 @@ def main():
     
 
     args = parser.parse_args()
-    if args.config:
-        config = Config(args.config)
-    else:
-        raise ValueError("Please provide a configuration file using --config")
+    config = Config(args.config or str(DEFAULT_CONFIG))
 
     if args.override:
         overrides = parse_overrides(args.override)
@@ -260,13 +262,7 @@ def main():
             f"Single-turn training: num_turns={num_turns}"
         )
 
-    launch_id = run_id()
-
-    if is_multi_turn:
-        output_dir = os.path.join(output_base_dir, f"mt_{launch_id}")
-    else:
-        output_dir = os.path.join(output_base_dir, launch_id)
-
+    output_dir = os.path.join(output_base_dir, run_id())
     os.makedirs(output_dir, exist_ok=True)
 
     if hasattr(config, "save"):
@@ -488,10 +484,10 @@ def main():
     output_section = config.get_section("output") if hasattr(config, "get_section") else {}
 
     wandb_config = {
-        "project": wandb_section.get("project", "comlrl"),
+        "project": wandb_section.get("project"),
         "entity": wandb_section.get("entity", "OpenMLRL"),
         "name": f"{wandb_name}",
-        "dir": wandb_section.get("dir", "../../../projects/bepg/sliu30"),
+        "dir": wandb_section.get("dir", output_dir),
         "tags": tags,
         # Provide full sections for the trainer to log cleanly
         "config_sections": {
@@ -542,7 +538,6 @@ def main():
         "wandb_config": wandb_config,
         "eval_logger": eval_logger,
         "eval_aggregator": eval_aggregator,
-        "dataset_type": dataset_type,
         "args": magrpo_args,
     }
 

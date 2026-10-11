@@ -2,6 +2,7 @@ import argparse
 import os
 import random
 import re
+import sys
 from pathlib import Path
 from typing import Any, Dict, List
 
@@ -9,6 +10,13 @@ import torch
 import wandb
 from datasets import load_dataset
 from transformers import AutoTokenizer
+
+REPO_ROOT = Path(__file__).resolve().parent
+DEFAULT_CONFIG = REPO_ROOT / "configs" / "ac_che_config.yaml"
+COMLRL_ROOT = REPO_ROOT.parent / "CoMLRL"
+for path in (COMLRL_ROOT, REPO_ROOT):
+    if str(path) not in sys.path:
+        sys.path.insert(0, str(path))
 
 from config import Config, add_config_args, parse_overrides, run_id
 from comlrl.trainers.actor_critic import IACConfig, IACTrainer
@@ -121,14 +129,7 @@ def main() -> None:
     add_config_args(parser)
     args = parser.parse_args()
 
-    if args.config:
-        config = Config(args.config)
-    else:
-        default_config_path = Path(__file__).parent / "configs" / "ac_che_config.yaml"
-        if default_config_path.exists():
-            config = Config(str(default_config_path))
-        else:
-            raise ValueError("Please provide a configuration file using --config")
+    config = Config(args.config or str(DEFAULT_CONFIG))
 
     if args.override:
         overrides = parse_overrides(args.override)
@@ -164,7 +165,7 @@ def main() -> None:
     if num_agents != 1:
         raise ValueError("train_ac expects ac.num_agents=1. Use train_iac for multi-agent.")
 
-    output_dir = os.path.join(output_base_dir, f"ac_{run_id()}")
+    output_dir = os.path.join(output_base_dir, run_id())
     os.makedirs(output_dir, exist_ok=True)
     config_save_path = os.path.join(output_dir, "config.yaml")
 
@@ -408,6 +409,7 @@ def main() -> None:
         },
         wandb_config=_build_wandb_config(
             config,
+            output_dir,
             dataset_name,
             dataset_type,
             train_split,
@@ -433,6 +435,7 @@ def main() -> None:
 
 def _build_wandb_config(
     config: Config,
+    output_dir: str,
     dataset_name: str,
     dataset_type: str | None,
     train_split: str,
@@ -455,10 +458,10 @@ def _build_wandb_config(
         or f"{(dataset_type or dataset_name)}-ac"
     )
     return {
-        "project": wandb_section.get("project", "ac"),
-        "entity": wandb_section.get("entity"),
+        "project": wandb_section.get("project"),
+        "entity": wandb_section.get("entity", "OpenMLRL"),
         "name": wandb_name,
-        "dir": wandb_section.get("dir"),
+        "dir": wandb_section.get("dir", output_dir),
         "tags": tags,
         "config_sections": {
             "dataset": {

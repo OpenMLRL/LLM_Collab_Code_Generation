@@ -279,11 +279,7 @@ def test_joint_text_preserves_task_reward_and_eval_metrics():
     )
     parsed = runtime.split_eval([[[joint]]], [item])
     logger, _ = get_logger_and_aggregator("coophumaneval")
-    context = {
-        "test_cases": [item["test"]],
-        "entry_points": [item["entry_point"]],
-        "prompts": [item["prompt"]],
-    }
+    context = {"batch_items": [item], "prompts": [item["prompt"]]}
     assert logger(agent_completions_turns=parsed, **context) == logger(
         agent_completions_turns=[[[left]], [[right]]], **context
     )

@@ -8,7 +8,7 @@ This repository contains the code-generation experiments in [**[AAAI26]** **_LLM
 
 ## Installation
 
-Install [**CoMLRL**](https://github.com/OpenMLRL/CoMLRL):
+Install [CoMLRL](https://github.com/OpenMLRL/CoMLRL):
 
 ```bash
 pip install comlrl
@@ -21,6 +21,9 @@ Or via conda-forge:
 conda install -c conda-forge comlrl
 # Install PyTorch compatible with your device
 ```
+
+A `CoMLRL/` checkout next to this repository takes precedence over the
+installed package, so local CoMLRL changes are used without reinstalling.
 
 ## Benchmarks
 
@@ -49,6 +52,7 @@ python LLM_Collab_Code_Generation/train_marlhf_iter.py \
   --config LLM_Collab_Code_Generation/configs/marlhf_iter_che_config.yaml
 ```
 
+Without `--config`, each script uses its default config in `configs/`.
 Override any configuration value inline with `--override`:
 
 ```bash

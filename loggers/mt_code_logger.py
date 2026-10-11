@@ -103,6 +103,21 @@ def mt_humaneval_logger(
     return all_metrics
 
 
+def mt_humaneval_eval_logger(
+    *,
+    agent_completions_turns: List[List[List[str]]],
+    batch_items: List[Dict[str, Any]],
+    prompts: Optional[List[str]] = None,
+) -> List[Dict[str, Any]]:
+    """CoMLRL eval_logger entry point: read tests and entry points from the items."""
+    return mt_humaneval_logger(
+        agent_completions_turns,
+        [item.get("test", "") for item in batch_items],
+        [item.get("entry_point", "") for item in batch_items],
+        prompts,
+    )
+
+
 def aggregate_mt_humaneval_metrics_for_logging(
     metrics_list: List[Dict[str, Any]], num_turns: int = 2
 ) -> Dict[str, float]:
