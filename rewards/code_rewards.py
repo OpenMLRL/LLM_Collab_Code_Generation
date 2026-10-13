@@ -50,8 +50,10 @@ def execution_reward_aux(
     """
     # Local print override based on VERBOSE
     if not VERBOSE:
+
         def print(*args, **kwargs):  # type: ignore
             return None
+
     else:
         print = builtins.print  # type: ignore
 

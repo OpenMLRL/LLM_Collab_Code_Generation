@@ -2,6 +2,7 @@ import argparse
 import os
 import random
 import re
+import sys
 from pathlib import Path
 from typing import Any, Dict, List
 
@@ -10,7 +11,14 @@ import wandb
 from datasets import load_dataset
 from transformers import AutoTokenizer
 
-from config import Config, add_config_args, parse_overrides
+REPO_ROOT = Path(__file__).resolve().parent
+DEFAULT_CONFIG = REPO_ROOT / "configs" / "ac_che_config.yaml"
+COMLRL_ROOT = REPO_ROOT.parent / "CoMLRL"
+for path in (COMLRL_ROOT, REPO_ROOT):
+    if str(path) not in sys.path:
+        sys.path.insert(0, str(path))
+
+from config import Config, add_config_args, parse_overrides, run_id
 from comlrl.trainers.actor_critic import IACConfig, IACTrainer
 from comlrl.utils.reward_processor import RewardProcessors
 from rewards.code_rewards import execution_reward_aux
@@ -115,24 +123,13 @@ def make_prompt_reward_fn():
 
 
 def main() -> None:
-    from comlrl.runtime import configure_job_cuda_cache
-
-    configure_job_cuda_cache()
-
     parser = argparse.ArgumentParser(
         description="Single-agent Actor-Critic training for code generation."
     )
     add_config_args(parser)
     args = parser.parse_args()
 
-    if args.config:
-        config = Config(args.config)
-    else:
-        default_config_path = Path(__file__).parent / "configs" / "ac_che_config.yaml"
-        if default_config_path.exists():
-            config = Config(str(default_config_path))
-        else:
-            raise ValueError("Please provide a configuration file using --config")
+    config = Config(args.config or str(DEFAULT_CONFIG))
 
     if args.override:
         overrides = parse_overrides(args.override)
@@ -158,7 +155,9 @@ def main() -> None:
         elif "coophumaneval" in dataset_name.lower() or "coop" in dataset_name.lower():
             dataset_type = "coophumaneval"
     if dataset_type is None:
-        raise ValueError("dataset.type must be specified or inferrable from dataset.name")
+        raise ValueError(
+            "dataset.type must be specified or inferrable from dataset.name"
+        )
 
     # AC-specific config (needed early for seed)
     ac_cfg = config.get_section("ac") if hasattr(config, "get_section") else {}
@@ -166,10 +165,11 @@ def main() -> None:
 
     num_agents = int(ac_cfg.get("num_agents", 1))
     if num_agents != 1:
-        raise ValueError("train_ac expects ac.num_agents=1. Use train_iac for multi-agent.")
+        raise ValueError(
+            "train_ac expects ac.num_agents=1. Use train_iac for multi-agent."
+        )
 
-    job_id = os.environ.get("SLURM_JOB_ID", "no_job_id")
-    output_dir = os.path.join(output_base_dir, f"ac_job_{job_id}")
+    output_dir = os.path.join(output_base_dir, run_id())
     os.makedirs(output_dir, exist_ok=True)
     config_save_path = os.path.join(output_dir, "config.yaml")
 
@@ -215,7 +215,9 @@ def main() -> None:
     if hasattr(config, "save"):
         config.save(config_save_path)
 
-    external_cfg = config.get_section("external") if hasattr(config, "get_section") else {}
+    external_cfg = (
+        config.get_section("external") if hasattr(config, "get_section") else {}
+    )
 
     def _normalize_prompt(p: str) -> str:
         return " ".join((p or "").split()).strip()
@@ -281,6 +283,7 @@ def main() -> None:
                     "tests_eval": tests_eval,
                     "tests_sandbox": tests_sandbox,
                 }
+
     if train_dataset is not None:
         _register_split(train_dataset)
     if eval_dataset is not None:
@@ -385,15 +388,15 @@ def main() -> None:
             num_agents=1,
             num_generations=ac_cfg.get("num_generations", 1),
             use_separate_critic=use_separate_critic,
-            parallel_training=str(ac_cfg.get("parallel_training", "none")).strip().lower(),
+            parallel_training=str(ac_cfg.get("parallel_training", "none"))
+            .strip()
+            .lower(),
             agent_devices=ac_cfg.get("agent_devices", None),
             critic_devices=ac_cfg.get("critic_devices", None),
             critic_value_head_hidden_dim=ac_cfg.get("critic_value_head_hidden_dim"),
             value_head_hidden_dim=ac_cfg.get("value_head_hidden_dim"),
             discount=ac_cfg.get("discount", 0.9),
-            early_termination_threshold=ac_cfg.get(
-                "early_termination_threshold", -0.2
-            ),
+            early_termination_threshold=ac_cfg.get("early_termination_threshold", -0.2),
             eval_interval=ac_cfg.get("eval_interval", 16),
             eval_num_samples=ac_cfg.get("eval_num_samples", 4),
             eval_batch_size=ac_cfg.get("eval_batch_size", 1),
@@ -406,13 +409,12 @@ def main() -> None:
         model_config={
             "model_kwargs": model_kwargs,
             "critic_model_kwargs": (
-                critic_model_kwargs
-                if critic_config is not None
-                else model_kwargs
+                critic_model_kwargs if critic_config is not None else model_kwargs
             ),
         },
         wandb_config=_build_wandb_config(
             config,
+            output_dir,
             dataset_name,
             dataset_type,
             train_split,
@@ -427,7 +429,9 @@ def main() -> None:
     trainer.train()
 
     if config.get("output.save_final_model", False):
-        save_path = config.get("output.save_path", os.path.join(output_dir, "final_model"))
+        save_path = config.get(
+            "output.save_path", os.path.join(output_dir, "final_model")
+        )
         trainer.save_model(save_path)
         if output_verbose:
             print(f"Model saved to: {save_path}")
@@ -438,6 +442,7 @@ def main() -> None:
 
 def _build_wandb_config(
     config: Config,
+    output_dir: str,
     dataset_name: str,
     dataset_type: str | None,
     train_split: str,
@@ -445,7 +450,9 @@ def _build_wandb_config(
     train_size: int,
     eval_size: int | None,
 ):
-    wandb_section = config.get_section("wandb") if hasattr(config, "get_section") else {}
+    wandb_section = (
+        config.get_section("wandb") if hasattr(config, "get_section") else {}
+    )
     ac_section = config.get_section("ac") if hasattr(config, "get_section") else {}
     model_section = (
         config.get_section("agent_model") if hasattr(config, "get_section") else {}
@@ -460,10 +467,10 @@ def _build_wandb_config(
         or f"{(dataset_type or dataset_name)}-ac"
     )
     return {
-        "project": wandb_section.get("project", "ac"),
-        "entity": wandb_section.get("entity"),
+        "project": wandb_section.get("project"),
+        "entity": wandb_section.get("entity", "OpenMLRL"),
         "name": wandb_name,
-        "dir": wandb_section.get("dir"),
+        "dir": wandb_section.get("dir", output_dir),
         "tags": tags,
         "config_sections": {
             "dataset": {

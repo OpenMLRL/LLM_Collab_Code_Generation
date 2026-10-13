@@ -2,13 +2,13 @@
 
 This repo provides the extended environments for [**CoMLRL**](https://github.com/OpenMLRL/CoMLRL).
 
-This repository contains the code-generation experiments in [**[AAAI26]** **_LLM Collaboration with Multi‑Agent Reinforcement Learning_**](https://arxiv.org/abs/2508.04652). 
+This repository contains the code-generation experiments in [**[AAAI26]** **_LLM Collaboration with Multi‑Agent Reinforcement Learning_**](https://arxiv.org/abs/2508.04652).
 
 <img src="./demo_cg.gif" alt="Code generation demo" width="600px">
 
 ## Installation
 
-Install [**CoMLRL**](https://github.com/OpenMLRL/CoMLRL):
+Install [CoMLRL](https://github.com/OpenMLRL/CoMLRL):
 
 ```bash
 pip install comlrl
@@ -21,6 +21,9 @@ Or via conda-forge:
 conda install -c conda-forge comlrl
 # Install PyTorch compatible with your device
 ```
+
+A `CoMLRL/` checkout next to this repository takes precedence over the
+installed package, so local CoMLRL changes are used without reinstalling.
 
 ## Benchmarks
 
@@ -49,6 +52,7 @@ python LLM_Collab_Code_Generation/train_marlhf_iter.py \
   --config LLM_Collab_Code_Generation/configs/marlhf_iter_che_config.yaml
 ```
 
+Without `--config`, each script uses its default config in `configs/`.
 Override any configuration value inline with `--override`:
 
 ```bash
@@ -116,11 +120,41 @@ Each agent receives its own full history at every turn: all of its past prompts 
 2. **Syntax**: Both functions are concatenated with any imports extracted from the prompt; a clean syntax check yields +0.5 and allows execution.
 3. **Execution**: Prompt-derived tests (10 s timeout per assert, up to three timeouts) run inside a sandbox. Passing assertions earn up to +1.0, with +0.5 bonus when the main function uses the aux function, +1.0 when the main is not a thin wrapper, and −0.5 if the aux return value is ignored. These same rewards back evaluation during logging.
 
+## Centralized MAGRPO
+
+`python train_magrpo.py --config configs/magrpo_che_config.yaml --override magrpo.collaboration_mode=centralized magrpo.num_turns=1`
+trains one joint-input/joint-output actor using the task reward, without a
+comparator, preference dataset, or learned reward model. The existing CoopHE
+adapter splits auxiliary/main outputs for rewards and evaluation.
+`max_new_tokens` is the total joint-response budget. The default remains
+decentralized.
+
+## Centralized Preference Collaboration
+
+MADPO, MARLHF, and their iterative variants support one trainable model playing
+both CoopHE roles. Set `<algorithm>.collaboration_mode=centralized`; the default
+remains `decentralized`. For example:
+
+```bash
+python train_madpo_iter.py --config configs/madpo_iter_che_config.yaml --override madpo_iter.collaboration_mode=centralized
+python train_marlhf_iter.py --config configs/marlhf_iter_che_config.yaml --override marlhf_iter.collaboration_mode=centralized
+```
+
+Keep `num_agents=2` for the task roles. `agent_model` is loaded once; if using
+an explicit `agents` list, supply one model and one actor device. The existing
+`CoopHECentralizedComparatorAdapter` builds the joint prompt and extracts
+`<auxiliary>` / `<main>` sections for task rewards and eval metrics. The actor
+and reward model learn from the complete joint text, not separately re-encoded
+roles. Iterative comparators are automatically centralized (actor index 0),
+including current, history, external model, and API sources.
+
+Use the `madpo` / `marlhf` prefix with the corresponding non-iterative scripts.
+`max_new_tokens` now limits both roles combined; consider doubling the previous
+per-role budget. Set MARLHF `reward_max_length` large enough for the joint prompt
+and both outputs. Device settings for the reward model and external comparator
+remain independent. Existing decentralized behavior and step counting stay
+unchanged.
+
 ## Logging
 
 `loggers/` adapt the shared `MAGRPOTrainer` utilities to emit pass rates, syntax success, reward decomposition, termination statistics, and aux-usage diagnostics. Configure Weights & Biases by setting `wandb.project`, `wandb.entity`, and `wandb.name` in YAML or through overrides. `output.save_final_model` stays `false` by default to avoid storing large checkpoints, while `output.verbose` toggles the detailed per-episode traces used when debugging on a cluster.
-
-## Slurm runtime cache
-
-Training launchers isolate unset CUDA JIT caches per job on node-local storage.
-Update CoMLRL alongside this checkout; see the [runtime cache guide](docs/runtime_cache.md).

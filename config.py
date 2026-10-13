@@ -1,27 +1,21 @@
-"""
-Configuration management for MLRL experiments.
-Handles YAML loading and model configuration.
-"""
+"""Configuration helpers for code-generation experiments."""
+
+from __future__ import annotations
 
 import argparse
+import ast
 import os
-import sys
+import time
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 import yaml
 
 
-REPO_ROOT = os.path.dirname(os.path.abspath(__file__))
-COMLRL_ROOT = os.path.join(os.path.dirname(REPO_ROOT), "CoMLRL")
-if COMLRL_ROOT not in sys.path:
-    sys.path.insert(0, COMLRL_ROOT)
-
-
 @dataclass(frozen=True)
 class ModelConfig:
-    """Configuration for model loading and generation."""
+    """Model loading and sampling settings from a ``*_model`` config section."""
 
     name: str
     type: str = "qwen"
@@ -30,6 +24,7 @@ class ModelConfig:
     top_k: Optional[int] = None
     special_tokens: Dict[str, str] = field(default_factory=dict)
     torch_dtype: Optional[str] = None
+    attn_implementation: Optional[str] = "sdpa"
 
     @classmethod
     def from_dict(
@@ -38,7 +33,6 @@ class ModelConfig:
         *,
         require_sampling: bool = True,
     ) -> "ModelConfig":
-        """Create ModelConfig from dictionary."""
         if require_sampling:
             missing = [
                 key
@@ -50,29 +44,13 @@ class ModelConfig:
                     f"agent_model is missing required sampling fields: {', '.join(missing)}"
                 )
 
-        def _as_optional_float(value: Any) -> Optional[float]:
-            if value is None:
-                return None
-            try:
-                return float(value)
-            except (TypeError, ValueError) as exc:
-                raise ValueError(f"Invalid float value: {value}") from exc
-
-        def _as_optional_int(value: Any) -> Optional[int]:
-            if value is None:
-                return None
-            if isinstance(value, str) and value.strip().lower() in ("none", "null", ""):
-                return None
-            try:
-                return int(float(value))
-            except (TypeError, ValueError) as exc:
-                raise ValueError(f"Invalid int value: {value}") from exc
-
-        temperature = _as_optional_float(config_dict.get("temperature"))
-        top_p = _as_optional_float(config_dict.get("top_p"))
-        top_k = _as_optional_int(config_dict.get("top_k"))
+        temperature = _optional_float(config_dict.get("temperature"))
+        top_p = _optional_float(config_dict.get("top_p"))
+        top_k = _optional_int(config_dict.get("top_k"))
         if require_sampling and (temperature is None or top_p is None):
-            raise ValueError("agent_model.temperature and agent_model.top_p must be non-null.")
+            raise ValueError(
+                "agent_model.temperature and agent_model.top_p must be non-null."
+            )
 
         return cls(
             name=config_dict.get("name", ""),
@@ -81,51 +59,62 @@ class ModelConfig:
             top_p=top_p,
             top_k=top_k,
             special_tokens=config_dict.get("special_tokens", {}),
-            torch_dtype=(
-                config_dict.get("torch_dtype")
-                or config_dict.get("dtype")
-            ),
+            torch_dtype=config_dict.get("torch_dtype") or config_dict.get("dtype"),
+            attn_implementation=config_dict.get("attn_implementation", "sdpa"),
         )
 
 
+def _optional_float(value: Any) -> Optional[float]:
+    if value is None:
+        return None
+    try:
+        return float(value)
+    except (TypeError, ValueError) as exc:
+        raise ValueError(f"Invalid float value: {value}") from exc
+
+
+def _optional_int(value: Any) -> Optional[int]:
+    if value is None:
+        return None
+    if isinstance(value, str) and value.strip().lower() in ("none", "null", ""):
+        return None
+    try:
+        return int(float(value))
+    except (TypeError, ValueError) as exc:
+        raise ValueError(f"Invalid int value: {value}") from exc
+
+
 class Config:
-    """Simple configuration manager for YAML files."""
+    """YAML experiment configuration with dotted-key access."""
 
     def __init__(self, config_path: str):
-        """Load configuration from YAML file."""
         self.path = Path(config_path)
         if not self.path.exists():
             raise FileNotFoundError(f"Configuration file not found: {config_path}")
-
-        with open(self.path, "r") as f:
-            self.data = yaml.safe_load(f)
+        with self.path.open("r", encoding="utf-8") as handle:
+            self.data = yaml.safe_load(handle) or {}
 
     def get(self, key: str, default: Any = None) -> Any:
-        """Get value using dot notation (e.g., 'agent_model.name')."""
-        keys = key.split(".")
-        value = self.data
-
-        for k in keys:
-            if isinstance(value, dict) and k in value:
-                value = value[k]
-            else:
+        """Return the value at a dotted key such as ``agent_model.name``."""
+        value: Any = self.data
+        for part in key.split("."):
+            if not isinstance(value, dict) or part not in value:
                 return default
-
+            value = value[part]
         return value
 
     def get_section(self, section: str) -> Dict[str, Any]:
-        """Get entire configuration section."""
-        return self.data.get(section, {})
+        """Return a copy of a top-level section ({} when missing or not a mapping)."""
+        value = self.data.get(section, {})
+        return dict(value) if isinstance(value, dict) else {}
 
     def get_agent_model_config(self) -> ModelConfig:
-        """Get agent model configuration as ModelConfig object."""
         model_section = self.get_section("agent_model")
         if not model_section:
             raise ValueError("No 'agent_model' section found in configuration")
         return ModelConfig.from_dict(model_section, require_sampling=True)
 
     def get_critic_model_config(self, required: bool = True) -> Optional[ModelConfig]:
-        """Get critic model configuration as ModelConfig object."""
         critic_section = self.get_section("critic_model")
         if not critic_section:
             if required:
@@ -133,27 +122,27 @@ class Config:
             return None
         return ModelConfig.from_dict(critic_section, require_sampling=False)
 
-    def update(self, updates: Dict[str, Any]):
-        """Update configuration with new values (deep merge)."""
+    def update(self, updates: Dict[str, Any]) -> None:
+        """Deep-merge ``updates`` into the configuration."""
         self._deep_merge(self.data, updates)
 
-    def _deep_merge(self, base: dict, updates: dict):
-        """Recursively merge updates into base dictionary."""
+    @classmethod
+    def _deep_merge(cls, base: Dict[str, Any], updates: Dict[str, Any]) -> None:
         for key, value in updates.items():
             if key in base and isinstance(base[key], dict) and isinstance(value, dict):
-                self._deep_merge(base[key], value)
+                cls._deep_merge(base[key], value)
             else:
                 base[key] = value
 
-    def save(self, output_path: Optional[str] = None):
-        """Save configuration to YAML file."""
-        save_path = Path(output_path) if output_path else self.path
-        with open(save_path, "w") as f:
-            yaml.dump(self.data, f, default_flow_style=False, sort_keys=False)
+    def save(self, output_path: Optional[str] = None) -> None:
+        """Write the configuration as YAML (to the loaded file by default)."""
+        path = Path(output_path) if output_path else self.path
+        path.parent.mkdir(parents=True, exist_ok=True)
+        with path.open("w", encoding="utf-8") as handle:
+            yaml.dump(self.data, handle, default_flow_style=False, sort_keys=False)
 
 
 def add_config_args(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
-    """Add configuration arguments to parser."""
     parser.add_argument(
         "--config", type=str, default=None, help="Path to YAML configuration file"
     )
@@ -171,35 +160,28 @@ def _parse_override_value(raw: str) -> Any:
     if lowered in ("none", "null"):
         return None
     try:
-        import ast
-
         return ast.literal_eval(value)
     except (ValueError, SyntaxError):
         return value
 
 
-def parse_overrides(overrides: list) -> Dict[str, Any]:
-    """Parse command-line overrides into nested dictionary."""
-    if not overrides:
-        return {}
-
-    result = {}
-    for override in overrides:
+def parse_overrides(overrides: Optional[List[str]]) -> Dict[str, Any]:
+    """Parse ``key.path=value`` overrides into a nested dictionary."""
+    result: Dict[str, Any] = {}
+    for override in overrides or []:
         if "=" not in override:
             raise ValueError(
                 f"Invalid override format: {override}. Use key=value format."
             )
-
         key, value = override.split("=", 1)
         keys = key.split(".")
-
-        value = _parse_override_value(value)
-
         current = result
-        for k in keys[:-1]:
-            if k not in current:
-                current[k] = {}
-            current = current[k]
-        current[keys[-1]] = value
-
+        for part in keys[:-1]:
+            current = current.setdefault(part, {})
+        current[keys[-1]] = _parse_override_value(value)
     return result
+
+
+def run_id() -> str:
+    """Return a time-pid id so concurrent launches write to separate directories."""
+    return f"{time.strftime('%Y%m%d-%H%M%S')}-{os.getpid()}"

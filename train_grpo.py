@@ -10,12 +10,17 @@ import os
 import re
 import sys
 
-# Add project root to Python path
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from pathlib import Path
 from typing import Any, Dict
 
-from config import Config, add_config_args, parse_overrides
+REPO_ROOT = Path(__file__).resolve().parent
+DEFAULT_CONFIG = REPO_ROOT / "configs" / "grpo_he_config.yaml"
+COMLRL_ROOT = REPO_ROOT.parent / "CoMLRL"
+for path in (COMLRL_ROOT, REPO_ROOT):
+    if str(path) not in sys.path:
+        sys.path.insert(0, str(path))
+
+from config import Config, add_config_args, parse_overrides, run_id
 from datasets import load_dataset
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
@@ -71,7 +76,7 @@ def {entry_point}({params_str}):\n    # your function code here\n    return resu
     return prompt_text
 
 
-def execution_reward_single_agent(completions, batch_items=None):
+def execution_reward_single_agent(completions, *, batch_items=None):
     """
     Compute execution-based rewards for single agent completions.
     Adapts to use execution_reward_aux by treating single agent
@@ -105,9 +110,6 @@ def execution_reward_single_agent(completions, batch_items=None):
     return raw_rewards
 
 
- 
-
-
 def get_formatter(dataset_type: str):
     """Get the appropriate formatter based on dataset type."""
     if dataset_type is None:
@@ -137,24 +139,11 @@ def get_reward_function(dataset_type: str):
 
 def main():
     """Main function to run the single agent experiment."""
-    from comlrl.runtime import configure_job_cuda_cache
-
-    configure_job_cuda_cache()
-
     parser = argparse.ArgumentParser(description="Train GRPO with configurable dataset")
     add_config_args(parser)
 
-    
-
     args = parser.parse_args()
-    if args.config:
-        config = Config(args.config)
-    else:
-        default_config_path = Path(__file__).parent / "configs" / "grpo_he_config.yaml"
-        if default_config_path.exists():
-            config = Config(str(default_config_path))
-        else:
-            raise ValueError("Please provide a configuration file using --config")
+    config = Config(args.config or str(DEFAULT_CONFIG))
 
     if args.override:
         overrides = parse_overrides(args.override)
@@ -183,15 +172,13 @@ def main():
     is_multi_turn = num_turns > 1
     output_verbose = bool(config.get("output.verbose", False))
     if output_verbose:
-        print(f"Multi-turn GRPO enabled: num_turns={num_turns}") if is_multi_turn else print(
-            f"Single-turn GRPO: num_turns={num_turns}"
+        (
+            print(f"Multi-turn GRPO enabled: num_turns={num_turns}")
+            if is_multi_turn
+            else print(f"Single-turn GRPO: num_turns={num_turns}")
         )
 
-    job_id = os.environ.get("SLURM_JOB_ID", "no_job_id")
-    if is_multi_turn:
-        output_dir = os.path.join(output_base_dir, f"mt_job_{job_id}")
-    else:
-        output_dir = os.path.join(output_base_dir, f"job_{job_id}")
+    output_dir = os.path.join(output_base_dir, run_id())
     os.makedirs(output_dir, exist_ok=True)
 
     if hasattr(config, "save"):
@@ -245,7 +232,9 @@ def main():
     temperature = model_config.temperature
     top_p = model_config.top_p
     top_k = model_config.top_k
-    external_cfg = config.get_section("external") if hasattr(config, "get_section") else {}
+    external_cfg = (
+        config.get_section("external") if hasattr(config, "get_section") else {}
+    )
 
     # Register external context resolver using dataset items (for external modes)
     def _normalize_prompt(p: str) -> str:
@@ -270,7 +259,6 @@ def main():
         sandbox_slice = _sandbox_val
     else:
         sandbox_slice = None if _sandbox_val is None else 0
-
 
     def _make_sliced_assert_tests(test_code: str, n: int) -> str:
         if not isinstance(test_code, str) or not test_code.strip():
@@ -318,6 +306,7 @@ def main():
                     "tests_eval": tests_eval,
                     "tests_sandbox": tests_sandbox,
                 }
+
     if "train_dataset" in locals() and train_dataset is not None:
         _register_split(train_dataset)
     if "eval_dataset" in locals() and eval_dataset is not None:
@@ -337,7 +326,9 @@ def main():
         temperature=temperature,
         top_p=top_p,
         top_k=top_k,
-        parallel_training=str(grpo_config.get("parallel_training", "none")).strip().lower(),
+        parallel_training=str(grpo_config.get("parallel_training", "none"))
+        .strip()
+        .lower(),
         agent_devices=grpo_config.get("agent_devices", None),
         discount=grpo_config.get("discount", 0.9),
         joint_mode=grpo_config.get("joint_mode", "aligned"),
@@ -363,9 +354,7 @@ def main():
     else:
         default_name = f"{dataset_type}-grpo"
     wandb_name = (
-        wandb_section.get("name")
-        or wandb_section.get("run_name")
-        or default_name
+        wandb_section.get("name") or wandb_section.get("run_name") or default_name
     )
     external_mode = external_cfg.get("mode", "level_feedback")
     default_tags = ["grpo", dataset_type or "code", f"turns_{num_turns}"]
@@ -380,17 +369,21 @@ def main():
             wandb_name = f"{wandb_name}_slice"
         if "slice" not in tags:
             tags.append("slice")
-    dataset_section = config.get_section("dataset") if hasattr(config, "get_section") else {}
+    dataset_section = (
+        config.get_section("dataset") if hasattr(config, "get_section") else {}
+    )
     model_section = (
         config.get_section("agent_model") if hasattr(config, "get_section") else {}
     )
-    output_section = config.get_section("output") if hasattr(config, "get_section") else {}
+    output_section = (
+        config.get_section("output") if hasattr(config, "get_section") else {}
+    )
 
     wandb_config = {
-        "project": wandb_section.get("project", "comlrl"),
+        "project": wandb_section.get("project"),
         "entity": wandb_section.get("entity", "OpenMLRL"),
         "name": f"{wandb_name}",
-        "dir": wandb_section.get("dir", "../../../projects/bepg/sliu30"),
+        "dir": wandb_section.get("dir", output_dir),
         "tags": tags,
         "config_sections": {
             "dataset": dataset_section,
@@ -403,8 +396,10 @@ def main():
 
     # Propagate verbosity to reward/external modules
     import rewards.code_rewards as code_rewards
+
     code_rewards.VERBOSE = bool(output_verbose)
     import external as external_mod
+
     external_mod.VERBOSE = bool(output_verbose)
     reward_processor = None
     if config.get("reward_processor.enabled", False):
@@ -434,7 +429,6 @@ def main():
         "reward_func": reward_func,
         "formatters": formatter,
         "wandb_config": wandb_config,
-        "dataset_type": dataset_type,
         "args": grpo_args,
     }
 

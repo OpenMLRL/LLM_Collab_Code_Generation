@@ -1,0 +1,4 @@
+[codespell]
+# Raw benchmark data keeps its original wording.
+skip = data/*
+ignore-words-list = te,inferrable

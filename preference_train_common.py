@@ -10,7 +10,7 @@ import torch
 from datasets import load_dataset
 from transformers import AutoTokenizer
 
-from config import Config
+from config import Config, run_id
 from centralized_comparator import CoopHECentralizedComparatorAdapter
 from comlrl.utils.reward_processor import RewardProcessors
 from loggers.ac_code_metrics import build_ac_code_metrics_callback
@@ -80,6 +80,11 @@ def run_preference_training(
     set_seed(seed_value)
 
     num_agents = int(algo_config.get("num_agents", 2))
+    centralized = (
+        algo_config.get("collaboration_mode", "decentralized") == "centralized"
+    )
+    if centralized and num_agents != 2:
+        raise ValueError("Centralized code generation requires exactly 2 task roles.")
     agent_names = config.get("agents")
     if agent_names is not None:
         if not isinstance(agent_names, (list, tuple)) or not all(
@@ -87,9 +92,12 @@ def run_preference_training(
         ):
             raise ValueError("agents must be a list of model names.")
         agent_names = [str(item) for item in agent_names]
+        if centralized and len(agent_names) != 1:
+            raise ValueError(
+                "Centralized collaboration requires exactly one actor model."
+            )
 
-    job_id = os.environ.get("SLURM_JOB_ID", "no_job_id")
-    output_dir = os.path.join(output_base_dir, f"job_{job_id}")
+    output_dir = os.path.join(output_base_dir, run_id())
     os.makedirs(output_dir, exist_ok=True)
     config.save(os.path.join(output_dir, "config.yaml"))
 
@@ -155,10 +163,10 @@ def run_preference_training(
     tags = list(tags_from_cfg) if isinstance(tags_from_cfg, list) else default_tags
 
     wandb_config = {
-        "project": wandb_section.get("project", "comlrl"),
+        "project": wandb_section.get("project"),
         "entity": wandb_section.get("entity", "OpenMLRL"),
         "name": f"{wandb_name}",
-        "dir": wandb_section.get("dir", output_base_dir),
+        "dir": wandb_section.get("dir", output_dir),
         "output_dir": output_dir,
         "tags": tags,
         "config_sections": {
@@ -177,7 +185,9 @@ def run_preference_training(
     external_mod.VERBOSE = bool(output_verbose)
 
     trainer_kwargs = {
-        "agent_model": model_name or None,
+        "agent_model": (
+            None if centralized and agent_names is not None else model_name or None
+        ),
         "agents": agent_names,
         "num_agents": num_agents,
         "tokenizer": tokenizers if agent_names else tokenizers[0],
@@ -192,10 +202,12 @@ def run_preference_training(
         "wandb_config": wandb_config,
         "eval_logger": eval_logger,
         "eval_aggregator": eval_aggregator,
-        "dataset_type": dataset_type,
         "args": args,
     }
-    if hasattr(args, "comparator_generation_mode"):
+    if (
+        hasattr(args, "comparator_generation_mode")
+        or args.collaboration_mode == "centralized"
+    ):
         trainer_kwargs["centralized_comparator_adapter"] = (
             CoopHECentralizedComparatorAdapter()
         )
