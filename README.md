@@ -61,6 +61,34 @@ python LLM_Collab_Code_Generation/train_magrpo.py \
   --override agent_model.name='bigcode/starcoder2-3b' magrpo.num_turns=1
 ```
 
+### Training Checkpoints
+
+All training scripts accept an optional top-level `checkpoint` section with a
+CoMLRL version that supports training-state checkpoints:
+
+```yaml
+checkpoint:
+  checkpoint_dir: ./checkpoints/code-run
+  checkpoint_interval: 1
+  checkpoint_total_limit: 2
+  # resume_from_checkpoint: ./checkpoints/code-run/checkpoint-1
+```
+
+The four keys are passed directly to `trainer.train()`. Checkpointing stays
+disabled when the section is absent; specifying a resume path does not enable
+new checkpoint saves unless `checkpoint_dir` is also set. The same options work
+through `--override checkpoint.checkpoint_dir=./checkpoints/code-run` and
+`checkpoint.resume_from_checkpoint=./checkpoints/code-run/checkpoint-1`.
+
+On resume, the launcher reads the saved W&B identity before constructing the
+trainer and uses its `id`, `project`, and `entity` with `resume: allow`, while
+preserving the configured name, tags, and logging directory. An explicit
+`wandb.id` or `wandb.resume` skips automatic identity lookup. `wandb: null`,
+`wandb: false`, `wandb.enabled: false`, or `wandb.mode: disabled` disables W&B
+without reading logging metadata. Checkpoints without a saved W&B identity keep
+the configured logging settings. `output.save_final_model` remains a separate
+model export option.
+
 ## Settings
 
 ### Preference-Based Algorithms

@@ -20,6 +20,7 @@ for path in (COMLRL_ROOT, REPO_ROOT):
     if str(path) not in sys.path:
         sys.path.insert(0, str(path))
 
+from checkpoint_launch import parse_checkpoint_options, prepare_wandb_config
 from config import Config, add_config_args, parse_overrides, run_id
 from datasets import load_dataset
 from transformers import AutoModelForCausalLM, AutoTokenizer
@@ -148,6 +149,7 @@ def main():
     if args.override:
         overrides = parse_overrides(args.override)
         config.update(overrides)
+    checkpoint_options = parse_checkpoint_options(config)
     model_config = config.get_agent_model_config()
     model_name = model_config.name
     dataset_name = config.get("dataset.name")
@@ -393,6 +395,11 @@ def main():
             "trainer": grpo_config,
         },
     }
+    wandb_config = prepare_wandb_config(
+        wandb_config,
+        section=config.get("wandb", {}),
+        checkpoint_options=checkpoint_options,
+    )
 
     # Propagate verbosity to reward/external modules
     import rewards.code_rewards as code_rewards
@@ -471,7 +478,7 @@ def main():
 
     trainer = MAGRPOTrainer(**trainer_kwargs)
     trainer.verbose = bool(output_verbose)
-    trainer.train()
+    trainer.train(**checkpoint_options)
 
     save_final = config.get("output.save_final_model", False)
     if save_final:

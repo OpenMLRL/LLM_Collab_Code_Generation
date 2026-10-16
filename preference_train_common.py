@@ -10,6 +10,7 @@ import torch
 from datasets import load_dataset
 from transformers import AutoTokenizer
 
+from checkpoint_launch import parse_checkpoint_options, prepare_wandb_config
 from config import Config, run_id
 from centralized_comparator import CoopHECentralizedComparatorAdapter
 from comlrl.utils.reward_processor import RewardProcessors
@@ -66,6 +67,7 @@ def run_preference_training(
     trainer_cls: Type[Any],
     algorithm_name: str,
 ) -> None:
+    checkpoint_options = parse_checkpoint_options(config)
     model_config = config.get_agent_model_config()
     model_name = model_config.name
     dataset_name = config.get("dataset.name")
@@ -177,6 +179,11 @@ def run_preference_training(
             "trainer": algo_config,
         },
     }
+    wandb_config = prepare_wandb_config(
+        wandb_config,
+        section=config.get("wandb", {}),
+        checkpoint_options=checkpoint_options,
+    )
 
     import external as external_mod
     import rewards.code_rewards as code_rewards
@@ -220,7 +227,7 @@ def run_preference_training(
 
     trainer = trainer_cls(**trainer_kwargs)
     trainer.verbose = bool(output_verbose)
-    trainer.train()
+    trainer.train(**checkpoint_options)
 
     if config.get("output.save_final_model", False):
         save_path = config.get(
