@@ -70,6 +70,14 @@ MADPO and MARLHF build preferences from task rewards. MARLHF then trains a joint
 
 **Centralized collaboration.** One model can play both roles with `--override <method>.collaboration_mode=centralized`, for example `magrpo.collaboration_mode=centralized`; the default is decentralized. `num_agents` stays 2 for the two roles, while only one model is loaded. The joint response contains `<auxiliary>` and `<main>` sections, which are split only for rewards and evaluation. `max_new_tokens` then limits the whole joint response, and MARLHF's `reward_max_length` has to fit the joint prompt and both outputs.
 
+**Native centralized prompt (MAGRPO).** By default the centralized prompt concatenates the Auxiliary and Main agent prompts, so the problem appears twice and each copy asks for "only the function". `magrpo.centralized_prompt=native` states the problem once and asks one programmer for `aux` and the main function in the same `<auxiliary>` / `<main>` sections; parsing, reward and evaluation are unchanged. Centralized MAGRPO is single-turn, so the decentralized runs it is compared with use `magrpo.num_turns=1`, and the joint response gets the two roles' combined budget:
+
+```bash
+python train_magrpo.py --config configs/magrpo_che_config.yaml --override \
+  magrpo.collaboration_mode=centralized magrpo.num_turns=1 \
+  magrpo.max_new_tokens=512 magrpo.centralized_prompt=native
+```
+
 **Checkpoints.** A top-level `checkpoint` section is passed to CoMLRL's `trainer.train()`; without it, no training checkpoints are saved.
 
 ```yaml

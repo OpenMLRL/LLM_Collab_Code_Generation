@@ -241,6 +241,10 @@ def main():
             "magrpo.collaboration_mode must be decentralized or centralized."
         )
     centralized = collaboration_mode == "centralized"
+    # "concatenated" embeds both role prompts; "native" states the problem once.
+    centralized_prompt = magrpo_config.get("centralized_prompt", "concatenated")
+    if centralized_prompt not in {"concatenated", "native"}:
+        raise ValueError("magrpo.centralized_prompt must be concatenated or native.")
     args_cls = CentralizedMAGRPOConfig if centralized else MAGRPOConfig
     trainer_cls = CentralizedMAGRPOTrainer if centralized else MAGRPOTrainer
     seed_value = int(config.get("seed", magrpo_config.get("seed", 42)))
@@ -589,8 +593,13 @@ def main():
 
     if centralized:
         from centralized_comparator import CoopHECentralizedComparatorAdapter
+        from centralized_native import CoopHENativeCentralizedAdapter
 
-        trainer_kwargs["centralized_adapter"] = CoopHECentralizedComparatorAdapter()
+        trainer_kwargs["centralized_adapter"] = (
+            CoopHENativeCentralizedAdapter()
+            if centralized_prompt == "native"
+            else CoopHECentralizedComparatorAdapter()
+        )
     trainer = trainer_cls(**trainer_kwargs)
     trainer.verbose = bool(output_verbose)
     trainer.train(**checkpoint_options)
