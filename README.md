@@ -1,70 +1,76 @@
 # LLM Collaboration – Code Generation
 
-This repo provides the extended environments for [**CoMLRL**](https://github.com/OpenMLRL/CoMLRL).
-
-This repository contains the code-generation experiments in [**[AAAI26]** **_LLM Collaboration with Multi‑Agent Reinforcement Learning_**](https://arxiv.org/abs/2508.04652).
+Code-generation environments for [CoMLRL](https://github.com/OpenMLRL/CoMLRL), used in the code-generation experiments of [**[AAAI26]** **_LLM Collaboration with Multi‑Agent Reinforcement Learning_**](https://arxiv.org/abs/2508.04652). One agent writes an auxiliary function, the other writes the main function that uses it, and both are trained with a shared reward.
 
 <img src="./demo_cg.gif" alt="Code generation demo" width="600px">
 
 ## Installation
 
-Install [CoMLRL](https://github.com/OpenMLRL/CoMLRL):
+CoMLRL can be installed from PyPI or conda-forge (`conda install -c conda-forge comlrl`). Users should also install a PyTorch build compatible with their device.
 
 ```bash
 pip install comlrl
-# Install PyTorch compatible with your device
+git clone https://github.com/OpenMLRL/LLM_Collab_Code_Generation.git
+cd LLM_Collab_Code_Generation
 ```
 
-Or via conda-forge:
+A `CoMLRL/` checkout next to this repository takes precedence over the installed package, so local CoMLRL changes are used without reinstalling.
+
+## Quick Start
+
+The following command trains two agents with MAGRPO on CoopHumanEval:
 
 ```bash
-conda install -c conda-forge comlrl
-# Install PyTorch compatible with your device
+python train_magrpo.py --config configs/magrpo_che_config.yaml
 ```
 
-A `CoMLRL/` checkout next to this repository takes precedence over the
-installed package, so local CoMLRL changes are used without reinstalling.
-
-## Benchmarks
-
-- HumanEval: 164 problems on split `test`
-- CoopHumanEval: 82 problems on split `test`
-
-## Training Scripts
+Any configuration value can be changed with `--override`:
 
 ```bash
-python LLM_Collab_Code_Generation/train_grpo.py \
-  --config LLM_Collab_Code_Generation/configs/grpo_he_config.yaml
-
-python LLM_Collab_Code_Generation/train_magrpo.py \
-  --config LLM_Collab_Code_Generation/configs/magrpo_che_config.yaml
-
-python LLM_Collab_Code_Generation/train_madpo.py \
-  --config LLM_Collab_Code_Generation/configs/madpo_che_config.yaml
-
-python LLM_Collab_Code_Generation/train_marlhf.py \
-  --config LLM_Collab_Code_Generation/configs/marlhf_che_config.yaml
-
-python LLM_Collab_Code_Generation/train_madpo_iter.py \
-  --config LLM_Collab_Code_Generation/configs/madpo_iter_che_config.yaml
-
-python LLM_Collab_Code_Generation/train_marlhf_iter.py \
-  --config LLM_Collab_Code_Generation/configs/marlhf_iter_che_config.yaml
-```
-
-Without `--config`, each script uses its default config in `configs/`.
-Override any configuration value inline with `--override`:
-
-```bash
-python LLM_Collab_Code_Generation/train_magrpo.py \
-  --config LLM_Collab_Code_Generation/configs/magrpo_he_config.yaml \
+python train_magrpo.py --config configs/magrpo_he_config.yaml \
   --override agent_model.name='bigcode/starcoder2-3b' magrpo.num_turns=1
 ```
 
-### Training Checkpoints
+## Tasks
 
-All training scripts accept an optional top-level `checkpoint` section with a
-CoMLRL version that supports training-state checkpoints:
+- HumanEval (`he` configs): 164 problems on split `test`.
+- CoopHumanEval (`che` configs): 82 problems on split `test`.
+
+MAGRPO, IAC, MAAC, and the baselines use two turns by default, while the preference methods are single-turn. Each agent keeps its own history of prompts and responses and sees no transcript of the other agent, so the agents coordinate only through the shared reward. Between turns, `external.mode` builds the next prompt:
+
+- `level_feedback` (default): syntax and test diagnostics, followed by a request for a code-only revision. `external.sandbox_slice` sets how many asserts are shown: 1 by default; 0, `None`, or `'all'` for every test; negative values count from the end.
+- `expert_edits`: an external LLM (`external.expert_model`, DeepSeek-Coder by default) first suggests compact edits.
+- `plain`: the previous attempt with a request for a concise, code-only revision.
+
+The rollout tree is controlled by `magrpo.num_turns`, `magrpo.num_generations`, `magrpo.joint_mode` (`aligned` or `cross`), and `magrpo.early_termination_threshold`, as described in [Multi-Turn Interaction](https://openmlrl.github.io/CoMLRL/docs/marl/multi-turn-interaction/).
+
+## Reward
+
+`rewards/code_rewards.py` scores each auxiliary/main pair in three levels, and the same rewards back evaluation:
+
+1. **Definitions:** +0.4 for a well-defined auxiliary function with a return value and +0.6 for a correct entry-point function. Scoring stops if the main function is missing.
+2. **Syntax:** both functions are joined with the prompt's imports. A clean syntax check gives +0.5 and allows execution.
+3. **Execution:** prompt-derived tests run in a sandbox (10 s per assert, at most three timeouts). Passing asserts earn up to +1.0, with +0.5 when the main function uses the auxiliary function, +1.0 when the main function is not a thin wrapper, and −0.5 when the auxiliary return value is ignored.
+
+## Training Scripts
+
+Configs are in `configs/`. Without `--config`, each script uses its CoopHumanEval config, except `train_grpo.py`, which uses HumanEval.
+
+| Script | Method | Configs |
+| --- | --- | --- |
+| `train_magrpo.py` | MAGRPO | `he`, `che` |
+| `train_iac.py`, `train_maac.py` | IAC, MAAC | `he`, `che` |
+| `train_madpo.py`, `train_madpo_iter.py` | MADPO and its iterative variant | `che` |
+| `train_marlhf.py`, `train_marlhf_iter.py` | MARLHF and its iterative variant | `che` |
+| `train_grpo.py`, `train_ac.py` | Single-agent GRPO and actor-critic baselines | `he`, `che` |
+
+MADPO and MARLHF build preferences from task rewards. MARLHF then trains a joint reward model and runs online RL with `rl_algorithm: magrpo` by default. The iterative variants refresh the preferences at each iteration against a comparator, as described in [Multi-LLM PbRL](https://openmlrl.github.io/CoMLRL/docs/marl/multi-llm-pbrl/).
+
+## Options
+
+**Centralized collaboration.** One model can play both roles with `--override <method>.collaboration_mode=centralized`, for example `magrpo.collaboration_mode=centralized`; the default is decentralized. `num_agents` stays 2 for the two roles, while only one model is loaded. The joint response contains `<auxiliary>` and `<main>` sections, which are split only for rewards and evaluation. `max_new_tokens` then limits the whole joint response, and MARLHF's `reward_max_length` has to fit the joint prompt and both outputs.
+
+**Checkpoints.** A top-level `checkpoint` section is passed to CoMLRL's `trainer.train()`; without it, no training checkpoints are saved.
 
 ```yaml
 checkpoint:
@@ -74,115 +80,6 @@ checkpoint:
   # resume_from_checkpoint: ./checkpoints/code-run/checkpoint-1
 ```
 
-The four keys are passed directly to `trainer.train()`. Checkpointing stays
-disabled when the section is absent; specifying a resume path does not enable
-new checkpoint saves unless `checkpoint_dir` is also set. The same options work
-through `--override checkpoint.checkpoint_dir=./checkpoints/code-run` and
-`checkpoint.resume_from_checkpoint=./checkpoints/code-run/checkpoint-1`.
+Resuming does not save new checkpoints unless `checkpoint_dir` is also set. A resumed run continues logging to the saved W&B run unless `wandb.id` or `wandb.resume` is set.
 
-On resume, the launcher reads the saved W&B identity before constructing the
-trainer and uses its `id`, `project`, and `entity` with `resume: allow`, while
-preserving the configured name, tags, and logging directory. An explicit
-`wandb.id` or `wandb.resume` skips automatic identity lookup. `wandb: null`,
-`wandb: false`, `wandb.enabled: false`, or `wandb.mode: disabled` disables W&B
-without reading logging metadata. Checkpoints without a saved W&B identity keep
-the configured logging settings. `output.save_final_model` remains a separate
-model export option.
-
-## Settings
-
-### Preference-Based Algorithms
-
-`train_madpo.py` first builds a single-turn offline joint preference dataset
-from task rewards, then optimizes a joint-factorized DPO loss. Gradients remain
-agent-local: each agent only backpropagates through its own winner/loser
-sequence log probabilities.
-
-`train_marlhf.py` uses the same offline joint preferences to train a fixed
-joint reward model, then runs online RL with `marlhf.rl_algorithm: magrpo` by
-default.
-
-`train_madpo_iter.py` refreshes a preference dataset at each iteration by
-comparing target-policy completions against a comparator policy, then optimizes
-a joint-factorized DPO loss. Set `madpo_iter.num_iterations: 1` to run a single
-preference-refresh/update cycle.
-
-`train_marlhf_iter.py` uses the iterative preferences to train a joint reward
-model, then runs online RL with `marlhf_iter.rl_algorithm: magrpo` by default.
-Set `marlhf_iter.num_iterations: 1` to run a single preference-refresh/reward
-model/RL cycle.
-
-### Joint Action Modes
-
-`magrpo.joint_mode` controls how each agent’s `magrpo.num_generations = G` samples combine into joint actions. `align` (default) pairs the $g$‑th sample from every agent, yielding $G$ siblings per node. `cross` forms the Cartesian product, yielding $G^N$ siblings for $N$ agents. After $T$ turns (no early termination), aligned trees expand to $G^T$ leaves, while crossed trees expand to $G^{N \cdot T}$. Align is faster in wall-clock time; cross reuses the same samples but provides denser credit assignment.
-
-### Advantage & Baselines
-
-Advantages use the mean return of the sibling set at each node as the baseline, matching the Dr. GRPO update. No standard-deviation normalization, importance sampling ratios, or epsilon clipping are applied because training is strictly on-policy.
-
-### Sampling
-
-`magrpo.num_turns` controls tree depth and `magrpo.num_generations` controls branching factor. Under `align`, each node has $G$ siblings and the trainer evaluates $G^T$ joint actions at depth $T$; under `cross`, each node has $G^N$ siblings and depth-$T$ leaves scale to $G^{N \cdot T}$. The same sibling baseline referenced above is reused for every node.
-
-### Termination Threshold
-
-`magrpo.early_termination_threshold` compares the mean immediate reward of the current sibling set against the threshold. When the threshold is exceeded, the branch stops expanding at that turn and the trainer backpropagates from the truncated subtree while other branches continue exploring.
-
-### History
-
-Each agent receives its own full history at every turn: all of its past prompts and responses plus the new external prompt/context. No cross-agent transcripts are injected; coordination happens only through the shared reward.
-
-### External Feedback
-
-`external.mode` shapes the prompt that seeds each turn:
-
-- `level_feedback` (default) appends syntax/test diagnostics and asks for a code-only revision. `external.sandbox_slice` controls how many eval asserts to surface (1 by default, 0/None/`'all'` to show every test, negatives to index from the end).
-- `expert_edits` calls an external LLM (configured via `external.expert_model`, default DeepSeek-Coder) to produce compact edit suggestions before asking for a revision.
-- `plain` simply restates the prior attempt and asks for a concise "revise, code-only" answer.
-
-## Reward Structure
-
-`rewards/code_rewards.py` implements the aux/main collaboration reward in three levels:
-
-1. **Function definitions**: +0.4 when the auxiliary function is well defined with a return value, +0.6 when the entry-point function is defined correctly. Missing the main definition halts scoring.
-2. **Syntax**: Both functions are concatenated with any imports extracted from the prompt; a clean syntax check yields +0.5 and allows execution.
-3. **Execution**: Prompt-derived tests (10 s timeout per assert, up to three timeouts) run inside a sandbox. Passing assertions earn up to +1.0, with +0.5 bonus when the main function uses the aux function, +1.0 when the main is not a thin wrapper, and −0.5 if the aux return value is ignored. These same rewards back evaluation during logging.
-
-## Centralized MAGRPO
-
-`python train_magrpo.py --config configs/magrpo_che_config.yaml --override magrpo.collaboration_mode=centralized magrpo.num_turns=1`
-trains one joint-input/joint-output actor using the task reward, without a
-comparator, preference dataset, or learned reward model. The existing CoopHE
-adapter splits auxiliary/main outputs for rewards and evaluation.
-`max_new_tokens` is the total joint-response budget. The default remains
-decentralized.
-
-## Centralized Preference Collaboration
-
-MADPO, MARLHF, and their iterative variants support one trainable model playing
-both CoopHE roles. Set `<algorithm>.collaboration_mode=centralized`; the default
-remains `decentralized`. For example:
-
-```bash
-python train_madpo_iter.py --config configs/madpo_iter_che_config.yaml --override madpo_iter.collaboration_mode=centralized
-python train_marlhf_iter.py --config configs/marlhf_iter_che_config.yaml --override marlhf_iter.collaboration_mode=centralized
-```
-
-Keep `num_agents=2` for the task roles. `agent_model` is loaded once; if using
-an explicit `agents` list, supply one model and one actor device. The existing
-`CoopHECentralizedComparatorAdapter` builds the joint prompt and extracts
-`<auxiliary>` / `<main>` sections for task rewards and eval metrics. The actor
-and reward model learn from the complete joint text, not separately re-encoded
-roles. Iterative comparators are automatically centralized (actor index 0),
-including current, history, external model, and API sources.
-
-Use the `madpo` / `marlhf` prefix with the corresponding non-iterative scripts.
-`max_new_tokens` now limits both roles combined; consider doubling the previous
-per-role budget. Set MARLHF `reward_max_length` large enough for the joint prompt
-and both outputs. Device settings for the reward model and external comparator
-remain independent. Existing decentralized behavior and step counting stay
-unchanged.
-
-## Logging
-
-`loggers/` adapt the shared `MAGRPOTrainer` utilities to emit pass rates, syntax success, reward decomposition, termination statistics, and aux-usage diagnostics. Configure Weights & Biases by setting `wandb.project`, `wandb.entity`, and `wandb.name` in YAML or through overrides. `output.save_final_model` stays `false` by default to avoid storing large checkpoints, while `output.verbose` toggles the detailed per-episode traces used when debugging on a cluster.
+**Logging.** The loggers report pass rates, syntax success, reward components, termination statistics, and auxiliary-function usage. W&B is configured through `wandb.project`, `wandb.entity`, and `wandb.name`. `output.save_final_model` is `false` by default, and `output.verbose` prints detailed per-episode traces.
