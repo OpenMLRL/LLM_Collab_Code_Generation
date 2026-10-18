@@ -78,6 +78,8 @@ python train_magrpo.py --config configs/magrpo_che_config.yaml --override \
   magrpo.max_new_tokens=512 magrpo.centralized_prompt=native
 ```
 
+**Bounded centralized answers.** A free-running joint answer can drift: after a few updates the model may drop the section tags and keep writing prose after the code until `max_new_tokens`, and an answer cut off before its functions are complete scores zero. `magrpo.centralized_answer=bounded` ends either centralized prompt with the opening `<auxiliary>` tag and stops every train and eval rollout at the first `</main>`. The reward, parser and prompts are unchanged; the default is `open`.
+
 **Checkpoints.** A top-level `checkpoint` section is passed to CoMLRL's `trainer.train()`; without it, no training checkpoints are saved.
 
 ```yaml

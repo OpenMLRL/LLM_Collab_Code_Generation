@@ -39,6 +39,7 @@ from comlrl.trainers.reinforce import (
     CentralizedMAGRPOConfig,
     CentralizedMAGRPOTrainer,
 )
+from centralized_stop import StopAfterMainMAGRPOTrainer
 import external as external_ctx
 from external import get_external_transition
 
@@ -245,8 +246,19 @@ def main():
     centralized_prompt = magrpo_config.get("centralized_prompt", "concatenated")
     if centralized_prompt not in {"concatenated", "native"}:
         raise ValueError("magrpo.centralized_prompt must be concatenated or native.")
+    # "open" lets the joint answer run to max_new_tokens; "bounded" starts it
+    # inside <auxiliary> and stops every rollout at the first </main>.
+    centralized_answer = magrpo_config.get("centralized_answer", "open")
+    if centralized_answer not in {"open", "bounded"}:
+        raise ValueError("magrpo.centralized_answer must be open or bounded.")
+    if centralized_answer == "bounded" and not centralized:
+        raise ValueError(
+            "magrpo.centralized_answer=bounded requires centralized collaboration."
+        )
     args_cls = CentralizedMAGRPOConfig if centralized else MAGRPOConfig
     trainer_cls = CentralizedMAGRPOTrainer if centralized else MAGRPOTrainer
+    if centralized_answer == "bounded":
+        trainer_cls = StopAfterMainMAGRPOTrainer
     seed_value = int(config.get("seed", magrpo_config.get("seed", 42)))
     num_turns = magrpo_config.get("num_turns", 2)
     num_agents = magrpo_config.get("num_agents", 2)
@@ -594,12 +606,16 @@ def main():
     if centralized:
         from centralized_comparator import CoopHECentralizedComparatorAdapter
         from centralized_native import CoopHENativeCentralizedAdapter
+        from centralized_stop import AuxiliaryPrefillAdapter
 
-        trainer_kwargs["centralized_adapter"] = (
+        adapter = (
             CoopHENativeCentralizedAdapter()
             if centralized_prompt == "native"
             else CoopHECentralizedComparatorAdapter()
         )
+        if centralized_answer == "bounded":
+            adapter = AuxiliaryPrefillAdapter(adapter)
+        trainer_kwargs["centralized_adapter"] = adapter
     trainer = trainer_cls(**trainer_kwargs)
     trainer.verbose = bool(output_verbose)
     trainer.train(**checkpoint_options)
