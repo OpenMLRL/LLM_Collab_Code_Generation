@@ -33,12 +33,7 @@ from loggers.mt_code_logger import (
 from rewards.code_rewards import execution_reward_aux
 from comlrl.utils import set_reward_range
 from comlrl.utils.reward_processor import RewardProcessors
-from comlrl.trainers.reinforce import (
-    MAGRPOConfig,
-    MAGRPOTrainer,
-    CentralizedMAGRPOConfig,
-    CentralizedMAGRPOTrainer,
-)
+from comlrl.trainers.reinforce import MAGRPOConfig, MAGRPOTrainer
 from centralized_stop import StopAfterMainMAGRPOTrainer
 import external as external_ctx
 from external import get_external_transition
@@ -255,8 +250,7 @@ def main():
         raise ValueError(
             "magrpo.centralized_answer=bounded requires centralized collaboration."
         )
-    args_cls = CentralizedMAGRPOConfig if centralized else MAGRPOConfig
-    trainer_cls = CentralizedMAGRPOTrainer if centralized else MAGRPOTrainer
+    trainer_cls = MAGRPOTrainer
     if centralized_answer == "bounded":
         trainer_cls = StopAfterMainMAGRPOTrainer
     seed_value = int(config.get("seed", magrpo_config.get("seed", 42)))
@@ -439,6 +433,7 @@ def main():
     external_ctx.set_context_resolver(_resolver)
 
     magrpo_args_kwargs = {
+        "collaboration_mode": collaboration_mode,
         "num_turns": num_turns,
         "num_train_epochs": magrpo_config.get("num_train_epochs", 8),
         "agent_learning_rate": magrpo_config.get("agent_learning_rate", 2e-5),
@@ -483,7 +478,7 @@ def main():
         magrpo_args_kwargs["match_decentralized_loss"] = bool(
             magrpo_config.get("match_decentralized_loss", False)
         )
-    magrpo_args = args_cls(**magrpo_args_kwargs)
+    magrpo_args = MAGRPOConfig(**magrpo_args_kwargs)
     formatters = get_formatters(dataset_type, num_agents)
     reward_func = get_reward_function(dataset_type, num_agents)
     eval_logger, eval_aggregator = get_logger_and_aggregator(

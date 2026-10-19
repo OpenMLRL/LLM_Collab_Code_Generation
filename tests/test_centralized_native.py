@@ -3,7 +3,7 @@ from types import SimpleNamespace
 
 import pytest
 
-from comlrl.trainers.preference.collaboration import CentralizedCollaboration
+from comlrl.trainers.centralized import CentralizedCollaboration
 
 ITEM = {
     "prompt": 'def solve(x):\n    """Add one."""',
@@ -67,7 +67,7 @@ def test_native_split_gives_the_unchanged_reward_and_logs():
     )
 
 
-def _run_entrypoint(monkeypatch, tmp_path, extra, trainer="CentralizedMAGRPOTrainer"):
+def _run_entrypoint(monkeypatch, tmp_path, extra, trainer="MAGRPOTrainer"):
     import sys
     import train_magrpo as entrypoint
 
@@ -80,8 +80,10 @@ def _run_entrypoint(monkeypatch, tmp_path, extra, trainer="CentralizedMAGRPOTrai
     def unexpected(**kwargs):
         raise AssertionError("the launcher picked the wrong trainer class")
 
-    for name in ("CentralizedMAGRPOTrainer", "StopAfterMainMAGRPOTrainer"):
-        monkeypatch.setattr(entrypoint, name, capture if name == trainer else unexpected)
+    for name in ("MAGRPOTrainer", "StopAfterMainMAGRPOTrainer"):
+        monkeypatch.setattr(
+            entrypoint, name, capture if name == trainer else unexpected
+        )
     monkeypatch.setattr(entrypoint, "load_dataset", lambda *a, **kw: [ITEM])
     monkeypatch.setattr(
         entrypoint.AutoTokenizer,
@@ -166,10 +168,15 @@ def test_bounded_answer_starts_inside_auxiliary_with_the_same_reward(prompt_mode
 
 def test_stop_trainer_stops_at_main_and_keeps_only_sampled_tokens(monkeypatch):
     import torch
-    from comlrl.trainers.reinforce import CentralizedMAGRPOTrainer
+    from comlrl.trainers.reinforce import MAGRPOTrainer
     from centralized_stop import StopAfterMainMAGRPOTrainer
 
-    pieces = {1: LEFT + "\n</auxiliary>\n<main>\n", 2: RIGHT + "\n", 3: "</main>", 4: " prose"}
+    pieces = {
+        1: LEFT + "\n</auxiliary>\n<main>\n",
+        2: RIGHT + "\n",
+        3: "</main>",
+        4: " prose",
+    }
     tokenizer = SimpleNamespace(
         pad_token_id=0,
         eos_token_id=0,
@@ -193,7 +200,7 @@ def test_stop_trainer_stops_at_main_and_keeps_only_sampled_tokens(monkeypatch):
             "response_lens": [4, 3, 5],
         }
 
-    monkeypatch.setattr(CentralizedMAGRPOTrainer, "_generate_completions", generate)
+    monkeypatch.setattr(MAGRPOTrainer, "_generate_completions", generate)
     trainer = object.__new__(StopAfterMainMAGRPOTrainer)
     trainer.tokenizers = [tokenizer]
     trainer.args = SimpleNamespace(match_decentralized_loss=False)
@@ -225,7 +232,10 @@ def test_entrypoint_bounded_answer_uses_the_stop_trainer(
     observed = _run_entrypoint(
         monkeypatch,
         tmp_path,
-        [f"magrpo.centralized_prompt={prompt_mode}", "magrpo.centralized_answer=bounded"],
+        [
+            f"magrpo.centralized_prompt={prompt_mode}",
+            "magrpo.centralized_answer=bounded",
+        ],
         trainer="StopAfterMainMAGRPOTrainer",
     )
     adapter = observed["centralized_adapter"]
@@ -238,7 +248,10 @@ def test_entrypoint_bounded_answer_uses_the_stop_trainer(
     [
         (["magrpo.centralized_answer=stop"], "centralized_answer"),
         (
-            ["magrpo.collaboration_mode=decentralized", "magrpo.centralized_answer=bounded"],
+            [
+                "magrpo.collaboration_mode=decentralized",
+                "magrpo.centralized_answer=bounded",
+            ],
             "requires centralized",
         ),
     ],

@@ -14,7 +14,7 @@ for path in (COMLRL_ROOT, REPO_ROOT):
         sys.path.insert(0, str(path))
 
 from config import Config, add_config_args, parse_overrides
-from comlrl.trainers.preference import MARLHFConfig, MARLHFTrainer
+from comlrl.trainers.pbrl import MARLHFConfig, MARLHFTrainer
 from preference_train_common import run_preference_training
 
 

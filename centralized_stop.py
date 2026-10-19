@@ -11,7 +11,7 @@ The reward, the parser and the decentralized runs are unchanged.
 import re
 from typing import Any, Dict, List, Optional, Sequence
 
-from comlrl.trainers.reinforce import CentralizedMAGRPOTrainer
+from comlrl.trainers.reinforce import MAGRPOTrainer
 
 AUXILIARY_PREFILL = "<auxiliary>\n"
 MAIN_STOP = "</main>"
@@ -57,7 +57,9 @@ def crop_stop_padding(result: Dict[str, Any], tokenizer: Any) -> Dict[str, Any]:
     pad_id = tokenizer.pad_token_id
     tokens: List[Any] = []
     lengths: List[int] = []
-    for sequence, length in zip(result["completion_input_ids"][0], result["response_lens"]):
+    for sequence, length in zip(
+        result["completion_input_ids"][0], result["response_lens"]
+    ):
         if pad_id is not None:
             pads = (sequence == pad_id).nonzero()
             if pads.numel():
@@ -79,7 +81,7 @@ def crop_stop_padding(result: Dict[str, Any], tokenizer: Any) -> Dict[str, Any]:
     return cropped
 
 
-class StopAfterMainMAGRPOTrainer(CentralizedMAGRPOTrainer):
+class StopAfterMainMAGRPOTrainer(MAGRPOTrainer):
     """Centralized MAGRPO whose train and eval rollouts stop at </main>."""
 
     def _generate_completions(

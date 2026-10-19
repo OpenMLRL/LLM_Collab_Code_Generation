@@ -293,13 +293,13 @@ def launch(request, monkeypatch, tmp_path):
     monkeypatch.setattr(wandb, "run", None)
 
     if module_name == "preference_train_common":
-        from comlrl.trainers import preference
+        from comlrl.trainers import pbrl
 
         def invoke():
             module.run_preference_training(
                 config=config,
                 section_name=section,
-                args_cls=getattr(preference, trainer_or_config),
+                args_cls=getattr(pbrl, trainer_or_config),
                 trainer_cls=create_trainer,
                 algorithm_name=section,
             )
