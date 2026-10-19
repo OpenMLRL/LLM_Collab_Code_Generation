@@ -48,6 +48,10 @@ magrpo:
   rollout_buffer_size: 4
   train_batch_size: 4
   advantage_normalization: true
+  # Skip optimizer steps whose gradients are all zero (every advantage zero).
+  skip_zero_grad_steps: true
+  # Centralized runs score the joint response with the decentralized loss.
+  match_decentralized_loss: true
   eval_interval: 4
   eval_num_samples: 4
   eval_batch_size: 1

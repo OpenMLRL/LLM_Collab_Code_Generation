@@ -473,8 +473,16 @@ def main():
             "reference_kl_enabled": magrpo_config.get("reference_kl_enabled", False),
             "reference_kl_coef": magrpo_config.get("reference_kl_coef", 0.1),
             "reference_devices": magrpo_config.get("reference_devices", None),
+            "skip_zero_grad_steps": bool(
+                magrpo_config.get("skip_zero_grad_steps", False)
+            ),
         }
     )
+    if centralized:
+        # Score the joint response with the decentralized MAGRPO loss.
+        magrpo_args_kwargs["match_decentralized_loss"] = bool(
+            magrpo_config.get("match_decentralized_loss", False)
+        )
     magrpo_args = args_cls(**magrpo_args_kwargs)
     formatters = get_formatters(dataset_type, num_agents)
     reward_func = get_reward_function(dataset_type, num_agents)

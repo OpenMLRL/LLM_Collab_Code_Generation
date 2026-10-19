@@ -124,6 +124,9 @@ def test_entrypoint_selects_the_centralized_prompt(
 ):
     observed = _run_entrypoint(monkeypatch, tmp_path, extra)
     assert type(observed["centralized_adapter"]).__name__ == adapter_name
+    # The default config shares the decentralized loss and skips empty updates.
+    assert observed["args"].match_decentralized_loss is True
+    assert observed["args"].skip_zero_grad_steps is True
 
 
 def test_entrypoint_rejects_unknown_prompt_mode(monkeypatch, tmp_path):
@@ -193,6 +196,7 @@ def test_stop_trainer_stops_at_main_and_keeps_only_sampled_tokens(monkeypatch):
     monkeypatch.setattr(CentralizedMAGRPOTrainer, "_generate_completions", generate)
     trainer = object.__new__(StopAfterMainMAGRPOTrainer)
     trainer.tokenizers = [tokenizer]
+    trainer.args = SimpleNamespace(match_decentralized_loss=False)
     result = trainer._generate_completions(None, [ITEM], num_return_sequences=3)
     assert seen["stop_strings"] == ["</main>"] and seen["tokenizer"] is tokenizer
     assert [t.tolist() for t in result["completion_input_ids"][0]] == [
@@ -203,6 +207,15 @@ def test_stop_trainer_stops_at_main_and_keeps_only_sampled_tokens(monkeypatch):
     assert result["response_lens"] == [3, 3, 5]
     assert [len(m) for m in result["completion_attention_mask"][0]] == [3, 5, 5]
     assert result["completions"] == [["stopped", "ended", "capped"]]
+    # With the decentralized loss, rows keep their padding like decentralized rows.
+    trainer.args = SimpleNamespace(match_decentralized_loss=True)
+    result = trainer._generate_completions(None, [ITEM], num_return_sequences=3)
+    assert [t.tolist() for t in result["completion_input_ids"][0]] == [
+        stopped.tolist(),
+        ended.tolist(),
+        capped.tolist(),
+    ]
+    assert result["response_lens"] == [4, 3, 5]
 
 
 @pytest.mark.parametrize("prompt_mode", ["concatenated", "native"])

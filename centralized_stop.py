@@ -50,7 +50,9 @@ def crop_stop_padding(result: Dict[str, Any], tokenizer: Any) -> Dict[str, Any]:
     Generation pads a sequence once it reaches the stop string. When the pad
     token is also EOS, CoMLRL counts the first pad as a sampled EOS and scores
     it in the joint loss, although the stop criterion forced it. Rollouts that
-    ended with a real EOS or at the token budget are left unchanged.
+    ended with a real EOS or at the token budget are left unchanged. Only the
+    joint loss needs this; the decentralized loss scores padding as it does for
+    decentralized rows.
     """
     pad_id = tokenizer.pad_token_id
     tokens: List[Any] = []
@@ -104,4 +106,6 @@ class StopAfterMainMAGRPOTrainer(CentralizedMAGRPOTrainer):
             external_prompts=external_prompts,
             **kwargs,
         )
+        if getattr(getattr(self, "args", None), "match_decentralized_loss", False):
+            return result
         return crop_stop_padding(result, tokenizer)
