@@ -159,6 +159,12 @@ def run_preference_training(
                 f"{section_name}.centralized_answer=bounded requires an iterative "
                 "method with a centralized actor or comparator."
             )
+        if getattr(args, "rl_algorithm", "magrpo") != "magrpo":
+            # MARLHF's actor-critic online phase runs a separate trainer that
+            # would keep generating past </main>.
+            raise ValueError(
+                f"{section_name}.centralized_answer=bounded needs rl_algorithm=magrpo."
+            )
         trainer_cls = bounded_trainer_cls
 
     formatters = get_formatters(dataset_type, num_agents)

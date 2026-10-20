@@ -221,3 +221,21 @@ def test_bounded_preference_runs_need_a_joint_answer_and_a_stop_trainer(
             tmp_path,
             bounded=bounded,
         )
+
+
+def test_bounded_marlhf_needs_the_magrpo_online_phase(monkeypatch, tmp_path):
+    settings = {
+        "comparator_generation_mode": "centralized",
+        "centralized_answer": "bounded",
+        "rl_algorithm": "maac",
+    }
+    with pytest.raises(ValueError, match="rl_algorithm=magrpo"):
+        _run_preference_setup(
+            "marlhf_iter",
+            pbrl.MARLHFIterConfig,
+            "che",
+            settings,
+            monkeypatch,
+            tmp_path,
+            bounded=True,
+        )
