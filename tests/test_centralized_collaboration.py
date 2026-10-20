@@ -3,6 +3,8 @@ from types import SimpleNamespace
 
 import pytest
 
+from centralized_comparator import CoopHECentralizedComparatorAdapter
+from centralized_native import CoopHENativeCentralizedAdapter
 import preference_train_common as setup
 from comlrl.trainers import pbrl
 from comlrl.trainers.centralized import CentralizedCollaboration
@@ -13,6 +15,45 @@ ALGORITHMS = [
     ("madpo_iter", pbrl.MADPOIterConfig),
     ("marlhf_iter", pbrl.MARLHFIterConfig),
 ]
+
+
+def _run_preference_setup(
+    section, config_cls, dataset, settings, monkeypatch, tmp_path, item=None
+):
+    """Run the pbrl setup on one row and return the trainer's kwargs and the row."""
+    root = Path(__file__).resolve().parents[1]
+    config = setup.Config(str(root / "configs" / f"{section}_{dataset}_config.yaml"))
+    assert config.get(f"{section}.collaboration_mode") == "decentralized"
+    config.update(
+        {
+            section: {"agent_devices": "cpu", **settings},
+            "output": {"base_dir": str(tmp_path), "save_final_model": False},
+        }
+    )
+    item = item or {
+        "prompt": "A task to solve",
+        "abstract_text": "A scientific abstract",
+        "entry_point": "solve",
+    }
+    monkeypatch.setattr(setup, "load_dataset", lambda *a, **kw: [item])
+    tokenizer = SimpleNamespace(pad_token="<pad>", eos_token="<eos>")
+    monkeypatch.setattr(
+        setup.AutoTokenizer, "from_pretrained", lambda *a, **kw: tokenizer
+    )
+    observed = {}
+
+    def create_trainer(**kwargs):
+        observed.update(kwargs)
+        return SimpleNamespace(train=lambda: None)
+
+    setup.run_preference_training(
+        config=config,
+        section_name=section,
+        args_cls=config_cls,
+        trainer_cls=create_trainer,
+        algorithm_name=section,
+    )
+    return observed, item
 
 
 @pytest.mark.parametrize("mode", ["centralized", "decentralized"])
@@ -68,37 +109,13 @@ def test_magrpo_entrypoint_selects_joint_actor(mode, monkeypatch, tmp_path):
 def test_preference_setup_passes_collaboration_adapter(
     section, config_cls, dataset, mode, monkeypatch, tmp_path
 ):
-    root = Path(__file__).resolve().parents[1]
-    config = setup.Config(str(root / "configs" / f"{section}_{dataset}_config.yaml"))
-    assert config.get(f"{section}.collaboration_mode") == "decentralized"
-    config.update(
-        {
-            section: {"collaboration_mode": mode, "agent_devices": "cpu"},
-            "output": {"base_dir": str(tmp_path), "save_final_model": False},
-        }
-    )
-    item = {
-        "prompt": "A task to solve",
-        "abstract_text": "A scientific abstract",
-        "entry_point": "solve",
-    }
-    monkeypatch.setattr(setup, "load_dataset", lambda *a, **kw: [item])
-    tokenizer = SimpleNamespace(pad_token="<pad>", eos_token="<eos>")
-    monkeypatch.setattr(
-        setup.AutoTokenizer, "from_pretrained", lambda *a, **kw: tokenizer
-    )
-    observed = {}
-
-    def create_trainer(**kwargs):
-        observed.update(kwargs)
-        return SimpleNamespace(train=lambda: None)
-
-    setup.run_preference_training(
-        config=config,
-        section_name=section,
-        args_cls=config_cls,
-        trainer_cls=create_trainer,
-        algorithm_name=section,
+    observed, item = _run_preference_setup(
+        section,
+        config_cls,
+        dataset,
+        {"collaboration_mode": mode},
+        monkeypatch,
+        tmp_path,
     )
     assert observed["num_agents"] == 2
     assert observed["args"].collaboration_mode == mode
@@ -121,6 +138,49 @@ def test_preference_setup_passes_collaboration_adapter(
             assert observed["args"].comparator_generation_mode == "centralized"
     elif not section.endswith("_iter"):
         assert "centralized_comparator_adapter" not in observed
+
+
+ITERATIVE = [algorithm for algorithm in ALGORITHMS if algorithm[0].endswith("_iter")]
+
+
+@pytest.mark.parametrize("section,config_cls", ITERATIVE)
+@pytest.mark.parametrize("prompt_mode", [None, "native"])
+def test_centralized_comparator_follows_the_centralized_prompt(
+    section, config_cls, prompt_mode, monkeypatch, tmp_path
+):
+    # Dec-Cen: decentralized agents are compared with one centralized comparator.
+    settings = {"comparator_generation_mode": "centralized"}
+    if prompt_mode is not None:
+        settings["centralized_prompt"] = prompt_mode
+    # The CoopHE prompts need a function signature to describe both roles.
+    row = {"prompt": 'def solve(x):\n    """Add one."""', "entry_point": "solve"}
+    observed, item = _run_preference_setup(
+        section, config_cls, "che", settings, monkeypatch, tmp_path, item=row
+    )
+    assert observed["args"].collaboration_mode == "decentralized"
+    assert observed["args"].comparator_generation_mode == "centralized"
+    adapter = observed["centralized_comparator_adapter"]
+    roles = [format_role(item) for format_role in observed["formatters"]]
+    prompt = adapter.build_prompt(item, roles)
+    if prompt_mode == "native":
+        assert type(adapter) is CoopHENativeCentralizedAdapter
+        assert prompt.count(item["prompt"]) == 1
+        assert not any(role in prompt for role in roles)
+    else:
+        assert type(adapter) is CoopHECentralizedComparatorAdapter
+        assert all(role in prompt for role in roles)
+
+
+def test_preference_setup_rejects_an_unknown_centralized_prompt(monkeypatch, tmp_path):
+    with pytest.raises(ValueError, match="madpo_iter.centralized_prompt"):
+        _run_preference_setup(
+            "madpo_iter",
+            pbrl.MADPOIterConfig,
+            "che",
+            {"centralized_prompt": "joint"},
+            monkeypatch,
+            tmp_path,
+        )
 
 
 @pytest.fixture

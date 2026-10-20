@@ -70,12 +70,19 @@ MADPO and MARLHF build preferences from task rewards. MARLHF then trains a joint
 
 **Centralized collaboration.** One model can play both roles with `--override <method>.collaboration_mode=centralized`, for example `magrpo.collaboration_mode=centralized`; the default is decentralized. `num_agents` stays 2 for the two roles, while only one model is loaded. The joint response contains `<auxiliary>` and `<main>` sections, which are split only for rewards and evaluation. `max_new_tokens` then limits the whole joint response, and MARLHF's `reward_max_length` has to fit the joint prompt and both outputs.
 
-**Native centralized prompt (MAGRPO).** By default the centralized prompt concatenates the Auxiliary and Main agent prompts, so the problem appears twice and each copy asks for "only the function". `magrpo.centralized_prompt=native` states the problem once and asks one programmer for `aux` and the main function in the same `<auxiliary>` / `<main>` sections; parsing, reward and evaluation are unchanged. Centralized MAGRPO is single-turn, so the decentralized runs it is compared with use `magrpo.num_turns=1`, and the joint response gets the two roles' combined budget:
+**Native centralized prompt.** By default the centralized prompt concatenates the Auxiliary and Main agent prompts, so the problem appears twice and each copy asks for "only the function". `magrpo.centralized_prompt=native` states the problem once and asks one programmer for `aux` and the main function in the same `<auxiliary>` / `<main>` sections; parsing, reward and evaluation are unchanged. Centralized MAGRPO is single-turn, so the decentralized runs it is compared with use `magrpo.num_turns=1`, and the joint response gets the two roles' combined budget:
 
 ```bash
 python train_magrpo.py --config configs/magrpo_che_config.yaml --override \
   magrpo.collaboration_mode=centralized magrpo.num_turns=1 \
   magrpo.max_new_tokens=512 magrpo.centralized_prompt=native
+```
+
+**Centralized comparator.** The iterative preference methods can pair decentralized agents with one centralized comparator, which writes `aux` and the main function in a single answer. `madpo_iter.centralized_prompt` (or `marlhf_iter.centralized_prompt`) picks that comparator's prompt, `concatenated` by default or `native`. In centralized preference runs, the joint actor uses the same prompt. The comparator's joint answer shares `max_new_tokens` with the agents, which is 256 in the iterative configs, and bounded answers apply only to MAGRPO:
+
+```bash
+python train_madpo_iter.py --config configs/madpo_iter_che_config.yaml --override \
+  madpo_iter.comparator_generation_mode=centralized madpo_iter.centralized_prompt=native
 ```
 
 **Bounded centralized answers.** A free-running joint answer can drift: after a few updates the model may drop the section tags and keep writing prose after the code until `max_new_tokens`, and an answer cut off before its functions are complete scores zero. `magrpo.centralized_answer=bounded` ends either centralized prompt with the opening `<auxiliary>` tag and stops every train and eval rollout at the first `</main>`. The reward, parser and prompts are unchanged; the default is `open`.

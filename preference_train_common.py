@@ -13,6 +13,7 @@ from transformers import AutoTokenizer
 from checkpoint_launch import parse_checkpoint_options, prepare_wandb_config
 from config import Config, run_id
 from centralized_comparator import CoopHECentralizedComparatorAdapter
+from centralized_native import CoopHENativeCentralizedAdapter
 from comlrl.utils.reward_processor import RewardProcessors
 from loggers.ac_code_metrics import build_ac_code_metrics_callback
 from train_magrpo import (
@@ -131,6 +132,12 @@ def run_preference_training(
             tokenizer.add_special_tokens(model_config.special_tokens)
 
     args_kwargs = dict(algo_config)
+    # "concatenated" embeds both role prompts; "native" states the problem once.
+    centralized_prompt = args_kwargs.pop("centralized_prompt", "concatenated")
+    if centralized_prompt not in {"concatenated", "native"}:
+        raise ValueError(
+            f"{section_name}.centralized_prompt must be concatenated or native."
+        )
     args_kwargs.setdefault("temperature", model_config.temperature)
     args_kwargs.setdefault("top_p", model_config.top_p)
     args_kwargs.setdefault("top_k", model_config.top_k)
@@ -216,7 +223,9 @@ def run_preference_training(
         or args.collaboration_mode == "centralized"
     ):
         trainer_kwargs["centralized_comparator_adapter"] = (
-            CoopHECentralizedComparatorAdapter()
+            CoopHENativeCentralizedAdapter()
+            if centralized_prompt == "native"
+            else CoopHECentralizedComparatorAdapter()
         )
     if metrics_callback is not None:
         trainer_kwargs["metrics_callback"] = metrics_callback
