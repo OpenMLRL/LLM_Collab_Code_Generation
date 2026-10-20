@@ -14,6 +14,7 @@ from checkpoint_launch import parse_checkpoint_options, prepare_wandb_config
 from config import Config, run_id
 from centralized_comparator import CoopHECentralizedComparatorAdapter
 from centralized_native import CoopHENativeCentralizedAdapter
+from centralized_stop import AuxiliaryPrefillAdapter
 from comlrl.utils.reward_processor import RewardProcessors
 from loggers.ac_code_metrics import build_ac_code_metrics_callback
 from train_magrpo import (
@@ -67,6 +68,7 @@ def run_preference_training(
     args_cls: Type[Any],
     trainer_cls: Type[Any],
     algorithm_name: str,
+    bounded_trainer_cls: Optional[Type[Any]] = None,
 ) -> None:
     checkpoint_options = parse_checkpoint_options(config)
     model_config = config.get_agent_model_config()
@@ -138,11 +140,26 @@ def run_preference_training(
         raise ValueError(
             f"{section_name}.centralized_prompt must be concatenated or native."
         )
+    # "open" lets joint answers run to max_new_tokens; "bounded" starts them
+    # inside <auxiliary> and stops them at the first </main>.
+    centralized_answer = args_kwargs.pop("centralized_answer", "open")
+    if centralized_answer not in {"open", "bounded"}:
+        raise ValueError(f"{section_name}.centralized_answer must be open or bounded.")
     args_kwargs.setdefault("temperature", model_config.temperature)
     args_kwargs.setdefault("top_p", model_config.top_p)
     args_kwargs.setdefault("top_k", model_config.top_k)
     args_kwargs.setdefault("num_agents", num_agents)
     args = args_cls(**args_kwargs)
+    if centralized_answer == "bounded":
+        joint = args.collaboration_mode == "centralized" or (
+            getattr(args, "comparator_generation_mode", None) == "centralized"
+        )
+        if not joint or bounded_trainer_cls is None:
+            raise ValueError(
+                f"{section_name}.centralized_answer=bounded requires an iterative "
+                "method with a centralized actor or comparator."
+            )
+        trainer_cls = bounded_trainer_cls
 
     formatters = get_formatters(dataset_type, num_agents)
     reward_func = get_reward_function(dataset_type, num_agents)
@@ -218,11 +235,14 @@ def run_preference_training(
         hasattr(args, "comparator_generation_mode")
         or args.collaboration_mode == "centralized"
     ):
-        trainer_kwargs["centralized_comparator_adapter"] = (
+        adapter = (
             CoopHENativeCentralizedAdapter()
             if centralized_prompt == "native"
             else CoopHECentralizedComparatorAdapter()
         )
+        if centralized_answer == "bounded":
+            adapter = AuxiliaryPrefillAdapter(adapter)
+        trainer_kwargs["centralized_comparator_adapter"] = adapter
     if metrics_callback is not None:
         trainer_kwargs["metrics_callback"] = metrics_callback
 

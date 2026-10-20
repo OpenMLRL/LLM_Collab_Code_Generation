@@ -15,6 +15,7 @@ for path in (COMLRL_ROOT, REPO_ROOT):
 
 from config import Config, add_config_args, parse_overrides
 from comlrl.trainers.pbrl import MARLHFIterConfig, MARLHFIterTrainer
+from centralized_stop import StopAfterMainMARLHFIterTrainer
 from preference_train_common import run_preference_training
 
 
@@ -34,6 +35,7 @@ def main():
         args_cls=MARLHFIterConfig,
         trainer_cls=MARLHFIterTrainer,
         algorithm_name="MARLHFIter",
+        bounded_trainer_cls=StopAfterMainMARLHFIterTrainer,
     )
 
 

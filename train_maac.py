@@ -194,6 +194,27 @@ def main() -> None:
         ):
             raise ValueError("agents must be a list of model names.")
         agent_names = [str(x) for x in agent_names]
+    collaboration_mode = maac_cfg.get("collaboration_mode", "decentralized")
+    if collaboration_mode not in {"decentralized", "centralized"}:
+        raise ValueError(
+            "maac.collaboration_mode must be decentralized or centralized."
+        )
+    centralized = collaboration_mode == "centralized"
+    # "concatenated" embeds both role prompts; "native" states the problem once.
+    centralized_prompt = maac_cfg.get("centralized_prompt", "concatenated")
+    if centralized_prompt not in {"concatenated", "native"}:
+        raise ValueError("maac.centralized_prompt must be concatenated or native.")
+    # "open" lets the joint answer run to max_new_tokens; "bounded" starts it
+    # inside <auxiliary> and stops every rollout at the first </main>.
+    centralized_answer = maac_cfg.get("centralized_answer", "open")
+    if centralized_answer not in {"open", "bounded"}:
+        raise ValueError("maac.centralized_answer must be open or bounded.")
+    if centralized_answer == "bounded" and not centralized:
+        raise ValueError(
+            "maac.centralized_answer=bounded requires centralized collaboration."
+        )
+    if centralized and agent_names is not None and len(agent_names) != 1:
+        raise ValueError("Centralized collaboration requires exactly one actor model.")
 
     output_dir = os.path.join(output_base_dir, run_id())
     os.makedirs(output_dir, exist_ok=True)
@@ -406,9 +427,25 @@ def main() -> None:
                 response_history_per_agent=response_history_per_agent,
             )
 
-    model_arg = model_name or None
+    model_arg = None if centralized and agent_names is not None else model_name or None
     agents_arg = agent_names
-    trainer = MAACTrainer(
+    trainer_cls = MAACTrainer
+    collaboration_kwargs: Dict[str, Any] = {}
+    if centralized:
+        from centralized_comparator import CoopHECentralizedComparatorAdapter
+        from centralized_native import CoopHENativeCentralizedAdapter
+        from centralized_stop import AuxiliaryPrefillAdapter, StopAfterMainMAACTrainer
+
+        adapter = (
+            CoopHENativeCentralizedAdapter()
+            if centralized_prompt == "native"
+            else CoopHECentralizedComparatorAdapter()
+        )
+        if centralized_answer == "bounded":
+            adapter = AuxiliaryPrefillAdapter(adapter)
+            trainer_cls = StopAfterMainMAACTrainer
+        collaboration_kwargs["centralized_adapter"] = adapter
+    trainer = trainer_cls(
         agent_model=model_arg,
         agents=agents_arg,
         tokenizer=tokenizers if agent_names else tokenizer,
@@ -418,6 +455,7 @@ def main() -> None:
         metrics_callback=metrics_callback,
         external_transition=external_transition_fn,
         args=MAACConfig(
+            collaboration_mode=collaboration_mode,
             num_turns=num_turns,
             num_train_epochs=maac_cfg.get("num_train_epochs", 80),
             agent_learning_rate=maac_cfg.get("agent_learning_rate", 5e-6),
@@ -471,6 +509,7 @@ def main() -> None:
         ),
         critic_model=critic_name,
         critics=critics,
+        **collaboration_kwargs,
     )
     trainer.verbose = bool(output_verbose)
     trainer.train(**checkpoint_options)

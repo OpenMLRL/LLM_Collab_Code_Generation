@@ -18,7 +18,14 @@ ALGORITHMS = [
 
 
 def _run_preference_setup(
-    section, config_cls, dataset, settings, monkeypatch, tmp_path, item=None
+    section,
+    config_cls,
+    dataset,
+    settings,
+    monkeypatch,
+    tmp_path,
+    item=None,
+    bounded=False,
 ):
     """Run the pbrl setup on one row and return the trainer's kwargs and the row."""
     root = Path(__file__).resolve().parents[1]
@@ -46,12 +53,19 @@ def _run_preference_setup(
         observed.update(kwargs)
         return SimpleNamespace(train=lambda: None)
 
+    def unexpected(**kwargs):
+        raise AssertionError("the setup picked the wrong trainer class")
+
+    classes = {"trainer_cls": create_trainer}
+    if bounded:
+        # A bounded run must build the stop trainer, not the plain one.
+        classes = {"trainer_cls": unexpected, "bounded_trainer_cls": create_trainer}
     setup.run_preference_training(
         config=config,
         section_name=section,
         args_cls=config_cls,
-        trainer_cls=create_trainer,
         algorithm_name=section,
+        **classes,
     )
     return observed, item
 

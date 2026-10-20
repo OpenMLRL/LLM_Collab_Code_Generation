@@ -3,14 +3,18 @@
 Open joint answers dropped the section tags after a few updates and kept
 writing prose after the code until the token budget ran out, and an answer
 cut off before its functions are complete scores zero. With
-``magrpo.centralized_answer=bounded`` the prompt ends with the opening
-<auxiliary> tag and every train and eval rollout stops at the first </main>.
-The reward, the parser and the decentralized runs are unchanged.
+``<method>.centralized_answer=bounded`` the prompt ends with the opening
+<auxiliary> tag and every joint answer stops at the first </main>: all train
+and eval rollouts of a joint actor (MAGRPO, MAAC, iterative MADPO/MARLHF), or
+only a centralized comparator's answers when the actors are decentralized.
+The reward, the parser and decentralized rollouts are unchanged.
 """
 
 import re
 from typing import Any, Dict, List, Optional, Sequence
 
+from comlrl.trainers.actor_critic import MAACTrainer
+from comlrl.trainers.pbrl import MADPOIterTrainer, MARLHFIterTrainer
 from comlrl.trainers.reinforce import MAGRPOTrainer
 
 AUXILIARY_PREFILL = "<auxiliary>\n"
@@ -81,8 +85,12 @@ def crop_stop_padding(result: Dict[str, Any], tokenizer: Any) -> Dict[str, Any]:
     return cropped
 
 
-class StopAfterMainMAGRPOTrainer(MAGRPOTrainer):
-    """Centralized MAGRPO whose train and eval rollouts stop at </main>."""
+class StopAfterMainMixin:
+    """Stop joint answers at the first </main> in MAGRPO-based trainers."""
+
+    def _stops_every_rollout(self) -> bool:
+        # A joint actor writes every rollout as one joint answer.
+        return self.is_centralized
 
     def _generate_completions(
         self,
@@ -95,6 +103,18 @@ class StopAfterMainMAGRPOTrainer(MAGRPOTrainer):
         external_prompts: Any = None,
         **kwargs: Any,
     ) -> Dict[str, Any]:
+        if not self._stops_every_rollout() and "stop_strings" not in kwargs:
+            # A decentralized actor's own rollout stays open.
+            return super()._generate_completions(
+                agent,
+                batch_items,
+                agent_idx=agent_idx,
+                num_return_sequences=num_return_sequences,
+                max_new_tokens=max_new_tokens,
+                prompts_override=prompts_override,
+                external_prompts=external_prompts,
+                **kwargs,
+            )
         tokenizer = self.tokenizers[agent_idx]
         kwargs.setdefault("stop_strings", [MAIN_STOP])
         kwargs.setdefault("tokenizer", tokenizer)
@@ -111,3 +131,42 @@ class StopAfterMainMAGRPOTrainer(MAGRPOTrainer):
         if getattr(getattr(self, "args", None), "match_decentralized_loss", False):
             return result
         return crop_stop_padding(result, tokenizer)
+
+    def _generate_centralized_policy_output_for_agent(
+        self, policy_agent, batch_item, *, prompt, num_candidates, **kwargs
+    ):
+        # A centralized comparator writes one joint answer as well.
+        kwargs.setdefault("stop_strings", [MAIN_STOP])
+        return super()._generate_centralized_policy_output_for_agent(
+            policy_agent,
+            batch_item,
+            prompt=prompt,
+            num_candidates=num_candidates,
+            **kwargs,
+        )
+
+
+class StopAfterMainMAGRPOTrainer(StopAfterMainMixin, MAGRPOTrainer):
+    """Centralized MAGRPO whose train and eval rollouts stop at </main>."""
+
+    def _stops_every_rollout(self) -> bool:
+        # Bounded MAGRPO always trains a joint actor.
+        return True
+
+
+class StopAfterMainMADPOIterTrainer(StopAfterMainMixin, MADPOIterTrainer):
+    """Iterative MADPO whose joint answers stop at </main>."""
+
+
+class StopAfterMainMARLHFIterTrainer(StopAfterMainMixin, MARLHFIterTrainer):
+    """Iterative MARLHF whose joint answers stop at </main>."""
+
+
+class StopAfterMainMAACTrainer(MAACTrainer):
+    """Centralized MAAC whose train and eval rollouts stop at </main>."""
+
+    def _generation_kwargs(self, agent_idx: int) -> Dict[str, Any]:
+        return {
+            "stop_strings": [MAIN_STOP],
+            "tokenizer": self._get_tokenizer(agent_idx),
+        }
