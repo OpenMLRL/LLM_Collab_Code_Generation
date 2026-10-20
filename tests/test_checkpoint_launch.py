@@ -49,9 +49,7 @@ def test_helper_import_and_default_options_have_no_checkpoint_io(monkeypatch, tm
         {"resume_from_checkpoint": None},
         {"checkpoint_dir": str(tmp_path / "periodic-only"), "checkpoint_interval": 3},
     ):
-        result = namespace["prepare_wandb_config"](
-            BASE_WANDB, section={}, checkpoint_options=options
-        )
+        result = namespace["prepare_wandb_config"]({"wandb": {}}, BASE_WANDB, options)
         assert result == BASE_WANDB
         assert result is not BASE_WANDB
     assert not list(tmp_path.iterdir())
@@ -123,9 +121,9 @@ def test_disabled_wandb_never_imports_metadata(section, monkeypatch):
     forbid_metadata_import(monkeypatch)
     assert (
         checkpoint.prepare_wandb_config(
+            {"wandb": section},
             BASE_WANDB,
-            section=section,
-            checkpoint_options={"resume_from_checkpoint": "missing-checkpoint"},
+            {"resume_from_checkpoint": "missing-checkpoint"},
         )
         is None
     )
@@ -135,9 +133,9 @@ def test_absent_prepared_wandb_never_imports_metadata(monkeypatch):
     forbid_metadata_import(monkeypatch)
     assert (
         checkpoint.prepare_wandb_config(
+            {"wandb": {}},
             None,
-            section={},
-            checkpoint_options={"resume_from_checkpoint": "missing-checkpoint"},
+            {"resume_from_checkpoint": "missing-checkpoint"},
         )
         is None
     )
@@ -157,9 +155,9 @@ def test_explicit_identity_keys_skip_metadata_even_when_null(section, monkeypatc
     forbid_metadata_import(monkeypatch)
     original = deepcopy(BASE_WANDB)
     result = checkpoint.prepare_wandb_config(
+        {"wandb": section},
         BASE_WANDB,
-        section=section,
-        checkpoint_options={"resume_from_checkpoint": "missing-checkpoint"},
+        {"resume_from_checkpoint": "missing-checkpoint"},
     )
     assert result == {**BASE_WANDB, **section}
     assert result is not BASE_WANDB
@@ -172,9 +170,9 @@ def test_prepared_identity_also_skips_metadata(identity, monkeypatch):
     prepared = {**BASE_WANDB, **identity}
     assert (
         checkpoint.prepare_wandb_config(
+            {"wandb": {}},
             prepared,
-            section={},
-            checkpoint_options={"resume_from_checkpoint": "missing-checkpoint"},
+            {"resume_from_checkpoint": "missing-checkpoint"},
         )
         == prepared
     )
@@ -195,9 +193,9 @@ def test_metadata_restores_only_saved_identity_and_keeps_launch_settings(
     monkeypatch.setattr(comlrl.utils, "read_checkpoint_metadata", read_metadata)
     original = deepcopy(BASE_WANDB)
     result = checkpoint.prepare_wandb_config(
+        {"wandb": {"project": "configured-project"}},
         BASE_WANDB,
-        section={"project": "configured-project"},
-        checkpoint_options={"resume_from_checkpoint": "checkpoint/state.pt"},
+        {"resume_from_checkpoint": "checkpoint/state.pt"},
     )
     assert calls == ["checkpoint/state.pt"]
     expected = dict(BASE_WANDB)
@@ -248,9 +246,9 @@ def launch(request, monkeypatch, tmp_path):
         events.append("parse")
         return checkpoint.parse_checkpoint_options(value)
 
-    def prepare_wandb(value, **kwargs):
+    def prepare_wandb(config, value, options):
         observed["before_prepare"] = deepcopy(value)
-        result = checkpoint.prepare_wandb_config(value, **kwargs)
+        result = checkpoint.prepare_wandb_config(config, value, options)
         events.append("prepared")
         observed["prepared"] = result
         return result

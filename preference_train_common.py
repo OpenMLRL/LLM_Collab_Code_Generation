@@ -186,11 +186,7 @@ def run_preference_training(
             "trainer": algo_config,
         },
     }
-    wandb_config = prepare_wandb_config(
-        wandb_config,
-        section=config.get("wandb", {}),
-        checkpoint_options=checkpoint_options,
-    )
+    wandb_config = prepare_wandb_config(config, wandb_config, checkpoint_options)
 
     import external as external_mod
     import rewards.code_rewards as code_rewards

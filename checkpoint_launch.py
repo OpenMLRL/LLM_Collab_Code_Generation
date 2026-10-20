@@ -41,8 +41,9 @@ def parse_checkpoint_options(config):
     return options
 
 
-def prepare_wandb_config(wandb_config, *, section, checkpoint_options):
+def prepare_wandb_config(config, wandb_config, checkpoint_options):
     """Reuse saved logging identity before an eager trainer constructor runs."""
+    section = config.get("wandb", {})
     if wandb_config is None or section is None or section is False:
         return None
     if not isinstance(section, Mapping):

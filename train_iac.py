@@ -466,6 +466,7 @@ def main() -> None:
             ),
         },
         wandb_config=prepare_wandb_config(
+            config,
             _build_wandb_config(
                 config,
                 output_dir,
@@ -476,8 +477,7 @@ def main() -> None:
                 train_size,
                 eval_size,
             ),
-            section=config.get("wandb", {}),
-            checkpoint_options=checkpoint_options,
+            checkpoint_options,
         ),
         critic_model=critic_name,
         critics=critics,
