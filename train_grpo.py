@@ -395,11 +395,7 @@ def main():
             "trainer": grpo_config,
         },
     }
-    wandb_config = prepare_wandb_config(
-        wandb_config,
-        section=config.get("wandb", {}),
-        checkpoint_options=checkpoint_options,
-    )
+    wandb_config = prepare_wandb_config(config, wandb_config, checkpoint_options)
 
     # Propagate verbosity to reward/external modules
     import rewards.code_rewards as code_rewards

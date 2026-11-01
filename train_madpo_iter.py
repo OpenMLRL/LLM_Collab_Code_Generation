@@ -14,7 +14,8 @@ for path in (COMLRL_ROOT, REPO_ROOT):
         sys.path.insert(0, str(path))
 
 from config import Config, add_config_args, parse_overrides
-from comlrl.trainers.preference import MADPOIterConfig, MADPOIterTrainer
+from comlrl.trainers.pbrl import MADPOIterConfig, MADPOIterTrainer
+from centralized_stop import StopAfterMainMADPOIterTrainer
 from preference_train_common import run_preference_training
 
 
@@ -34,6 +35,7 @@ def main():
         args_cls=MADPOIterConfig,
         trainer_cls=MADPOIterTrainer,
         algorithm_name="MADPOIter",
+        bounded_trainer_cls=StopAfterMainMADPOIterTrainer,
     )
 
 

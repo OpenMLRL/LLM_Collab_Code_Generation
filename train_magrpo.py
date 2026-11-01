@@ -33,12 +33,8 @@ from loggers.mt_code_logger import (
 from rewards.code_rewards import execution_reward_aux
 from comlrl.utils import set_reward_range
 from comlrl.utils.reward_processor import RewardProcessors
-from comlrl.trainers.reinforce import (
-    MAGRPOConfig,
-    MAGRPOTrainer,
-    CentralizedMAGRPOConfig,
-    CentralizedMAGRPOTrainer,
-)
+from comlrl.trainers.reinforce import MAGRPOConfig, MAGRPOTrainer
+from centralized_stop import StopAfterMainMAGRPOTrainer
 import external as external_ctx
 from external import get_external_transition
 
@@ -241,8 +237,22 @@ def main():
             "magrpo.collaboration_mode must be decentralized or centralized."
         )
     centralized = collaboration_mode == "centralized"
-    args_cls = CentralizedMAGRPOConfig if centralized else MAGRPOConfig
-    trainer_cls = CentralizedMAGRPOTrainer if centralized else MAGRPOTrainer
+    # "concatenated" embeds both role prompts; "native" states the problem once.
+    centralized_prompt = magrpo_config.get("centralized_prompt", "concatenated")
+    if centralized_prompt not in {"concatenated", "native"}:
+        raise ValueError("magrpo.centralized_prompt must be concatenated or native.")
+    # "open" lets the joint answer run to max_new_tokens; "bounded" starts it
+    # inside <auxiliary> and stops every rollout at the first </main>.
+    centralized_answer = magrpo_config.get("centralized_answer", "open")
+    if centralized_answer not in {"open", "bounded"}:
+        raise ValueError("magrpo.centralized_answer must be open or bounded.")
+    if centralized_answer == "bounded" and not centralized:
+        raise ValueError(
+            "magrpo.centralized_answer=bounded requires centralized collaboration."
+        )
+    trainer_cls = MAGRPOTrainer
+    if centralized_answer == "bounded":
+        trainer_cls = StopAfterMainMAGRPOTrainer
     seed_value = int(config.get("seed", magrpo_config.get("seed", 42)))
     num_turns = magrpo_config.get("num_turns", 2)
     num_agents = magrpo_config.get("num_agents", 2)
@@ -423,6 +433,7 @@ def main():
     external_ctx.set_context_resolver(_resolver)
 
     magrpo_args_kwargs = {
+        "collaboration_mode": collaboration_mode,
         "num_turns": num_turns,
         "num_train_epochs": magrpo_config.get("num_train_epochs", 8),
         "agent_learning_rate": magrpo_config.get("agent_learning_rate", 2e-5),
@@ -457,9 +468,17 @@ def main():
             "reference_kl_enabled": magrpo_config.get("reference_kl_enabled", False),
             "reference_kl_coef": magrpo_config.get("reference_kl_coef", 0.1),
             "reference_devices": magrpo_config.get("reference_devices", None),
+            "skip_zero_grad_steps": bool(
+                magrpo_config.get("skip_zero_grad_steps", False)
+            ),
         }
     )
-    magrpo_args = args_cls(**magrpo_args_kwargs)
+    if centralized:
+        # Score the joint response with the decentralized MAGRPO loss.
+        magrpo_args_kwargs["match_decentralized_loss"] = bool(
+            magrpo_config.get("match_decentralized_loss", False)
+        )
+    magrpo_args = MAGRPOConfig(**magrpo_args_kwargs)
     formatters = get_formatters(dataset_type, num_agents)
     reward_func = get_reward_function(dataset_type, num_agents)
     eval_logger, eval_aggregator = get_logger_and_aggregator(
@@ -507,11 +526,7 @@ def main():
             "trainer": magrpo_config,
         },
     }
-    wandb_config = prepare_wandb_config(
-        wandb_config,
-        section=config.get("wandb", {}),
-        checkpoint_options=checkpoint_options,
-    )
+    wandb_config = prepare_wandb_config(config, wandb_config, checkpoint_options)
 
     # Propagate verbosity to reward/external modules
     import rewards.code_rewards as code_rewards
@@ -589,8 +604,17 @@ def main():
 
     if centralized:
         from centralized_comparator import CoopHECentralizedComparatorAdapter
+        from centralized_native import CoopHENativeCentralizedAdapter
+        from centralized_stop import AuxiliaryPrefillAdapter
 
-        trainer_kwargs["centralized_adapter"] = CoopHECentralizedComparatorAdapter()
+        adapter = (
+            CoopHENativeCentralizedAdapter()
+            if centralized_prompt == "native"
+            else CoopHECentralizedComparatorAdapter()
+        )
+        if centralized_answer == "bounded":
+            adapter = AuxiliaryPrefillAdapter(adapter)
+        trainer_kwargs["centralized_adapter"] = adapter
     trainer = trainer_cls(**trainer_kwargs)
     trainer.verbose = bool(output_verbose)
     trainer.train(**checkpoint_options)
